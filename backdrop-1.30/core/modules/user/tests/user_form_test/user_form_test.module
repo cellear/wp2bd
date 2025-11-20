@@ -1,0 +1,120 @@
+<?php
+/**
+ * @file
+ * Dummy module implementing a form to test user password validation
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Sets up a form that allows a user to validate password.
+ */
+function user_form_test_menu() {
+  $items = array();
+  $items['user_form_test_current_password/%user'] = array(
+    'title' => 'User form test for current password validation',
+    'page callback' => 'user_form_test_current_password_page',
+    'page arguments' => array(1),
+    'access arguments' => array('administer users'),
+    'type' => MENU_SUGGESTED_ITEM,
+  );
+
+  if (state_get('user_form_test_user_paths', FALSE)) {
+    $items['user_form_test_current_password/%user']['delivery callback'] = 'backdrop_deliver_html_page';
+  }
+
+  return $items;
+}
+
+/**
+ * Menu callback for user_form_test_current_password/%user.
+ */
+function user_form_test_current_password_page($user_account) {
+  $form = backdrop_get_form('user_form_test_current_password', $user_account);
+  return user_login_page_wrapper($form);
+}
+
+/**
+ * A test form for user_validate_current_pass().
+ */
+function user_form_test_current_password($form, &$form_state, $account) {
+  $account->user_form_test_field = '';
+  $form['#user'] = $account;
+
+  $form['user_form_test_field'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Test field'),
+    '#description' => t('A field that would require a correct password to change.'),
+    '#required' => TRUE,
+  );
+
+  $form['current_pass'] = array(
+    '#type' => 'password',
+    '#title' => t('Current password'),
+    '#size' => 25,
+    '#description' => t('Enter your current password'),
+  );
+
+  $form['current_pass_required_values'] = array(
+    '#type' => 'value',
+    '#value' => array('user_form_test_field' => t('Test field')),
+  );
+
+  $form['password_confirm'] = array(
+    '#type' => 'password_confirm',
+  );
+
+  $form['#validate'][] = 'user_validate_current_pass';
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Test'),
+  );
+  return $form;
+}
+
+/**
+ * Submit function for the test form for user_validate_current_pass().
+ */
+function user_form_test_current_password_submit($form, &$form_state) {
+  backdrop_set_message(t('The password has been validated and the form submitted successfully.'));
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function user_form_test_form_user_profile_form_alter(&$form, &$form_state) {
+  if (state_get('user_form_test_user_profile_form_rebuild', FALSE)) {
+    $form['#submit'][] = 'user_form_test_user_account_submit';
+  }
+}
+
+/**
+ * Submit function for user_profile_form().
+ */
+function user_form_test_user_account_submit($form, &$form_state) {
+  // Rebuild the form instead of letting the process end. This allows us to
+  // test for bugs that can be triggered in contributed modules.
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Implements hook_user_login_paths().
+ */
+function user_form_test_user_login_paths() {
+  $paths = array();
+  // If set, turn the custom password form into a user login path so that it
+  // uses the simplified login display.
+  if (state_get('user_form_test_user_paths', FALSE)) {
+    $paths['user_form_test_current_password/*'] = TRUE;
+  }
+  return $paths;
+}
+
+/**
+ * Implements hook_user_login_paths_alter().
+ */
+function user_form_test_user_login_paths_alter(&$paths) {
+  if (state_get('user_form_test_user_paths', FALSE)) {
+    $paths['user/login'] = FALSE;
+  }
+}
