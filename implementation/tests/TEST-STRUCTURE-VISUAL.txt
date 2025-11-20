@@ -1,0 +1,214 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    LOOP INTEGRATION TEST STRUCTURE                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+LoopIntegration.test.php (775 lines)
+│
+├── CLASS: LoopIntegrationTestCase extends BackdropWebTestCase
+│   │
+│   ├── PROPERTIES
+│   │   ├── $testNodes (array) - Stores created nodes for cleanup
+│   │   ├── $originalGlobals (array) - Stores globals for restoration
+│   │   └── $testUser (object) - Test user for authorship
+│   │
+│   ├── SETUP & TEARDOWN
+│   │   ├── setUp() - Initialize test environment
+│   │   │   ├── Enable modules: node, field, text
+│   │   │   ├── Store original globals
+│   │   │   ├── Load WP2BD implementation files
+│   │   │   ├── Create content types (article, page)
+│   │   │   └── Create test user
+│   │   │
+│   │   └── tearDown() - Clean up test environment
+│   │       ├── Delete all test nodes
+│   │       └── Restore original globals
+│   │
+│   ├── HELPER METHODS
+│   │   ├── storeOriginalGlobals() - Save globals before tests
+│   │   ├── restoreOriginalGlobals() - Restore globals after tests
+│   │   └── createTestNode($settings) - Helper to create test nodes
+│   │
+│   └── TEST METHODS (11 TOTAL)
+│       │
+│       ├── [1] testLoopWithThreeBackdropNodes()
+│       │     └── Creates 3 nodes → Query → Loop → Verify iteration
+│       │
+│       ├── [2] testNestedLoopsWithReset()
+│       │     └── Main query → Inner custom query → wp_reset_postdata()
+│       │
+│       ├── [3] testEmptyQuery()
+│       │     └── Query nonexistent type → Verify have_posts() FALSE
+│       │
+│       ├── [4] testSinglePost()
+│       │     └── Query 1 node → Loop once → Verify globals
+│       │
+│       ├── [5] testDifferentNodeTypes()
+│       │     └── Query article, page, both → Verify filtering
+│       │
+│       ├── [6] testMultiPageContent()
+│       │     └── Create multi-page node → Verify $pages, $multipage
+│       │
+│       ├── [7] testTemplateTagsInLoop()
+│       │     └── Loop → Verify $post, $id, $authordata set
+│       │
+│       ├── [8] testUnpublishedNodesExcluded()
+│       │     └── Create published + unpublished → Query → Verify filtering
+│       │
+│       ├── [9] testThePostWithoutHavePostsCheck()
+│       │     └── Empty query → Call the_post() → Verify no error
+│       │
+│       ├── [10] testCurrentPostCounter()
+│       │     └── Loop → Verify counter: -1 → 0 → 1 → 2
+│       │
+│       └── [11] testWPPostFromNodeMissingBody()
+│             └── Node without body → Convert → Verify empty strings
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         GLOBALS TESTED                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    $wp_query ──────┐
+                    ├─→ posts (array)
+                    ├─→ post_count (int)
+                    ├─→ current_post (int)
+                    └─→ post (object)
+
+    $post ──────────┐
+                    ├─→ ID
+                    ├─→ post_title
+                    ├─→ post_content
+                    ├─→ post_excerpt
+                    ├─→ post_type
+                    ├─→ post_status
+                    ├─→ post_author
+                    ├─→ post_date
+                    └─→ ... (more properties)
+
+    $id ────────────→ Current post ID (int)
+
+    $authordata ────→ Author user object
+
+    Pagination ─────┐
+                    ├─→ $pages (array)
+                    ├─→ $page (int)
+                    ├─→ $numpages (int)
+                    └─→ $multipage (bool)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       TEST EXECUTION FLOW                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    START
+      │
+      ├─→ setUp()
+      │     ├─→ Enable modules
+      │     ├─→ Store globals
+      │     ├─→ Load WP2BD files
+      │     ├─→ Create content types
+      │     └─→ Create test user
+      │
+      ├─→ testLoopWithThreeBackdropNodes()
+      │     ├─→ Create 3 nodes
+      │     ├─→ new WP_Query()
+      │     ├─→ while (have_posts()) { the_post(); }
+      │     └─→ Assert results
+      │
+      ├─→ testNestedLoopsWithReset()
+      │     ├─→ Create nodes (article + page)
+      │     ├─→ Outer loop (articles)
+      │     ├─→   Inner loop (pages)
+      │     ├─→   wp_reset_postdata()
+      │     └─→ Assert outer loop continues
+      │
+      ├─→ testEmptyQuery()
+      │     ├─→ Query nonexistent type
+      │     └─→ Assert have_posts() FALSE
+      │
+      ├─→ ... (8 more tests)
+      │
+      └─→ tearDown()
+            ├─→ Delete test nodes
+            └─→ Restore globals
+      │
+    END
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     WORDPRESS LOOP PATTERN                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    STANDARD WORDPRESS:                    WP2BD IMPLEMENTATION:
+
+    if (have_posts()) {                    global $wp_query, $post;
+      while (have_posts()) {               $wp_query = new WP_Query(...);
+        the_post();                        
+        the_title();                       if (have_posts()) {
+        the_content();                       while (have_posts()) {
+      }                                        the_post();
+    }                                          // $post is populated
+                                               // Template tags work
+                                             }
+                                           }
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       ASSERTION EXAMPLES                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    // Test loop iteration count
+    $this->assertEqual($iteration_count, 3, 'Loop should iterate 3 times');
+
+    // Test have_posts() returns FALSE after loop
+    $this->assertFalse(have_posts(), 'have_posts() should be FALSE');
+
+    // Test post ID is set
+    $this->assertEqual($post->ID, $node->nid, 'Post ID should match node ID');
+
+    // Test post title
+    $this->assertEqual($post->post_title, 'Test Title', 'Title should match');
+
+    // Test counter incrementation
+    $this->assertEqual($wp_query->current_post, 0, 'Counter should be 0');
+
+    // Test multiple posts found
+    $this->assertEqual($wp_query->post_count, 3, 'Should return 3 posts');
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      DOCUMENTATION FILES                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    README.md
+      ├─→ How to run tests (command line, web UI)
+      ├─→ Test coverage summary
+      ├─→ Expected vs actual behavior
+      ├─→ Troubleshooting guide
+      └─→ CI/CD integration examples
+
+    TEST-SUMMARY.md
+      ├─→ Test matrix (all 11 tests at a glance)
+      ├─→ Globals tested
+      ├─→ Sample output
+      ├─→ Performance notes
+      └─→ Maintenance guidelines
+
+    QUICK-START.md
+      ├─→ 3-step run guide
+      ├─→ Common commands
+      ├─→ Requirements checklist
+      └─→ Quick reference
+
+    INTEGRATION-TESTS-DELIVERY.md
+      ├─→ Delivery summary
+      ├─→ Requirements met
+      ├─→ Code statistics
+      └─→ Success criteria
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    RUN COMMAND (QUICK REFERENCE)                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    cd /path/to/backdrop
+
+    # Run all tests
+    php core/scripts/run-tests.sh --class LoopIntegrationTestCase --verbose
+
+    # Expected output: 11 tests, 0 failures, 0 exceptions
+
