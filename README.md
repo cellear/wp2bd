@@ -15,7 +15,7 @@ WP4BD (WordPress for Backdrop) is a backward compatibility layer that allows cla
 
 ## Proof of Concept Target
 
-The initial PoC successfully runs the **WordPress Twenty Seventeen** theme (WordPress 4.9 era) on Backdrop CMS 1.30 without any theme modifications.
+The initial PoC aims to successfully run the **WordPress Twenty Seventeen** theme (WordPress 4.9 era) on Backdrop CMS 1.30 without any theme modifications.
 
 ## Project Components
 
