@@ -1009,3 +1009,169 @@ function is_sticky( $post_id = null ) {
   // Not sticky
   return false;
 }
+
+/**
+ * Determines whether the query resulted in a 404 (Not Found) error.
+ *
+ * WordPress Behavior:
+ * - Returns true when the requested content was not found (404 error)
+ * - Returns false for all other page types (posts, pages, archives, etc.)
+ * - Set when WordPress cannot find matching content for the request
+ * - Commonly used in templates to display custom 404 pages
+ *
+ * Backdrop Mapping:
+ * - Checks WP_Query->is_404 flag (most reliable for programmatic queries)
+ * - Checks Backdrop's HTTP status header for "404" response
+ * - Uses backdrop_get_http_header('status') to detect 404 responses
+ * - Returns true if no content found via menu_get_object
+ * - Compatible with Backdrop's MENU_NOT_FOUND status
+ *
+ * @since WordPress 1.5.0
+ * @since WP2BD 1.0.0
+ *
+ * @global WP_Query $wp_query WordPress Query object (if available).
+ *
+ * @return bool Whether the query is for a 404 error page.
+ *
+ * @example
+ * ```php
+ * // Display custom 404 content
+ * if (is_404()) {
+ *     echo '<h1>Page Not Found</h1>';
+ *     echo '<p>The page you requested does not exist.</p>';
+ * }
+ *
+ * // Redirect 404s to homepage
+ * if (is_404()) {
+ *     wp_redirect(home_url());
+ *     exit;
+ * }
+ *
+ * // Track 404 errors
+ * if (is_404()) {
+ *     error_log('404 Error: ' . $_SERVER['REQUEST_URI']);
+ * }
+ *
+ * // Load different template for 404
+ * if (is_404()) {
+ *     get_template_part('template-parts/content', 'none');
+ * }
+ * ```
+ */
+function is_404() {
+  global $wp_query;
+
+  // Method 1: Check WP_Query if available (most reliable for WordPress compatibility)
+  if ( isset( $wp_query ) && is_object( $wp_query ) ) {
+    // Check the is_404 property
+    if ( isset( $wp_query->is_404 ) && $wp_query->is_404 ) {
+      return true;
+    }
+
+    // Check if WP_Query has is_404() method
+    if ( method_exists( $wp_query, 'is_404' ) ) {
+      return $wp_query->is_404();
+    }
+  }
+
+  // Method 2: Check Backdrop's HTTP status header
+  // Backdrop sets HTTP status via backdrop_deliver_html_page() and backdrop_set_http_header()
+  if ( function_exists( 'backdrop_get_http_header' ) ) {
+    $status = backdrop_get_http_header( 'status' );
+
+    // Check if status contains "404"
+    // Common formats: "404 Not Found", "404", etc.
+    if ( $status && strpos( $status, '404' ) !== false ) {
+      return true;
+    }
+  }
+
+  // Method 3: Check if we have any content loaded
+  // If menu_get_object returns null for both node and taxonomy_term,
+  // and we're not on a special page (front, search, etc.), it might be a 404
+  if ( function_exists( 'menu_get_object' ) ) {
+    $node = menu_get_object( 'node' );
+    $term = menu_get_object( 'taxonomy_term' );
+
+    // If no object found, check if we're on a valid special page
+    if ( ! $node && ! $term ) {
+      // Not a 404 if we're on front page
+      if ( is_front_page() ) {
+        return false;
+      }
+
+      // Not a 404 if we're on search page
+      if ( is_search() ) {
+        return false;
+      }
+
+      // Not a 404 if we're on archive/listing page
+      // (archives can be empty but aren't 404s)
+      if ( is_archive() ) {
+        return false;
+      }
+
+      // Check for admin pages or special paths
+      if ( function_exists( 'arg' ) ) {
+        $args = arg();
+        if ( isset( $args[0] ) ) {
+          $first_arg = $args[0];
+
+          // Common valid paths that aren't 404s
+          $valid_paths = array( 'admin', 'user', 'node', 'taxonomy', 'search', 'blog' );
+          if ( in_array( $first_arg, $valid_paths, true ) ) {
+            // These are handled by their respective systems, not 404s
+            return false;
+          }
+        }
+      }
+
+      // No content and not a special page - likely a 404
+      // But we need to be careful not to false-positive
+      // Only return true if we have additional evidence
+
+      // Check current path
+      if ( function_exists( 'current_path' ) ) {
+        $path = current_path();
+
+        // Empty path is front page, not 404
+        if ( empty( $path ) ) {
+          return false;
+        }
+
+        // If we have a path but no content, it could be 404
+        // But we still need to check menu system
+        if ( function_exists( 'menu_get_item' ) ) {
+          $router_item = menu_get_item();
+
+          // If menu system returned no valid item, it's a 404
+          if ( ! $router_item || ! isset( $router_item['page_callback'] ) ) {
+            return true;
+          }
+
+          // If menu system explicitly says not found
+          if ( isset( $router_item['access'] ) && $router_item['access'] === false ) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  // Method 4: Check $_GET['q'] against known 404 patterns
+  // Some Backdrop sites might not set HTTP headers properly
+  if ( isset( $_GET['q'] ) ) {
+    $path = $_GET['q'];
+
+    // If menu_get_item shows MENU_NOT_FOUND constant (= 4 in Backdrop/Drupal)
+    if ( function_exists( 'menu_get_item' ) ) {
+      $item = menu_get_item();
+      if ( isset( $item['access_callback'] ) && $item['access_callback'] === false ) {
+        return true;
+      }
+    }
+  }
+
+  // Default: not a 404
+  return false;
+}
