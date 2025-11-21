@@ -1,0 +1,34 @@
+#edit-tm-toolbar {
+  ~ fieldset:not(.fieldgroup) {
+    background-color: var(--gin-bg-app);
+
+    legend {
+      background-color: var(--gin-bg-app);
+    }
+  }
+}
+
+.tm--highlighted .form-item {
+  background-color: var(--gin-bg-green-light);
+}
+
+#taxonomy-manager {
+  > #taxonomy-term-data,
+  > #tm--double-tree-operations {
+    top: var(--gin-offset-y);
+  }
+
+  .treeview {
+    .form-item,
+    .term-operations {
+      border-radius: var(--gin-border-radius);
+      padding-inline: var(--gin-spacing-xs);
+      padding-block: var(--gin-spacing-xxs);
+    }
+
+    .term-operations {
+      display: flex;
+    }
+  }
+}
+

@@ -1,0 +1,12 @@
+name = Devel
+description = Various blocks, pages, and functions for developers.
+package = Development
+backdrop = 1.x
+configure = admin/config/development/devel
+tags[] = developer
+type = module
+
+; Added by Backdrop CMS packaging script on 2025-09-08
+project = devel
+version = 1.x-1.8.3
+timestamp = 1757351947
