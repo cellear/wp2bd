@@ -16,11 +16,13 @@ define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wp-content/themes');
 define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
 
 // Initialize WordPress globals
-global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post;
+global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version;
 $wp_filter = array();
 $wp_actions = array();
 $wp_current_filter = array();
 $post = null;
+$wp_version = '4.9'; // WordPress 4.9 compatibility
+$GLOBALS['wp_version'] = '4.9';
 
 // Load WordPress compatibility classes
 require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
@@ -68,6 +70,38 @@ function get_stylesheet() {
 }
 
 /**
+ * Retrieve the path of a file in the parent theme.
+ *
+ * @param string $file Optional. File to search for in the parent theme.
+ * @return string The path of the file.
+ */
+if (!function_exists('get_parent_theme_file_path')) {
+  function get_parent_theme_file_path($file = '') {
+    $path = get_template_directory();
+    if (!empty($file)) {
+      $path .= '/' . ltrim($file, '/');
+    }
+    return $path;
+  }
+}
+
+/**
+ * Retrieve the URL of a file in the theme.
+ *
+ * @param string $file Optional. File to search for in the theme.
+ * @return string The URL of the file.
+ */
+if (!function_exists('get_theme_file_uri')) {
+  function get_theme_file_uri($file = '') {
+    $uri = get_template_directory_uri();
+    if (!empty($file)) {
+      $uri .= '/' . ltrim($file, '/');
+    }
+    return $uri;
+  }
+}
+
+/**
  * Implements hook_preprocess_page().
  *
  * Initialize WordPress query for the current page.
@@ -79,6 +113,31 @@ function wp_preprocess_page(&$variables) {
   $node = menu_get_object();
 
   if ($node) {
+    // Always reload the node fully to ensure it has all properties including 'type'
+    // menu_get_object() might return a partially loaded node
+    if (function_exists('node_load') && isset($node->nid)) {
+      $full_node = node_load($node->nid);
+      if ($full_node) {
+        $node = $full_node;
+      }
+    }
+    
+    // Double-check: ensure node has type property (bundle) before converting
+    // This prevents "Missing bundle property" errors
+    if (!isset($node->type)) {
+      // Try to get it from the node table directly if available
+      if (isset($node->nid) && function_exists('db_query')) {
+        $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+        if ($type_result) {
+          $node->type = $type_result;
+        } else {
+          $node->type = 'page'; // Fallback
+        }
+      } else {
+        $node->type = 'page'; // Fallback
+      }
+    }
+    
     // Convert Backdrop node to WordPress post
     $post = WP_Post::from_node($node);
 
@@ -91,14 +150,183 @@ function wp_preprocess_page(&$variables) {
     // Manually set up the query state
     $wp_query->posts = array($post);
     $wp_query->post_count = 1;
-    $wp_query->current_post = -1;
+    $wp_query->current_post = -1; // Start before first post (WordPress loop convention)
     $wp_query->is_single = true;
     $wp_query->is_singular = true;
     $wp_query->queried_object = $post;
     $wp_query->queried_object_id = $post->ID;
+    
+    // Ensure the query object is properly initialized
+    if (!isset($wp_query->post)) {
+      $wp_query->post = null;
+    }
+    
+    // Store in GLOBALS to ensure it persists across all scopes
+    $GLOBALS['wp_query'] = $wp_query;
+    $GLOBALS['post'] = null; // Reset global post until loop starts
   } else {
-    // Create empty query for non-node pages
-    $wp_query = new WP_Query(array('post__in' => array(0)));
+    // For home/archive pages, load published nodes
+    // On home page, Backdrop shows promoted nodes (like node_page_default())
+    
+    // Check if we're on the front page
+    $is_front = isset($variables['is_front']) && $variables['is_front'];
+    
+    // Try to load published nodes
+    if (function_exists('node_load_multiple')) {
+      // Use db_select like Backdrop's node_page_default() does
+      if (function_exists('db_select')) {
+        $site_config = config('system.core');
+        $select = db_select('node', 'n')
+          ->fields('n', array('nid', 'sticky', 'created'))
+          ->condition('n.status', 1) // Published only
+          ->orderBy('n.sticky', 'DESC')
+          ->orderBy('n.created', 'DESC')
+          ->addTag('node_access');
+        
+        // On front page, only show promoted nodes (like Backdrop does)
+        if ($is_front) {
+          $select->condition('n.promote', 1);
+          $limit = $site_config->get('default_nodes_main') ?: 10;
+        } else {
+          // On other archive pages, show all published
+          $limit = 10;
+        }
+        
+        $select->range(0, $limit);
+        $nids = $select->execute()->fetchCol();
+        
+        if (!empty($nids)) {
+          $nodes = node_load_multiple($nids);
+          
+          // Convert to WP_Post objects
+          $posts = array();
+          foreach ($nodes as $node) {
+            // Ensure node has type property (bundle) before converting
+            if (!isset($node->type)) {
+              // Try to reload if missing
+              if (function_exists('node_load')) {
+                $full_node = node_load($node->nid);
+                if ($full_node && isset($full_node->type)) {
+                  $node = $full_node;
+                } else {
+                  $node->type = 'page'; // Fallback
+                }
+              } else {
+                $node->type = 'page'; // Fallback
+              }
+            }
+            
+            $wp_post = WP_Post::from_node($node);
+            if ($wp_post) {
+              $posts[] = $wp_post;
+            }
+          }
+          
+          // Create WP_Query object - use a query that returns empty, then override
+          $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999))); // Invalid IDs to return empty
+          
+          // Immediately override with our manually loaded posts
+          $wp_query->posts = $posts;
+          $wp_query->post_count = count($posts);
+          $wp_query->current_post = -1; // Start before first post (WordPress loop convention)
+          $wp_query->found_posts = count($posts);
+          $wp_query->max_num_pages = 1;
+          $wp_query->is_home = $is_front;
+          $wp_query->is_archive = (count($posts) > 0);
+          $wp_query->is_404 = false;
+          $wp_query->is_single = false;
+          $wp_query->is_page = false;
+          $wp_query->is_singular = false;
+          
+          // Ensure the query object is properly initialized
+          if (!isset($wp_query->post)) {
+            $wp_query->post = null;
+          }
+          
+          // Store in GLOBALS to ensure it persists across all scopes
+          $GLOBALS['wp_query'] = $wp_query;
+          $GLOBALS['post'] = null; // Reset global post until loop starts
+        } else {
+          $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999)));
+          $GLOBALS['wp_query'] = $wp_query;
+        }
+      } elseif (class_exists('EntityFieldQuery')) {
+        // Fallback to EntityFieldQuery
+        $query = new EntityFieldQuery();
+        $query->entityCondition('entity_type', 'node');
+        $query->propertyCondition('status', 1); // Published only
+        $query->propertyOrderBy('created', 'DESC');
+        $query->range(0, 10);
+        
+        try {
+          $result = $query->execute();
+          
+          if (isset($result['node'])) {
+            $nids = array_keys($result['node']);
+            $nodes = node_load_multiple($nids);
+            
+            // Convert to WP_Post objects
+            $posts = array();
+            foreach ($nodes as $node) {
+              // Ensure node has type property (bundle) before converting
+              if (!isset($node->type)) {
+                // Try to reload if missing
+                if (function_exists('node_load')) {
+                  $full_node = node_load($node->nid);
+                  if ($full_node && isset($full_node->type)) {
+                    $node = $full_node;
+                  } else {
+                    $node->type = 'page'; // Fallback
+                  }
+                } else {
+                  $node->type = 'page'; // Fallback
+                }
+              }
+              
+              $wp_post = WP_Post::from_node($node);
+              if ($wp_post) {
+                $posts[] = $wp_post;
+              }
+            }
+            
+            // Create WP_Query object
+            $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999)));
+            
+            // Override with our manually loaded posts
+            $wp_query->posts = $posts;
+            $wp_query->post_count = count($posts);
+            $wp_query->current_post = -1;
+            $wp_query->found_posts = count($posts);
+            $wp_query->max_num_pages = 1;
+            $wp_query->is_home = $is_front;
+            $wp_query->is_archive = (count($posts) > 0);
+            $wp_query->is_404 = false;
+            $wp_query->is_single = false;
+            $wp_query->is_page = false;
+            $wp_query->is_singular = false;
+            
+            if (!isset($wp_query->post)) {
+              $wp_query->post = null;
+            }
+            
+            $GLOBALS['wp_query'] = $wp_query;
+            $GLOBALS['post'] = null;
+          } else {
+            $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999)));
+            $GLOBALS['wp_query'] = $wp_query;
+          }
+        } catch (Exception $e) {
+          $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999)));
+          $GLOBALS['wp_query'] = $wp_query;
+        }
+      } else {
+        $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999)));
+        $GLOBALS['wp_query'] = $wp_query;
+      }
+    } else {
+      $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999)));
+      $GLOBALS['wp_query'] = $wp_query;
+    }
   }
 }
 

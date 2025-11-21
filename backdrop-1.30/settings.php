@@ -15,10 +15,10 @@
  * See the documentation at https://docs.backdropcms.org/database-configuration
  */
 $database = array(
-  'database' => 'database_name',
-  'username' => 'user',
-  'password' => 'pass',
-  'host' => 'localhost',
+  'database' => 'db',
+  'username' => 'db',
+  'password' => 'db',
+  'host' => 'db',
 );
 
 /**
@@ -58,8 +58,8 @@ $database = array(
  * $config_directories['staging'] = '/home/myusername/config/staging';
  * @endcode
  */
-$config_directories['active'] = 'files/config_' . md5(serialize($database)) . '/active';
-$config_directories['staging'] = 'files/config_' . md5(serialize($database)) . '/staging';
+$config_directories['active'] = 'files/config/active';
+$config_directories['staging'] = 'files/config/staging';
 
 /**
  * Skip the configuration staging directory cleanup
@@ -113,7 +113,7 @@ $settings['restore_free_access'] = FALSE;
  * This can also be set to a value of FALSE to disable the backup capability,
  * for sites that have an alternative backup mechanism in place.
  */
-$settings['backup_directory'] = '';
+$settings['backup_directory'] = 'files/backups_4c7c4c82c7dca1b936acbfb577ea055e';
 
 /**
  * Salt for one-time login links and cancel links, form tokens, etc.
@@ -133,7 +133,7 @@ $settings['backup_directory'] = '';
  * $settings['hash_salt'] = file_get_contents('/home/example/salt.txt');
  * @endcode
  */
-$settings['hash_salt'] = '';
+$settings['hash_salt'] = 'XzoFO9H1hH8YklB4F6OlTgArpfSUNna-ve5CgdPWJN4';
 
 /**
  * Trusted host configuration (optional but highly recommended).
@@ -577,4 +577,10 @@ $settings['backdrop_drupal_compatibility'] = TRUE;
  */
 if (file_exists(__DIR__ . '/settings.local.php')) {
   include __DIR__ . '/settings.local.php';
+}
+
+// Automatically generated include for settings managed by ddev.
+$ddev_settings = __DIR__ . '/settings.ddev.php';
+if (getenv('IS_DDEV_PROJECT') == 'true' && is_readable($ddev_settings)) {
+  require $ddev_settings;
 }

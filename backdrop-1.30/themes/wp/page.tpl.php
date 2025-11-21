@@ -10,12 +10,38 @@
 <body <?php body_class(); ?>>
 <div id="page" class="site">
   <?php
+  // DEBUG: Build content using WordPress loop
+  $content = '';
+  
+  if (have_posts()) {
+    $content .= '<div class="wp-posts-list">';
+    while (have_posts()) {
+      the_post();
+      $content .= '<article class="post">';
+      $content .= '<h2><a href="' . get_permalink() . '">' . get_the_title() . '</a></h2>';
+      $content .= '<div class="entry-content">' . get_the_content() . '</div>';
+      $content .= '</article>';
+    }
+    $content .= '</div>';
+  } else {
+    $content .= '<p>No posts found.</p>';
+  }
+  
+  // Debug: Print $content visibly
+  echo '<div style="background: #0f0; padding: 10px; margin: 10px; border: 2px solid #0a0;">';
+  echo '<strong>CONTENT DEBUG:</strong><br>';
+  echo 'Content length: ' . strlen($content) . ' characters<br>';
+  echo 'Content preview (first 1000 chars):<br>';
+  echo '<pre>' . htmlspecialchars(substr($content, 0, 1000)) . '</pre>';
+  echo '</div>';
+  
+  // Output the content
+  echo $content;
+  
   /**
    * Delegate to WordPress theme's template hierarchy
    *
-   * For now, we'll use index.php as the main template.
-   * Later we can implement proper template hierarchy
-   * (single.php, page.php, archive.php, etc.)
+   * Determine which WordPress template to use based on the current page context.
    */
 
   // Determine which WordPress template to use
@@ -49,6 +75,8 @@
     }
   }
 
+  // TODO: Once direct output works, delegate to WordPress template
+  /*
   // Include the WordPress template
   $template_path = get_template_directory() . '/' . $wp_template;
   if (file_exists($template_path)) {
@@ -57,6 +85,7 @@
     echo '<p>WordPress template not found: ' . esc_html($wp_template) . '</p>';
     echo '<p>Looking in: ' . esc_html(get_template_directory()) . '</p>';
   }
+  */
   ?>
 </div>
 
