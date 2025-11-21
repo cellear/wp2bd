@@ -1,0 +1,375 @@
+<?php
+/**
+ * @file
+ * WordPress Content Block Module
+ *
+ * Provides a block that renders WordPress theme output for Backdrop nodes.
+ */
+
+/**
+ * Implements hook_init().
+ *
+ * Load WordPress compatibility layer on every page load.
+ */
+function wp_content_init() {
+  // Path to the wp theme that contains WordPress compatibility layer
+  $wp_theme_path = BACKDROP_ROOT . '/themes/wp';
+
+  // Only proceed if wp theme exists
+  if (!file_exists($wp_theme_path . '/template.php')) {
+    return;
+  }
+
+  // Define the active WordPress theme (hard-coded for now)
+  if (!defined('WP2BD_ACTIVE_THEME')) {
+    define('WP2BD_ACTIVE_THEME', 'twentyseventeen');
+  }
+
+  // Define paths
+  if (!defined('WP2BD_THEME_DIR')) {
+    define('WP2BD_THEME_DIR', $wp_theme_path);
+    define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wp-content/themes');
+    define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
+  }
+
+  // Initialize WordPress globals if not already done
+  global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version;
+  if (!isset($wp_filter)) {
+    $wp_filter = array();
+  }
+  if (!isset($wp_actions)) {
+    $wp_actions = array();
+  }
+  if (!isset($wp_current_filter)) {
+    $wp_current_filter = array();
+  }
+  if (!isset($post)) {
+    $post = null;
+  }
+  if (!isset($wp_version)) {
+    $wp_version = '4.9';
+    $GLOBALS['wp_version'] = '4.9';
+  }
+
+  // Load WordPress compatibility classes
+  require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
+  require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
+
+  // Load WordPress compatibility functions
+  require_once WP2BD_THEME_DIR . '/functions/hooks.php';
+  require_once WP2BD_THEME_DIR . '/functions/escaping.php';
+  require_once WP2BD_THEME_DIR . '/functions/loop.php';
+  require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
+  require_once WP2BD_THEME_DIR . '/functions/content-display.php';
+  require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
+  require_once WP2BD_THEME_DIR . '/functions/utilities.php';
+  require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
+  require_once WP2BD_THEME_DIR . '/functions/stubs.php';
+
+  // Define WordPress helper functions if not already defined
+  if (!function_exists('get_template_directory')) {
+    function get_template_directory() {
+      return WP2BD_ACTIVE_THEME_DIR;
+    }
+  }
+
+  if (!function_exists('get_template_directory_uri')) {
+    function get_template_directory_uri() {
+      global $base_url;
+      if (!$base_url) {
+        $base_url = $GLOBALS['base_url'];
+      }
+      $theme_path = str_replace($_SERVER['DOCUMENT_ROOT'], '', WP2BD_ACTIVE_THEME_DIR);
+      return $base_url . $theme_path;
+    }
+  }
+
+  if (!function_exists('get_stylesheet_directory')) {
+    function get_stylesheet_directory() {
+      return get_template_directory();
+    }
+  }
+
+  if (!function_exists('get_stylesheet_directory_uri')) {
+    function get_stylesheet_directory_uri() {
+      return get_template_directory_uri();
+    }
+  }
+
+  if (!function_exists('get_template')) {
+    function get_template() {
+      return WP2BD_ACTIVE_THEME;
+    }
+  }
+
+  if (!function_exists('get_stylesheet')) {
+    function get_stylesheet() {
+      return WP2BD_ACTIVE_THEME;
+    }
+  }
+
+  if (!function_exists('get_parent_theme_file_path')) {
+    function get_parent_theme_file_path($file = '') {
+      $path = get_template_directory();
+      if (!empty($file)) {
+        $path .= '/' . ltrim($file, '/');
+      }
+      return $path;
+    }
+  }
+
+  if (!function_exists('get_theme_file_uri')) {
+    function get_theme_file_uri($file = '') {
+      $uri = get_template_directory_uri();
+      if (!empty($file)) {
+        $uri .= '/' . ltrim($file, '/');
+      }
+      return $uri;
+    }
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function wp_content_block_info() {
+  $blocks = array();
+
+  // Define the WordPress content block
+  $blocks['wordpress_content'] = array(
+    'info' => t('WordPress Content'),
+    'description' => t('Renders node content using a WordPress theme.'),
+    // This block requires node context to access the current node
+    'required contexts' => array(
+      'node' => 'node',
+    ),
+  );
+
+  // Also create a block for home/archive pages that doesn't require node context
+  $blocks['wordpress_archive'] = array(
+    'info' => t('WordPress Archive/Home'),
+    'description' => t('Renders multiple nodes using WordPress theme (for home/archive pages).'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function wp_content_block_view($delta = '', $settings = array(), $contexts = array()) {
+  $block = array();
+
+  switch ($delta) {
+    case 'wordpress_content':
+      // Single node view
+      if (isset($contexts['node'])) {
+        $block['subject'] = NULL; // No title (WordPress theme handles it)
+        $block['content'] = _wp_content_render_single_node($contexts['node']);
+      }
+      break;
+
+    case 'wordpress_archive':
+      // Multiple nodes view (home/archive)
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_archive();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Helper function to render a single node with WordPress theme.
+ */
+function _wp_content_render_single_node($node) {
+  global $wp_query, $post;
+
+  // Always reload the node fully to ensure it has all properties including 'type'
+  if (isset($node->nid)) {
+    $full_node = node_load($node->nid);
+    if ($full_node) {
+      $node = $full_node;
+    }
+  }
+
+  // Ensure node has type property (bundle) before converting
+  if (!isset($node->type)) {
+    if (isset($node->nid)) {
+      $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+      if ($type_result) {
+        $node->type = $type_result;
+      } else {
+        $node->type = 'page'; // Fallback
+      }
+    } else {
+      $node->type = 'page'; // Fallback
+    }
+  }
+
+  // Convert Backdrop node to WordPress post
+  $post = WP_Post::from_node($node);
+
+  // Create a WP_Query with this post
+  $wp_query = new WP_Query(array(
+    'p' => $node->nid,
+    'post_type' => 'post',
+  ));
+
+  // Manually set up the query state
+  $wp_query->posts = array($post);
+  $wp_query->post_count = 1;
+  $wp_query->current_post = -1; // Start before first post
+  $wp_query->is_single = true;
+  $wp_query->is_singular = true;
+  $wp_query->queried_object = $post;
+  $wp_query->queried_object_id = $post->ID;
+
+  if (!isset($wp_query->post)) {
+    $wp_query->post = null;
+  }
+
+  // Store in GLOBALS
+  $GLOBALS['wp_query'] = $wp_query;
+  $GLOBALS['post'] = null; // Reset global post until loop starts
+
+  // Render using WordPress template
+  return _wp_content_delegate_to_template();
+}
+
+/**
+ * Helper function to render archive/home page with WordPress theme.
+ */
+function _wp_content_render_archive() {
+  global $wp_query, $post;
+
+  // Load published nodes (promoted ones for front page)
+  $site_config = config('system.core');
+  $select = db_select('node', 'n')
+    ->fields('n', array('nid', 'sticky', 'created'))
+    ->condition('n.status', 1) // Published only
+    ->orderBy('n.sticky', 'DESC')
+    ->orderBy('n.created', 'DESC')
+    ->addTag('node_access');
+
+  // Check if we're on front page
+  $is_front = backdrop_is_front_page();
+  if ($is_front) {
+    $select->condition('n.promote', 1);
+    $limit = $site_config->get('default_nodes_main') ?: 10;
+  } else {
+    $limit = 20; // Archive page default
+  }
+
+  $select->range(0, $limit);
+  $nids = $select->execute()->fetchCol();
+
+  $posts = array();
+  if (!empty($nids)) {
+    $nodes = node_load_multiple($nids);
+    foreach ($nodes as $node) {
+      // Ensure each node has type property
+      if (!isset($node->type) && isset($node->nid)) {
+        $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+        $node->type = $type_result ?: 'page';
+      }
+      $posts[] = WP_Post::from_node($node);
+    }
+  }
+
+  // Create WP_Query with multiple posts
+  $wp_query = new WP_Query(array('post_type' => 'post'));
+  $wp_query->posts = $posts;
+  $wp_query->post_count = count($posts);
+  $wp_query->current_post = -1;
+  $wp_query->is_home = $is_front;
+  $wp_query->is_archive = !$is_front;
+  $wp_query->is_front_page = $is_front;
+
+  if (!isset($wp_query->post)) {
+    $wp_query->post = null;
+  }
+
+  $GLOBALS['wp_query'] = $wp_query;
+  $GLOBALS['post'] = null;
+
+  // Render using WordPress template
+  return _wp_content_delegate_to_template();
+}
+
+/**
+ * Helper function to delegate rendering to WordPress template.
+ */
+function _wp_content_delegate_to_template() {
+  // Start output buffering to capture WordPress template output
+  ob_start();
+
+  // DEBUG: Build content using WordPress loop
+  $content = '';
+
+  if (have_posts()) {
+    $content .= '<div class="wp-posts-list">';
+    while (have_posts()) {
+      the_post();
+      $content .= '<article class="post">';
+      $content .= '<h2><a href="' . get_permalink() . '">' . get_the_title() . '</a></h2>';
+      $content .= '<div class="entry-content">' . get_the_content() . '</div>';
+      $content .= '</article>';
+    }
+    $content .= '</div>';
+  } else {
+    $content .= '<p>No posts found.</p>';
+  }
+
+  // Debug output (will be removed later)
+  echo '<div style="background: #0f0; padding: 10px; margin: 10px; border: 2px solid #0a0;">';
+  echo '<strong>CONTENT DEBUG (from wp_content module block):</strong><br>';
+  echo 'Content length: ' . strlen($content) . ' characters<br>';
+  echo 'Content preview (first 500 chars):<br>';
+  echo '<pre>' . htmlspecialchars(substr($content, 0, 500)) . '</pre>';
+  echo '</div>';
+
+  // Output the content
+  echo $content;
+
+  // TODO: Once this works, enable WordPress template delegation
+  /*
+  // Determine which WordPress template to use
+  $wp_template = 'index.php';
+
+  if (is_single()) {
+    if (file_exists(get_template_directory() . '/single.php')) {
+      $wp_template = 'single.php';
+    }
+  } elseif (is_page()) {
+    if (file_exists(get_template_directory() . '/page.php')) {
+      $wp_template = 'page.php';
+    }
+  } elseif (is_home() || is_front_page()) {
+    if (file_exists(get_template_directory() . '/home.php')) {
+      $wp_template = 'home.php';
+    } elseif (file_exists(get_template_directory() . '/front-page.php')) {
+      $wp_template = 'front-page.php';
+    }
+  } elseif (is_archive()) {
+    if (file_exists(get_template_directory() . '/archive.php')) {
+      $wp_template = 'archive.php';
+    }
+  }
+
+  // Include the WordPress template
+  $template_path = get_template_directory() . '/' . $wp_template;
+  if (file_exists($template_path)) {
+    include $template_path;
+  } else {
+    echo '<p>WordPress template not found: ' . esc_html($wp_template) . '</p>';
+  }
+  */
+
+  // Return the buffered output as block content
+  $output = ob_get_clean();
+
+  return array(
+    '#markup' => $output,
+  );
+}
