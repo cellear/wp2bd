@@ -173,8 +173,10 @@ function setup_postdata($post) {
         return false;
     }
 
-    // Ensure global $post is set
+    // Ensure global $post is set (WordPress standard)
     $GLOBALS['post'] = $post;
+    // Also set $wp_post for WP2BD compatibility
+    $GLOBALS['wp_post'] = $post;
 
     // Set up post ID global
     $id = (int) $post->ID;
@@ -272,33 +274,7 @@ function mysql2date($format, $date, $translate = true) {
     return date($format, $timestamp);
 }
 
-/**
- * Retrieve post data given a post ID or post object.
- *
- * Basic implementation for setup_postdata() support.
- * In full WP2BD implementation, this would query Backdrop for the node.
- *
- * @param int|WP_Post|null $post   Optional. Post ID or post object. Default is global $post.
- * @param string           $output Optional. OBJECT, ARRAY_A, or ARRAY_N. Default OBJECT.
- * @return WP_Post|array|null WP_Post on success, null on failure.
- */
-function get_post($post = null, $output = OBJECT) {
-    if (empty($post)) {
-        global $post;
-    }
-
-    if ($post instanceof WP_Post) {
-        return $post;
-    }
-
-    if (is_numeric($post)) {
-        // In full implementation, would load from Backdrop
-        // For now, return null if not already loaded
-        return null;
-    }
-
-    return null;
-}
+// get_post() is implemented in WP_Query.php - no need for duplicate here
 
 /**
  * Retrieve user info by user ID.
@@ -328,25 +304,4 @@ function get_userdata($user_id) {
     return false;
 }
 
-/**
- * Execute functions hooked on a specific action hook.
- *
- * Minimal implementation for 'the_post' action hook support.
- * Full WP2BD implementation would have complete hook system.
- *
- * @param string $hook_name The name of the action to be executed.
- * @param mixed  ...$arg    Additional arguments passed to hooked functions.
- * @return void
- */
-function do_action($hook_name, ...$arg) {
-    global $wp_filter;
-
-    // If full hook system is available, use it
-    if (isset($wp_filter[$hook_name])) {
-        // Hook system handles execution
-        return;
-    }
-
-    // Otherwise, this is a no-op stub
-    // Full implementation would execute all hooked functions
-}
+// do_action() is implemented in hooks.php - no need for duplicate here

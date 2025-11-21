@@ -99,6 +99,12 @@ class WP_Query {
     public $is_404 = false;
 
     /**
+     * Whether this is a singular post (single post or page)
+     * @var bool
+     */
+    public $is_singular = false;
+
+    /**
      * Error message if query failed
      * @var string
      */
@@ -408,7 +414,9 @@ class WP_Query {
      * @return bool
      */
     public function have_posts() {
-        if ($this->current_post + 1 < $this->post_count) {
+        $has_posts = ($this->current_post + 1 < $this->post_count);
+        
+        if ($has_posts) {
             return true;
         } elseif ($this->current_post + 1 == $this->post_count && $this->post_count > 0) {
             // End of loop - rewind for potential second loop
@@ -598,130 +606,6 @@ class WP_Query {
 }
 
 /**
- * Setup global post data
- *
- * Populates global variables used by template tags.
- *
- * @param WP_Post|object|int $post Post object or ID
- * @return bool Success
- */
-function setup_postdata($post) {
-    global $id, $authordata, $currentday, $currentmonth, $page, $pages;
-    global $multipage, $more, $numpages;
-
-    // Handle post ID
-    if (is_numeric($post)) {
-        $post = get_post($post);
-    }
-
-    if (!is_object($post)) {
-        return false;
-    }
-
-    // Set post ID (both global and $GLOBALS for test compatibility)
-    $id = (int) $post->ID;
-    $GLOBALS['id'] = $id;
-
-    // Set up author data
-    if (function_exists('user_load') && isset($post->post_author)) {
-        $authordata = user_load($post->post_author);
-        $GLOBALS['authordata'] = $authordata;
-    }
-
-    // Set up post content variables
-    $content = isset($post->post_content) ? $post->post_content : '';
-
-    // Check for multi-page content (<!--nextpage--> tag)
-    if (strpos($content, '<!--nextpage-->') !== false) {
-        // Normalize nextpage tags
-        $content = str_replace("\n<!--nextpage-->\n", '<!--nextpage-->', $content);
-        $content = str_replace("\n<!--nextpage-->", '<!--nextpage-->', $content);
-        $content = str_replace("<!--nextpage-->\n", '<!--nextpage-->', $content);
-
-        $pages = explode('<!--nextpage-->', $content);
-    } else {
-        $pages = array($content);
-    }
-
-    $numpages = count($pages);
-    $multipage = ($numpages > 1);
-
-    // Set in $GLOBALS for consistency
-    $GLOBALS['pages'] = $pages;
-    $GLOBALS['numpages'] = $numpages;
-    $GLOBALS['multipage'] = $multipage;
-
-    // Initialize page number if not set
-    if (!isset($page) || $page < 1) {
-        $page = 1;
-    }
-
-    // Ensure page doesn't exceed available pages
-    if ($page > $numpages) {
-        $page = $numpages;
-    }
-
-    $GLOBALS['page'] = $page;
-
-    // Initialize "more" flag if not set
-    if (!isset($more)) {
-        $more = 1;
-    }
-
-    $GLOBALS['more'] = $more;
-
-    // Set current day/month for calendar widgets
-    if (isset($post->post_date)) {
-        $currentday = mysql2date('d.m.y', $post->post_date, false);
-        $currentmonth = mysql2date('m', $post->post_date, false);
-    } else {
-        $currentday = '';
-        $currentmonth = '';
-    }
-
-    $GLOBALS['currentday'] = $currentday;
-    $GLOBALS['currentmonth'] = $currentmonth;
-
-    return true;
-}
-
-/**
- * Simple date conversion helper
- *
- * @param string $format Date format
- * @param string $date MySQL date string
- * @param bool $translate Whether to translate
- * @return string
- */
-function mysql2date($format, $date, $translate = true) {
-    if (empty($date)) {
-        return '';
-    }
-
-    $timestamp = strtotime($date);
-
-    if (!$timestamp) {
-        return '';
-    }
-
-    return date($format, $timestamp);
-}
-
-/**
- * Stub for do_action if not already defined
- *
- * @param string $hook Hook name
- * @param mixed ...$args Arguments
- * @return void
- */
-if (!function_exists('do_action')) {
-    function do_action($hook, ...$args) {
-        // In real implementation, this would call registered action hooks
-        // For now, just a stub to prevent errors
-    }
-}
-
-/**
  * Stub for db_like if not in Backdrop context
  *
  * @param string $string
@@ -737,17 +621,29 @@ if (!function_exists('db_like')) {
  * Get post object
  *
  * @param int|WP_Post|null $post Post ID or object
- * @return WP_Post|null
+ * @param string $output Optional. OBJECT, ARRAY_A, or ARRAY_N. Default OBJECT.
+ * @return WP_Post|array|null
  */
-function get_post($post = null) {
+function get_post($post = null, $output = OBJECT) {
     if ($post instanceof WP_Post) {
+        // Handle output format if needed
+        if ($output === OBJECT) {
+            return $post;
+        }
+        // For now, only support OBJECT output
         return $post;
     }
 
     if (is_numeric($post) && function_exists('node_load')) {
         $node = node_load($post);
         if ($node) {
-            return WP_Post::from_node($node);
+            $wp_post = WP_Post::from_node($node);
+            // Handle output format if needed
+            if ($output === OBJECT) {
+                return $wp_post;
+            }
+            // For now, only support OBJECT output
+            return $wp_post;
         }
     }
 

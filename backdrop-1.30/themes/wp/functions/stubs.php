@@ -282,6 +282,44 @@ if (!function_exists('register_nav_menus')) {
 }
 
 // ============================================================================
+// SIDEBAR FUNCTIONS
+// ============================================================================
+
+if (!function_exists('register_sidebar')) {
+  /**
+   * Register a sidebar.
+   */
+  function register_sidebar($args = array()) {
+    // Stub: Just accept it
+    static $sidebars = array();
+    $id = isset($args['id']) ? $args['id'] : 'sidebar-' . count($sidebars);
+    $sidebars[$id] = $args;
+    return true;
+  }
+}
+
+if (!function_exists('is_active_sidebar')) {
+  /**
+   * Check if a sidebar is active (has widgets).
+   */
+  function is_active_sidebar($index) {
+    // Stub: Return false (no active sidebars)
+    // In a real implementation, this would check if widgets are assigned to the sidebar
+    return false;
+  }
+}
+
+if (!function_exists('dynamic_sidebar')) {
+  /**
+   * Display dynamic sidebar.
+   */
+  function dynamic_sidebar($index = 1) {
+    // Stub: Display nothing
+    return false;
+  }
+}
+
+// ============================================================================
 // COMMENT FUNCTIONS
 // ============================================================================
 
@@ -291,6 +329,16 @@ if (!function_exists('comments_open')) {
    */
   function comments_open($post_id = null) {
     // Stub: Return false (comments disabled)
+    return false;
+  }
+}
+
+if (!function_exists('pings_open')) {
+  /**
+   * Check whether pings are open for a post.
+   */
+  function pings_open($post_id = null) {
+    // Stub: Return false (pings disabled)
     return false;
   }
 }
@@ -469,8 +517,636 @@ if (!function_exists('get_theme_mod')) {
    * Retrieve theme modification value.
    */
   function get_theme_mod($name, $default = false) {
-    // Stub: Return default value
+    // Stub: Use Backdrop's variable_get if available
+    if (function_exists('variable_get')) {
+      $key = 'theme_mod_' . $name;
+      return variable_get($key, $default);
+    }
     return $default;
+  }
+}
+
+if (!function_exists('get_theme_support')) {
+  /**
+   * Check if current theme supports a feature.
+   */
+  function get_theme_support($feature) {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('get_stylesheet_uri')) {
+  /**
+   * Retrieve stylesheet URI for current theme.
+   */
+  function get_stylesheet_uri() {
+    return get_stylesheet_directory_uri() . '/style.css';
+  }
+}
+
+if (!function_exists('get_parent_theme_file_uri')) {
+  /**
+   * Retrieve the URL of a file in the parent theme.
+   */
+  function get_parent_theme_file_uri($file = '') {
+    $uri = get_template_directory_uri();
+    if (!empty($file)) {
+      $uri .= '/' . ltrim($file, '/');
+    }
+    return $uri;
+  }
+}
+
+if (!function_exists('has_custom_header')) {
+  /**
+   * Check if the site has a custom header.
+   */
+  function has_custom_header() {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('is_admin')) {
+  /**
+   * Check if we're in the admin area.
+   */
+  function is_admin() {
+    // Stub: Return false (we're in frontend)
+    return false;
+  }
+}
+
+if (!function_exists('is_preview')) {
+  /**
+   * Check if we're in preview mode.
+   */
+  function is_preview() {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('post_password_required')) {
+  /**
+   * Check if post requires password.
+   */
+  function post_password_required($post = null) {
+    // Stub: Return false (no password protection)
+    return false;
+  }
+}
+
+if (!function_exists('post_type_supports')) {
+  /**
+   * Check if a post type supports a feature.
+   */
+  function post_type_supports($post_type, $feature) {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('wp_parse_args')) {
+  /**
+   * Merge user defined arguments into defaults array.
+   */
+  function wp_parse_args($args, $defaults = '') {
+    if (is_object($args)) {
+      $r = get_object_vars($args);
+    } elseif (is_array($args)) {
+      $r =& $args;
+    } else {
+      parse_str($args, $r);
+    }
+
+    if (is_array($defaults)) {
+      return array_merge($defaults, $r);
+    }
+    return $r;
+  }
+}
+
+if (!function_exists('wp_style_is')) {
+  /**
+   * Check if a style has been added to the queue.
+   */
+  function wp_style_is($handle, $list = 'enqueued') {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('wp_script_add_data')) {
+  /**
+   * Add extra data to a script.
+   */
+  function wp_script_add_data($handle, $key, $value) {
+    // Stub: Just accept it
+    return true;
+  }
+}
+
+if (!function_exists('wp_style_add_data')) {
+  /**
+   * Add extra data to a style.
+   */
+  function wp_style_add_data($handle, $key, $value) {
+    // Stub: Just accept it
+    return true;
+  }
+}
+
+if (!function_exists('wp_get_attachment_image_src')) {
+  /**
+   * Get attachment image source.
+   */
+  function wp_get_attachment_image_src($attachment_id, $size = 'thumbnail', $icon = false) {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('get_post_thumbnail_id')) {
+  /**
+   * Get post thumbnail ID.
+   */
+  function get_post_thumbnail_id($post = null) {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('get_queried_object_id')) {
+  /**
+   * Get the ID of the queried object.
+   */
+  function get_queried_object_id() {
+    global $wp_query;
+    if (isset($wp_query) && isset($wp_query->queried_object_id)) {
+      return $wp_query->queried_object_id;
+    }
+    return 0;
+  }
+}
+
+if (!function_exists('get_search_form')) {
+  /**
+   * Display search form.
+   */
+  function get_search_form($echo = true) {
+    $form = '<form role="search" method="get" class="search-form" action="' . esc_url(home_url('/')) . '">
+      <label>
+        <span class="screen-reader-text">Search for:</span>
+        <input type="search" class="search-field" placeholder="Search &hellip;" value="' . get_search_query() . '" name="s" />
+      </label>
+      <input type="submit" class="search-submit" value="Search" />
+    </form>';
+    
+    if ($echo) {
+      echo $form;
+    }
+    return $form;
+  }
+}
+
+if (!function_exists('get_search_query')) {
+  /**
+   * Get the search query.
+   */
+  function get_search_query($escaped = true) {
+    // Stub: Return empty string
+    return '';
+  }
+}
+
+if (!function_exists('get_edit_post_link')) {
+  /**
+   * Get edit post link.
+   */
+  function get_edit_post_link($id = 0, $context = 'display') {
+    // Stub: Return empty string
+    return '';
+  }
+}
+
+if (!function_exists('edit_post_link')) {
+  /**
+   * Display edit post link.
+   */
+  function edit_post_link($text = null, $before = '', $after = '', $id = 0, $class = 'post-edit-link') {
+    // Stub: Display nothing
+    return;
+  }
+}
+
+if (!function_exists('get_author_posts_url')) {
+  /**
+   * Get author posts URL.
+   */
+  function get_author_posts_url($author_id, $author_nicename = '') {
+    // Stub: Return home URL
+    return home_url('/');
+  }
+}
+
+if (!function_exists('get_categories')) {
+  /**
+   * Get categories.
+   */
+  function get_categories($args = '') {
+    // Stub: Return empty array
+    return array();
+  }
+}
+
+if (!function_exists('get_the_category_list')) {
+  /**
+   * Get category list for a post.
+   */
+  function get_the_category_list($separator = '', $parents = '', $post_id = false) {
+    // Stub: Return empty string
+    return '';
+  }
+}
+
+if (!function_exists('get_the_tag_list')) {
+  /**
+   * Get tag list for a post.
+   */
+  function get_the_tag_list($before = '', $sep = '', $after = '', $id = 0) {
+    // Stub: Return empty string
+    return '';
+  }
+}
+
+if (!function_exists('get_the_modified_date')) {
+  /**
+   * Get the modified date.
+   */
+  function get_the_modified_date($format = '', $post = null) {
+    // Stub: Return empty string
+    return '';
+  }
+}
+
+if (!function_exists('get_the_modified_time')) {
+  /**
+   * Get the modified time.
+   */
+  function get_the_modified_time($format = '', $post = null) {
+    // Stub: Return empty string
+    return '';
+  }
+}
+
+if (!function_exists('get_post_gallery')) {
+  /**
+   * Get post gallery.
+   */
+  function get_post_gallery($post = null, $html = true) {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('get_media_embedded_in_content')) {
+  /**
+   * Get media embedded in content.
+   */
+  function get_media_embedded_in_content($content, $types = null) {
+    // Stub: Return empty array
+    return array();
+  }
+}
+
+if (!function_exists('get_header_textcolor')) {
+  /**
+   * Get header text color.
+   */
+  function get_header_textcolor() {
+    // Stub: Return empty string
+    return '';
+  }
+}
+
+if (!function_exists('get_setting')) {
+  /**
+   * Get setting (customizer).
+   */
+  function get_setting($id) {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('add_query_arg')) {
+  /**
+   * Add query args to URL.
+   */
+  function add_query_arg() {
+    $args = func_get_args();
+    if (isset($args[0])) {
+      if (is_array($args[0])) {
+        $base = isset($args[1]) ? $args[1] : '';
+        $params = $args[0];
+      } else {
+        $base = isset($args[1]) ? $args[1] : '';
+        $key = $args[0];
+        $value = isset($args[2]) ? $args[2] : '';
+        $params = array($key => $value);
+      }
+      
+      if (empty($base)) {
+        $base = home_url('/');
+      }
+      
+      $url_parts = parse_url($base);
+      $query = isset($url_parts['query']) ? $url_parts['query'] : '';
+      parse_str($query, $query_params);
+      $query_params = array_merge($query_params, $params);
+      
+      $url = $url_parts['scheme'] . '://' . $url_parts['host'];
+      if (isset($url_parts['port'])) {
+        $url .= ':' . $url_parts['port'];
+      }
+      if (isset($url_parts['path'])) {
+        $url .= $url_parts['path'];
+      }
+      if (!empty($query_params)) {
+        $url .= '?' . http_build_query($query_params);
+      }
+      if (isset($url_parts['fragment'])) {
+        $url .= '#' . $url_parts['fragment'];
+      }
+      return $url;
+    }
+    return home_url('/');
+  }
+}
+
+if (!function_exists('load_theme_textdomain')) {
+  /**
+   * Load theme text domain.
+   */
+  function load_theme_textdomain($domain, $path = false) {
+    // Stub: Do nothing
+    return false;
+  }
+}
+
+if (!function_exists('number_format_i18n')) {
+  /**
+   * Format number with i18n.
+   */
+  function number_format_i18n($number, $decimals = 0) {
+    return number_format($number, $decimals);
+  }
+}
+
+if (!function_exists('single_post_title')) {
+  /**
+   * Display or retrieve page title for a single post.
+   */
+  function single_post_title($prefix = '', $display = true) {
+    // Stub: Return empty string
+    if ($display) {
+      echo '';
+    }
+    return '';
+  }
+}
+
+if (!function_exists('the_archive_title')) {
+  /**
+   * Display archive title.
+   */
+  function the_archive_title($before = '', $after = '') {
+    // Stub: Display nothing
+    return;
+  }
+}
+
+if (!function_exists('the_archive_description')) {
+  /**
+   * Display archive description.
+   */
+  function the_archive_description($before = '', $after = '') {
+    // Stub: Display nothing
+    return;
+  }
+}
+
+if (!function_exists('the_custom_logo')) {
+  /**
+   * Display custom logo.
+   */
+  function the_custom_logo($blog_id = 0) {
+    // Stub: Display nothing
+    return;
+  }
+}
+
+if (!function_exists('the_custom_header_markup')) {
+  /**
+   * Display custom header markup.
+   */
+  function the_custom_header_markup() {
+    // Stub: Display nothing
+    return;
+  }
+}
+
+if (!function_exists('the_comments_pagination')) {
+  /**
+   * Display comments pagination.
+   */
+  function the_comments_pagination($args = array()) {
+    // Stub: Display nothing
+    return;
+  }
+}
+
+if (!function_exists('the_post_navigation')) {
+  /**
+   * Display post navigation.
+   */
+  function the_post_navigation($args = array()) {
+    // Stub: Display nothing
+    return;
+  }
+}
+
+if (!function_exists('the_posts_pagination')) {
+  /**
+   * Display posts pagination.
+   */
+  function the_posts_pagination($args = array()) {
+    // Stub: Display nothing
+    return;
+  }
+}
+
+if (!function_exists('set_query_var')) {
+  /**
+   * Set query variable.
+   */
+  function set_query_var($var, $value) {
+    global $wp_query;
+    if (isset($wp_query)) {
+      $wp_query->set($var, $value);
+    }
+  }
+}
+
+if (!function_exists('set_transient')) {
+  /**
+   * Set transient.
+   */
+  function set_transient($transient, $value, $expiration = 0) {
+    // Stub: Use Backdrop's variable_set if available
+    if (function_exists('variable_set')) {
+      variable_set('transient_' . $transient, $value);
+      return true;
+    }
+    return false;
+  }
+}
+
+if (!function_exists('get_transient')) {
+  /**
+   * Get transient.
+   */
+  function get_transient($transient) {
+    // Stub: Use Backdrop's variable_get if available
+    if (function_exists('variable_get')) {
+      return variable_get('transient_' . $transient, false);
+    }
+    return false;
+  }
+}
+
+if (!function_exists('delete_transient')) {
+  /**
+   * Delete transient.
+   */
+  function delete_transient($transient) {
+    // Stub: Use Backdrop's variable_del if available
+    if (function_exists('variable_del')) {
+      variable_del('transient_' . $transient);
+      return true;
+    }
+    return false;
+  }
+}
+
+if (!function_exists('current_user_can')) {
+  /**
+   * Check if current user has capability.
+   */
+  function current_user_can($capability) {
+    // Stub: Return false
+    return false;
+  }
+}
+
+if (!function_exists('admin_url')) {
+  /**
+   * Get admin URL.
+   */
+  function admin_url($path = '', $scheme = 'admin') {
+    // Stub: Return home URL
+    return home_url('/admin/' . ltrim($path, '/'));
+  }
+}
+
+if (!function_exists('wp_die')) {
+  /**
+   * Kill WordPress execution.
+   */
+  function wp_die($message = '', $title = '', $args = array()) {
+    die($message);
+  }
+}
+
+if (!function_exists('switch_theme')) {
+  /**
+   * Switch theme.
+   */
+  function switch_theme($stylesheet) {
+    // Stub: Do nothing
+    return false;
+  }
+}
+
+if (!function_exists('register_default_headers')) {
+  /**
+   * Register default headers.
+   */
+  function register_default_headers($headers) {
+    // Stub: Just accept it
+    return true;
+  }
+}
+
+if (!function_exists('add_editor_style')) {
+  /**
+   * Add editor style.
+   */
+  function add_editor_style($stylesheet = 'editor-style.css') {
+    // Stub: Just accept it
+    return true;
+  }
+}
+
+if (!function_exists('add_image_size')) {
+  /**
+   * Register image size.
+   */
+  function add_image_size($name, $width = 0, $height = 0, $crop = false) {
+    // Stub: Just accept it
+    return true;
+  }
+}
+
+if (!function_exists('add_control')) {
+  /**
+   * Add customizer control.
+   */
+  function add_control($id, $args = array()) {
+    // Stub: Just accept it
+    return true;
+  }
+}
+
+if (!function_exists('add_partial')) {
+  /**
+   * Add customizer partial.
+   */
+  function add_partial($id, $args = array()) {
+    // Stub: Just accept it
+    return true;
+  }
+}
+
+if (!function_exists('add_section')) {
+  /**
+   * Add customizer section.
+   */
+  function add_section($id, $args = array()) {
+    // Stub: Just accept it
+    return true;
+  }
+}
+
+if (!function_exists('add_setting')) {
+  /**
+   * Add customizer setting.
+   */
+  function add_setting($id, $args = array()) {
+    // Stub: Just accept it
+    return true;
   }
 }
 
@@ -541,5 +1217,55 @@ if (!function_exists('sanitize_html_class')) {
     }
 
     return $sanitized;
+  }
+}
+
+// ============================================================================
+// AUTHOR FUNCTIONS
+// ============================================================================
+
+if (!function_exists('is_multi_author')) {
+  /**
+   * Check if the site has more than one author.
+   */
+  function is_multi_author() {
+    // Stub: Return false (single author site)
+    // In a real implementation, this would check if there are multiple users with published posts
+    return false;
+  }
+}
+
+// ============================================================================
+// HEADER IMAGE FUNCTIONS
+// ============================================================================
+
+if (!function_exists('has_header_image')) {
+  /**
+   * Check if the site has a header image.
+   */
+  function has_header_image() {
+    // Stub: Return false (no header image)
+    // In a real implementation, this would check theme mods or custom header settings
+    return false;
+  }
+}
+
+if (!function_exists('get_header_image')) {
+  /**
+   * Retrieve header image URL.
+   */
+  function get_header_image() {
+    // Stub: Return empty string
+    return '';
+  }
+}
+
+if (!function_exists('get_custom_header')) {
+  /**
+   * Get the custom header object.
+   */
+  function get_custom_header() {
+    // Stub: Return empty object
+    return (object) array();
   }
 }

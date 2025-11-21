@@ -23,11 +23,12 @@
  * @return string The post title. Empty string if no title or post not found.
  */
 function get_the_title( $post = null ) {
-  global $wp_post;
+  global $wp_post, $post;
 
   // If no post provided, use global $post (WordPress) or $wp_post (WP2BD)
   if ( null === $post ) {
-    $post = isset( $wp_post ) ? $wp_post : null;
+    // Check both WordPress standard $post and WP2BD $wp_post
+    $post = isset( $post ) ? $post : (isset( $wp_post ) ? $wp_post : null);
   }
   // If post is an ID, load it (for future WP_Post compatibility)
   elseif ( is_numeric( $post ) ) {
@@ -117,11 +118,12 @@ function the_title( $before = '', $after = '', $echo = true ) {
  * @return string|false The permalink URL, or false on failure.
  */
 function get_permalink( $post = null ) {
-  global $wp_post;
-
+  global $wp_post, $post;
+  
   // If no post provided, use global $post (WordPress) or $wp_post (WP2BD)
   if ( null === $post ) {
-    $post = isset( $wp_post ) ? $wp_post : null;
+    // Check both WordPress standard $post and WP2BD $wp_post
+    $post = isset( $post ) ? $post : (isset( $wp_post ) ? $wp_post : null);
   }
 
   // Handle post ID (integer) vs post object
@@ -238,11 +240,12 @@ function the_permalink( $post = null ) {
  * @return int|false The post ID on success, false on failure.
  */
 function get_the_ID( $post = null ) {
-  global $wp_post;
+  global $wp_post, $post;
 
   // If no post provided, use global $post (WordPress) or $wp_post (WP2BD)
   if ( null === $post ) {
-    $post = isset( $wp_post ) ? $wp_post : null;
+    // Check both WordPress standard $post and WP2BD $wp_post
+    $post = isset( $post ) ? $post : (isset( $wp_post ) ? $wp_post : null);
   }
 
   // Handle missing post gracefully
@@ -321,10 +324,10 @@ function the_ID( $post = null ) {
  * @return string The post content.
  */
 function get_the_content( $more_link_text = null, $strip_teaser = false ) {
-  global $wp_post, $page, $more, $preview, $pages, $multipage;
+  global $wp_post, $post, $page, $more, $preview, $pages, $multipage;
 
-  // Get the current post
-  $post = isset( $wp_post ) ? $wp_post : null;
+  // Get the current post - check both WordPress standard $post and WP2BD $wp_post
+  $post = isset( $post ) ? $post : (isset( $wp_post ) ? $wp_post : null);
 
   if ( ! $post || ! is_object( $post ) ) {
     return '';
@@ -2066,190 +2069,8 @@ function body_class( $class = '' ) {
   echo 'class="' . join( ' ', get_body_class( $class ) ) . '"';
 }
 
-/**
- * Determines whether the current request is for a singular post/page.
- *
- * Stub implementation - checks if viewing a single post, page, or attachment.
- *
- * @since WordPress 1.5.0
- * @since WP2BD 1.0.0
- *
- * @param string|array $post_types Optional. Post type or array of post types. Default empty.
- * @return bool True if singular, false otherwise.
- */
-if ( ! function_exists( 'is_singular' ) ) {
-  function is_singular( $post_types = '' ) {
-    global $wp_query;
-
-    if ( ! isset( $wp_query ) ) {
-      return false;
-    }
-
-    // Check if we have the is_singular property
-    if ( isset( $wp_query->is_singular ) ) {
-      return $wp_query->is_singular;
-    }
-
-    // Fallback: check if single or page
-    return is_single() || is_page();
-  }
-}
-
-/**
- * Determines whether the query is for a single post.
- *
- * Stub implementation for body_class() support.
- *
- * @since WordPress 1.5.0
- * @since WP2BD 1.0.0
- *
- * @param int|string|array $post Optional. Post ID, title, slug, or array of such. Default empty.
- * @return bool True if single post, false otherwise.
- */
-if ( ! function_exists( 'is_single' ) ) {
-  function is_single( $post = '' ) {
-    global $wp_query;
-
-    if ( ! isset( $wp_query ) || ! isset( $wp_query->is_single ) ) {
-      return false;
-    }
-
-    return $wp_query->is_single;
-  }
-}
-
-/**
- * Determines whether the query is for a static page.
- *
- * Stub implementation for body_class() support.
- *
- * @since WordPress 1.5.0
- * @since WP2BD 1.0.0
- *
- * @param int|string|array $page Optional. Page ID, title, slug, or array of such. Default empty.
- * @return bool True if page, false otherwise.
- */
-if ( ! function_exists( 'is_page' ) ) {
-  function is_page( $page = '' ) {
-    global $wp_query;
-
-    if ( ! isset( $wp_query ) || ! isset( $wp_query->is_page ) ) {
-      return false;
-    }
-
-    return $wp_query->is_page;
-  }
-}
-
-/**
- * Determines whether the query is for the front page of the site.
- *
- * Stub implementation for body_class() support.
- *
- * @since WordPress 2.5.0
- * @since WP2BD 1.0.0
- *
- * @return bool True if front page, false otherwise.
- */
-if ( ! function_exists( 'is_front_page' ) ) {
-  function is_front_page() {
-    global $wp_query;
-
-    if ( ! isset( $wp_query ) || ! isset( $wp_query->is_front_page ) ) {
-      return false;
-    }
-
-    return $wp_query->is_front_page;
-  }
-}
-
-/**
- * Determines whether the query is for the blog homepage.
- *
- * Stub implementation for body_class() support.
- *
- * @since WordPress 1.5.0
- * @since WP2BD 1.0.0
- *
- * @return bool True if blog home, false otherwise.
- */
-if ( ! function_exists( 'is_home' ) ) {
-  function is_home() {
-    global $wp_query;
-
-    if ( ! isset( $wp_query ) || ! isset( $wp_query->is_home ) ) {
-      return false;
-    }
-
-    return $wp_query->is_home;
-  }
-}
-
-/**
- * Determines whether the query is for an archive page.
- *
- * Stub implementation for body_class() support.
- *
- * @since WordPress 1.5.0
- * @since WP2BD 1.0.0
- *
- * @return bool True if archive, false otherwise.
- */
-if ( ! function_exists( 'is_archive' ) ) {
-  function is_archive() {
-    global $wp_query;
-
-    if ( ! isset( $wp_query ) || ! isset( $wp_query->is_archive ) ) {
-      return false;
-    }
-
-    return $wp_query->is_archive;
-  }
-}
-
-/**
- * Determines whether the query is for a search.
- *
- * Stub implementation for body_class() support.
- *
- * @since WordPress 1.5.0
- * @since WP2BD 1.0.0
- *
- * @return bool True if search, false otherwise.
- */
-if ( ! function_exists( 'is_search' ) ) {
-  function is_search() {
-    global $wp_query;
-
-    if ( ! isset( $wp_query ) || ! isset( $wp_query->is_search ) ) {
-      return false;
-    }
-
-    return $wp_query->is_search;
-  }
-}
-
-/**
- * Determines whether the query is for a 404 error.
- *
- * Stub implementation for body_class() support.
- *
- * @since WordPress 1.5.0
- * @since WP2BD 1.0.0
- *
- * @return bool True if 404, false otherwise.
- */
-if ( ! function_exists( 'is_404' ) ) {
-  function is_404() {
-    global $wp_query;
-
-    if ( ! isset( $wp_query ) || ! isset( $wp_query->is_404 ) ) {
-      return false;
-    }
-
-    return $wp_query->is_404;
-  }
-}
+// Conditional functions (is_singular, is_single, is_page, is_front_page, is_home, is_archive, is_search, is_404)
+// are properly implemented in conditionals.php - no need for stubs here
 
 /**
  * Determines whether the current user is logged in.

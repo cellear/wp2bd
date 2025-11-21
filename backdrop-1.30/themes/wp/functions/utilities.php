@@ -306,6 +306,7 @@ function get_bloginfo($show = '', $filter = 'raw') {
  *
  *   require get_template_directory() . '/inc/template-functions.php';
  */
+if (!function_exists('get_template_directory')) {
 function get_template_directory() {
     static $template_dir = null;
 
@@ -364,6 +365,7 @@ function get_template_directory() {
 
     return $template_dir;
 }
+}
 
 /**
  * Retrieve template directory URI for current theme.
@@ -381,6 +383,7 @@ function get_template_directory() {
  *
  *   echo '<link rel="stylesheet" href="' . get_template_directory_uri() . '/style.css">';
  */
+if (!function_exists('get_template_directory_uri')) {
 function get_template_directory_uri() {
     static $template_uri = null;
 
@@ -431,6 +434,7 @@ function get_template_directory_uri() {
 
     return $template_uri;
 }
+}
 
 /**
  * Retrieve stylesheet directory path for current theme.
@@ -440,9 +444,11 @@ function get_template_directory_uri() {
  *
  * @return string Path to stylesheet directory (no trailing slash).
  */
+if (!function_exists('get_stylesheet_directory')) {
 function get_stylesheet_directory() {
     // In WP2BD, we don't support child themes yet, so return template directory
     return get_template_directory();
+}
 }
 
 /**
@@ -453,9 +459,11 @@ function get_stylesheet_directory() {
  *
  * @return string URI to stylesheet directory (no trailing slash).
  */
+if (!function_exists('get_stylesheet_directory_uri')) {
 function get_stylesheet_directory_uri() {
     // In WP2BD, we don't support child themes yet, so return template directory URI
     return get_template_directory_uri();
+}
 }
 
 /**
@@ -463,8 +471,10 @@ function get_stylesheet_directory_uri() {
  *
  * @return string Template name (directory name).
  */
+if (!function_exists('get_template')) {
 function get_template() {
     return basename(get_template_directory());
+}
 }
 
 /**
@@ -472,6 +482,8 @@ function get_template() {
  *
  * @return string Stylesheet name (directory name).
  */
+if (!function_exists('get_stylesheet')) {
 function get_stylesheet() {
     return basename(get_stylesheet_directory());
+}
 }

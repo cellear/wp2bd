@@ -156,6 +156,21 @@ class WP_Post {
             return null;
         }
 
+        // Ensure node has required properties (especially 'type' bundle property)
+        // If node doesn't have 'type', try to load it fully
+        if (!isset($node->type) && function_exists('node_load')) {
+            $full_node = node_load($node->nid);
+            if ($full_node && isset($full_node->type)) {
+                $node = $full_node;
+            } else {
+                // Fallback: set a default type
+                $node->type = 'page';
+            }
+        } elseif (!isset($node->type)) {
+            // If we can't load it, set a default
+            $node->type = 'page';
+        }
+
         $post = new WP_Post();
 
         // Basic properties
