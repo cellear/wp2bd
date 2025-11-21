@@ -37,30 +37,12 @@
  * @return bool True if header was found and loaded, false otherwise.
  */
 function get_header($name = null) {
-    global $theme;
-
     // Fire the 'get_header' action hook before including template
     // This allows plugins/themes to hook in before header is loaded
     do_action('get_header', $name);
 
-    // Get the active theme name from Backdrop
-    // In Backdrop, $theme global contains the active theme name
-    $active_theme = $theme;
-
-    // If no theme is set, try to get it from theme system
-    if (empty($active_theme)) {
-        // Get default theme from config
-        $active_theme = config_get('system.core', 'theme_default');
-    }
-
-    // Build list of themes to check (child theme first, then parent)
-    $themes_to_check = array($active_theme);
-
-    // Check if active theme has a base theme (child theme scenario)
-    $theme_info = _wp2bd_get_theme_info($active_theme);
-    if (!empty($theme_info['base theme'])) {
-        $themes_to_check[] = $theme_info['base theme'];
-    }
+    // Get the WordPress theme directory (not Backdrop theme!)
+    $theme_dir = get_template_directory();
 
     // Build list of template files to check
     $templates = array();
@@ -73,22 +55,14 @@ function get_header($name = null) {
     // Always check for header.php as fallback
     $templates[] = 'header.php';
 
-    // Search for template in theme directories
-    foreach ($themes_to_check as $theme_name) {
-        $theme_path = backdrop_get_path('theme', $theme_name);
+    // Search for template in WordPress theme directory
+    foreach ($templates as $template) {
+        $template_file = $theme_dir . '/' . $template;
 
-        if (empty($theme_path)) {
-            continue;
-        }
-
-        foreach ($templates as $template) {
-            $template_file = BACKDROP_ROOT . '/' . $theme_path . '/' . $template;
-
-            if (file_exists($template_file)) {
-                // Load the template
-                require_once $template_file;
-                return true;
-            }
+        if (file_exists($template_file)) {
+            // Load the template
+            require_once $template_file;
+            return true;
         }
     }
 
@@ -125,30 +99,12 @@ function get_header($name = null) {
  * @return bool True if footer was found and loaded, false otherwise.
  */
 function get_footer($name = null) {
-    global $theme;
-
     // Fire the 'get_footer' action hook before including template
     // This allows plugins/themes to hook in before footer is loaded
     do_action('get_footer', $name);
 
-    // Get the active theme name from Backdrop
-    // In Backdrop, $theme global contains the active theme name
-    $active_theme = $theme;
-
-    // If no theme is set, try to get it from theme system
-    if (empty($active_theme)) {
-        // Get default theme from config
-        $active_theme = config_get('system.core', 'theme_default');
-    }
-
-    // Build list of themes to check (child theme first, then parent)
-    $themes_to_check = array($active_theme);
-
-    // Check if active theme has a base theme (child theme scenario)
-    $theme_info = _wp2bd_get_theme_info($active_theme);
-    if (!empty($theme_info['base theme'])) {
-        $themes_to_check[] = $theme_info['base theme'];
-    }
+    // Get the WordPress theme directory (not Backdrop theme!)
+    $theme_dir = get_template_directory();
 
     // Build list of template files to check
     $templates = array();
@@ -161,22 +117,14 @@ function get_footer($name = null) {
     // Always check for footer.php as fallback
     $templates[] = 'footer.php';
 
-    // Search for template in theme directories
-    foreach ($themes_to_check as $theme_name) {
-        $theme_path = backdrop_get_path('theme', $theme_name);
+    // Search for template in WordPress theme directory
+    foreach ($templates as $template) {
+        $template_file = $theme_dir . '/' . $template;
 
-        if (empty($theme_path)) {
-            continue;
-        }
-
-        foreach ($templates as $template) {
-            $template_file = BACKDROP_ROOT . '/' . $theme_path . '/' . $template;
-
-            if (file_exists($template_file)) {
-                // Load the template
-                require_once $template_file;
-                return true;
-            }
+        if (file_exists($template_file)) {
+            // Load the template
+            require_once $template_file;
+            return true;
         }
     }
 
@@ -196,20 +144,10 @@ function get_footer($name = null) {
  * @return bool True if sidebar was found and loaded, false otherwise.
  */
 function get_sidebar($name = null) {
-    global $theme;
-
     do_action('get_sidebar', $name);
 
-    $active_theme = $theme;
-    if (empty($active_theme)) {
-        $active_theme = config_get('system.core', 'theme_default');
-    }
-
-    $themes_to_check = array($active_theme);
-    $theme_info = _wp2bd_get_theme_info($active_theme);
-    if (!empty($theme_info['base theme'])) {
-        $themes_to_check[] = $theme_info['base theme'];
-    }
+    // Get the WordPress theme directory (not Backdrop theme!)
+    $theme_dir = get_template_directory();
 
     $templates = array();
     if (null !== $name) {
@@ -217,18 +155,11 @@ function get_sidebar($name = null) {
     }
     $templates[] = 'sidebar.php';
 
-    foreach ($themes_to_check as $theme_name) {
-        $theme_path = backdrop_get_path('theme', $theme_name);
-        if (empty($theme_path)) {
-            continue;
-        }
-
-        foreach ($templates as $template) {
-            $template_file = BACKDROP_ROOT . '/' . $theme_path . '/' . $template;
-            if (file_exists($template_file)) {
-                require_once $template_file;
-                return true;
-            }
+    foreach ($templates as $template) {
+        $template_file = $theme_dir . '/' . $template;
+        if (file_exists($template_file)) {
+            require_once $template_file;
+            return true;
         }
     }
 
@@ -248,20 +179,15 @@ function get_sidebar($name = null) {
  * @return bool True if template part was found and loaded, false otherwise.
  */
 function get_template_part($slug, $name = null) {
-    global $theme;
+    // TEMPORARY: Stub out completely to confirm this is the problem
+    echo '<!-- get_template_part(' . $slug . ', ' . $name . ') called but temporarily disabled -->';
+    return true;
 
-    do_action("get_template_part_{$slug}", $slug, $name);
+    // TEMPORARY: Comment out do_action to test if that's the issue
+    // do_action("get_template_part_{$slug}", $slug, $name);
 
-    $active_theme = $theme;
-    if (empty($active_theme)) {
-        $active_theme = config_get('system.core', 'theme_default');
-    }
-
-    $themes_to_check = array($active_theme);
-    $theme_info = _wp2bd_get_theme_info($active_theme);
-    if (!empty($theme_info['base theme'])) {
-        $themes_to_check[] = $theme_info['base theme'];
-    }
+    // Get the WordPress theme directory (not Backdrop theme!)
+    $theme_dir = get_template_directory();
 
     $templates = array();
     $name = (string) $name;
@@ -270,18 +196,11 @@ function get_template_part($slug, $name = null) {
     }
     $templates[] = "{$slug}.php";
 
-    foreach ($themes_to_check as $theme_name) {
-        $theme_path = backdrop_get_path('theme', $theme_name);
-        if (empty($theme_path)) {
-            continue;
-        }
-
-        foreach ($templates as $template) {
-            $template_file = BACKDROP_ROOT . '/' . $theme_path . '/' . $template;
-            if (file_exists($template_file)) {
-                require $template_file;
-                return true;
-            }
+    foreach ($templates as $template) {
+        $template_file = $theme_dir . '/' . $template;
+        if (file_exists($template_file)) {
+            require $template_file;
+            return true;
         }
     }
 

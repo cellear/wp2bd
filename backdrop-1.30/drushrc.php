@@ -8,5 +8,5 @@
  */
 
 if (getenv('IS_DDEV_PROJECT') == 'true') {
-  $options['l'] = "https://wp4bd-test2.ddev.site";
+  $options['l'] = "https://wp4bd-test.ddev.site";
 }

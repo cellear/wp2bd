@@ -40,33 +40,45 @@ require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
 require_once WP2BD_THEME_DIR . '/functions/stubs.php';
 
 // Override get_template_directory() to return WordPress theme directory
-function get_template_directory() {
-  return WP2BD_ACTIVE_THEME_DIR;
-}
-
-function get_template_directory_uri() {
-  global $base_url;
-  if (!$base_url) {
-    $base_url = $GLOBALS['base_url'];
+if (!function_exists('get_template_directory')) {
+  function get_template_directory() {
+    return WP2BD_ACTIVE_THEME_DIR;
   }
-  $theme_path = str_replace($_SERVER['DOCUMENT_ROOT'], '', WP2BD_ACTIVE_THEME_DIR);
-  return $base_url . $theme_path;
 }
 
-function get_stylesheet_directory() {
-  return get_template_directory();
+if (!function_exists('get_template_directory_uri')) {
+  function get_template_directory_uri() {
+    global $base_url;
+    if (!$base_url) {
+      $base_url = $GLOBALS['base_url'];
+    }
+    $theme_path = str_replace($_SERVER['DOCUMENT_ROOT'], '', WP2BD_ACTIVE_THEME_DIR);
+    return $base_url . $theme_path;
+  }
 }
 
-function get_stylesheet_directory_uri() {
-  return get_template_directory_uri();
+if (!function_exists('get_stylesheet_directory')) {
+  function get_stylesheet_directory() {
+    return get_template_directory();
+  }
 }
 
-function get_template() {
-  return WP2BD_ACTIVE_THEME;
+if (!function_exists('get_stylesheet_directory_uri')) {
+  function get_stylesheet_directory_uri() {
+    return get_template_directory_uri();
+  }
 }
 
-function get_stylesheet() {
-  return WP2BD_ACTIVE_THEME;
+if (!function_exists('get_template')) {
+  function get_template() {
+    return WP2BD_ACTIVE_THEME;
+  }
+}
+
+if (!function_exists('get_stylesheet')) {
+  function get_stylesheet() {
+    return WP2BD_ACTIVE_THEME;
+  }
 }
 
 /**

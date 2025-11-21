@@ -93,6 +93,12 @@ class WP_Query {
     public $is_home = false;
 
     /**
+     * Whether this is the front page
+     * @var bool
+     */
+    public $is_front_page = false;
+
+    /**
      * Whether results were found
      * @var bool
      */

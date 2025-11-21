@@ -315,8 +315,17 @@ function get_template_directory() {
         return $template_dir;
     }
 
-    // Try Backdrop's path_to_theme() function first
-    if (function_exists('path_to_theme')) {
+    // FIRST: Check if WP2BD WordPress theme directory is defined (highest priority!)
+    if (defined('WP2BD_ACTIVE_THEME_DIR')) {
+        $template_dir = WP2BD_ACTIVE_THEME_DIR;
+    }
+    // SECOND: Try path constant
+    elseif (defined('WP2BD_THEME_PATH')) {
+        $template_dir = WP2BD_THEME_PATH;
+    }
+    // Only fallback to Backdrop theme if WP2BD constants not set
+    // (This should NOT happen when wp_content module is active)
+    elseif (function_exists('path_to_theme')) {
         $relative_path = path_to_theme();
         // Convert to absolute path
         if (defined('BACKDROP_ROOT')) {
@@ -344,11 +353,6 @@ function get_template_directory() {
     // Fallback: Use hardcoded path for Twenty Seventeen
     if ($template_dir === null) {
         $template_dir = '/home/user/wp2bd/wordpress-4.9/wp-content/themes/twentyseventeen';
-
-        // Alternative: Try to detect from __FILE__ or environment
-        if (!is_dir($template_dir) && defined('WP2BD_THEME_PATH')) {
-            $template_dir = WP2BD_THEME_PATH;
-        }
     }
 
     // Remove trailing slash if present

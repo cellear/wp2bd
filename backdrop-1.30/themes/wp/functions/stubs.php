@@ -517,10 +517,11 @@ if (!function_exists('get_theme_mod')) {
    * Retrieve theme modification value.
    */
   function get_theme_mod($name, $default = false) {
-    // Stub: Use Backdrop's variable_get if available
-    if (function_exists('variable_get')) {
+    // Stub: Use Backdrop's config API if available
+    if (function_exists('config_get')) {
       $key = 'theme_mod_' . $name;
-      return variable_get($key, $default);
+      $value = config_get('system.core', $key);
+      return ($value !== NULL) ? $value : $default;
     }
     return $default;
   }
