@@ -1,0 +1,22 @@
+name = WordPress Theme Wrapper
+description = Wrapper theme for running WordPress themes on Backdrop CMS. Currently configured for Twenty Seventeen.
+type = theme
+backdrop = 1.x
+version = 1.0.0
+
+; Theme settings
+settings[toggle_logo] = 1
+settings[toggle_name] = 1
+settings[toggle_slogan] = 1
+
+; Regions (Twenty Seventeen expects these)
+regions[header] = Header
+regions[content] = Content
+regions[sidebar] = Sidebar
+regions[footer] = Footer
+
+; Stylesheets (Twenty Seventeen will handle its own CSS)
+; We're not adding any here, letting WP theme control styling
+
+; Scripts
+; WordPress theme will handle script enqueuing via wp_head/wp_footer
