@@ -12,6 +12,11 @@
  * Load WordPress compatibility layer on every page load.
  */
 function wp_content_init() {
+  // Don't load WordPress compatibility on admin pages
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
   // Path to the wp theme that contains WordPress compatibility layer
   $wp_theme_path = BACKDROP_ROOT . '/themes/wp';
 
@@ -69,9 +74,9 @@ function wp_content_init() {
   // Define WordPress helper functions if not already defined
   if (!function_exists('get_template_directory')) {
     function get_template_directory() {
-      if (function_exists('dpm')) {
-        dpm('get_template_directory() called from wp_content module, returning: ' . WP2BD_ACTIVE_THEME_DIR);
-      }
+      // if (function_exists('dpm')) {
+      //   dpm('get_template_directory() called from wp_content module, returning: ' . WP2BD_ACTIVE_THEME_DIR);
+      // }
       return WP2BD_ACTIVE_THEME_DIR;
     }
   }
@@ -131,10 +136,14 @@ function wp_content_init() {
     }
   }
 
-  // Load the WordPress theme's functions.php
-  $theme_functions = WP2BD_ACTIVE_THEME_DIR . '/functions.php';
-  if (file_exists($theme_functions)) {
-    require_once $theme_functions;
+  // Only load WordPress theme functions.php on frontend pages (not admin)
+  // Check if we're using the wp theme on the current page
+  global $theme_key;
+  if ($theme_key === 'wp' && !path_is_admin(current_path())) {
+    $theme_functions = WP2BD_ACTIVE_THEME_DIR . '/functions.php';
+    if (file_exists($theme_functions)) {
+      require_once $theme_functions;
+    }
   }
 }
 
@@ -178,10 +187,10 @@ function wp_content_block_view($delta = '', $settings = array(), $contexts = arr
   $block = array();
 
   // DEBUG: Log that block is being called
-  if (function_exists('dpm')) {
-    dpm("wp_content_block_view called with delta: $delta");
-    dpm($contexts, 'Block contexts');
-  }
+  // if (function_exists('dpm')) {
+  //   dpm("wp_content_block_view called with delta: $delta");
+  //   dpm($contexts, 'Block contexts');
+  // }
 
   switch ($delta) {
     case 'wordpress_header':
@@ -230,12 +239,25 @@ function _wp_content_render_header() {
 
   $header_path = get_template_directory() . '/header.php';
   if (file_exists($header_path)) {
-    include $header_path;
+    try {
+      include $header_path;
+    } catch (Exception $e) {
+      echo '<!-- WordPress header.php EXCEPTION: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Header failed: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    } catch (Error $e) {
+      echo '<!-- WordPress header.php FATAL ERROR: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Header FATAL: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    }
   } else {
     echo '<!-- WordPress header.php not found -->';
   }
 
   $output = ob_get_clean();
+
+  // Strip out HTML page structure tags (DOCTYPE, html, head, body)
+  // WordPress header.php outputs a complete page, but we only want the header content
+  $output = preg_replace('/^.*?<body[^>]*>/is', '', $output); // Remove everything up to and including <body>
+  $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output); // Remove closing body/html tags
 
   return array('#markup' => $output);
 }
@@ -304,7 +326,15 @@ function _wp_content_render_sidebar() {
 
   $sidebar_path = get_template_directory() . '/sidebar.php';
   if (file_exists($sidebar_path)) {
-    include $sidebar_path;
+    try {
+      include $sidebar_path;
+    } catch (Exception $e) {
+      echo '<!-- WordPress sidebar.php EXCEPTION: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Sidebar failed: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    } catch (Error $e) {
+      echo '<!-- WordPress sidebar.php FATAL ERROR: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Sidebar FATAL: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    }
   } else {
     echo '<!-- WordPress sidebar.php not found -->';
   }
@@ -325,12 +355,24 @@ function _wp_content_render_footer() {
 
   $footer_path = get_template_directory() . '/footer.php';
   if (file_exists($footer_path)) {
-    include $footer_path;
+    try {
+      include $footer_path;
+    } catch (Exception $e) {
+      echo '<!-- WordPress footer.php EXCEPTION: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Footer failed: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    } catch (Error $e) {
+      echo '<!-- WordPress footer.php FATAL ERROR: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Footer FATAL: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    }
   } else {
     echo '<!-- WordPress footer.php not found -->';
   }
 
   $output = ob_get_clean();
+
+  // Strip out closing HTML page structure tags
+  // WordPress footer.php outputs closing body/html tags, but Backdrop handles those
+  $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output); // Remove closing body/html tags
 
   return array('#markup' => $output);
 }
@@ -349,7 +391,7 @@ function _wp_content_setup_query() {
   // Load published nodes (promoted ones for front page)
   $site_config = config('system.core');
   $select = db_select('node', 'n')
-    ->fields('n', array('nid', 'sticky', 'created'))
+    ->fields('n', array('nid', 'type', 'sticky', 'created'))
     ->condition('n.status', 1)
     ->orderBy('n.sticky', 'DESC')
     ->orderBy('n.created', 'DESC')
@@ -370,15 +412,31 @@ function _wp_content_setup_query() {
   if (!empty($nids)) {
     $nodes = node_load_multiple($nids);
     foreach ($nodes as $node) {
-      if (!isset($node->nid)) continue;
+      // Skip if not a valid node object
+      if (!is_object($node) || !isset($node->nid)) {
+        continue;
+      }
 
+      // Ensure node has all required properties
       if (!isset($node->type)) {
-        $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
-        if ($type_result) {
-          $node->type = $type_result;
+        // Try to reload the node fully
+        $full_node = node_load($node->nid);
+        if ($full_node && isset($full_node->type)) {
+          $node = $full_node;
         } else {
-          continue;
+          // Last resort: query database directly
+          $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+          if ($type_result) {
+            $node->type = $type_result;
+          } else {
+            continue;
+          }
         }
+      }
+
+      // Double-check we have type before creating WP_Post
+      if (!isset($node->type)) {
+        continue;
       }
 
       $posts[] = WP_Post::from_node($node);

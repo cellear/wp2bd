@@ -179,12 +179,7 @@ function get_sidebar($name = null) {
  * @return bool True if template part was found and loaded, false otherwise.
  */
 function get_template_part($slug, $name = null) {
-    // TEMPORARY: Stub out completely to confirm this is the problem
-    echo '<!-- get_template_part(' . $slug . ', ' . $name . ') called but temporarily disabled -->';
-    return true;
-
-    // TEMPORARY: Comment out do_action to test if that's the issue
-    // do_action("get_template_part_{$slug}", $slug, $name);
+    do_action("get_template_part_{$slug}", $slug, $name);
 
     // Get the WordPress theme directory (not Backdrop theme!)
     $theme_dir = get_template_directory();
@@ -199,8 +194,37 @@ function get_template_part($slug, $name = null) {
     foreach ($templates as $template) {
         $template_file = $theme_dir . '/' . $template;
         if (file_exists($template_file)) {
-            require $template_file;
-            return true;
+            // Wrap in try-catch to prevent crashes
+            try {
+                require $template_file;
+                return true;
+            } catch (Exception $e) {
+                // Log error but don't crash
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                echo '<!-- get_template_part(' . htmlspecialchars($slug) . ', ' . htmlspecialchars($name) . ') EXCEPTION: ' . htmlspecialchars($error_msg) . ' -->';
+                if (function_exists('watchdog')) {
+                    watchdog('wp_content', 'Template part @template failed: @error<br>Trace: @trace', array(
+                        '@template' => $template,
+                        '@error' => $error_msg,
+                        '@trace' => $error_trace,
+                    ), WATCHDOG_ERROR);
+                }
+                return false;
+            } catch (Error $e) {
+                // Catch PHP 7+ fatal errors
+                $error_msg = $e->getMessage();
+                $error_trace = $e->getTraceAsString();
+                echo '<!-- get_template_part(' . htmlspecialchars($slug) . ', ' . htmlspecialchars($name) . ') FATAL ERROR: ' . htmlspecialchars($error_msg) . ' -->';
+                if (function_exists('watchdog')) {
+                    watchdog('wp_content', 'Template part @template FATAL: @error<br>Trace: @trace', array(
+                        '@template' => $template,
+                        '@error' => $error_msg,
+                        '@trace' => $error_trace,
+                    ), WATCHDOG_ERROR);
+                }
+                return false;
+            }
         }
     }
 

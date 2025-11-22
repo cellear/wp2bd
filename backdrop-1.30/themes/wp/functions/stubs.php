@@ -308,8 +308,11 @@ if (!function_exists('is_active_sidebar')) {
    * Check if a sidebar is active (has widgets).
    */
   function is_active_sidebar($index) {
-    // Stub: Return false (no active sidebars)
-    // In a real implementation, this would check if widgets are assigned to the sidebar
+    // Only sidebar-1 (main sidebar) is active
+    // Footer sidebars (sidebar-2, sidebar-3) are not active for now
+    if ($index === 'sidebar-1' || $index === 1) {
+      return true;
+    }
     return false;
   }
 }
@@ -319,8 +322,42 @@ if (!function_exists('dynamic_sidebar')) {
    * Display dynamic sidebar.
    */
   function dynamic_sidebar($index = 1) {
-    // Stub: Display nothing
-    return false;
+    // Only display widgets for the main sidebar (sidebar-1)
+    // Footer sidebars (sidebar-2, sidebar-3) remain empty for now
+    if ($index !== 'sidebar-1' && $index !== 1) {
+      return false;
+    }
+
+    // Display a placeholder widget structure matching Twenty Seventeen's widget styles
+    echo '<section id="search-2" class="widget widget_search">';
+    echo '<h2 class="widget-title">Search</h2>';
+    echo '<form role="search" method="get" class="search-form" action="' . esc_url(url('<front>')) . '">';
+    echo '<label><span class="screen-reader-text">Search for:</span>';
+    echo '<input type="search" class="search-field" placeholder="Search..." value="" name="s" /></label>';
+    echo '<button type="submit" class="search-submit"><svg class="icon icon-search" aria-hidden="true" role="img"> <use href="#icon-search" xlink:href="#icon-search"></use> </svg><span class="screen-reader-text">Search</span></button>';
+    echo '</form>';
+    echo '</section>';
+
+    echo '<section id="recent-posts-2" class="widget widget_recent_entries">';
+    echo '<h2 class="widget-title">Recent Posts</h2>';
+    echo '<ul>';
+
+    // Get recent published posts
+    $query = db_select('node', 'n')
+      ->fields('n', array('nid', 'title'))
+      ->condition('n.status', 1)
+      ->orderBy('n.created', 'DESC')
+      ->range(0, 5)
+      ->execute();
+
+    while ($record = $query->fetchObject()) {
+      echo '<li><a href="' . url('node/' . $record->nid) . '">' . check_plain($record->title) . '</a></li>';
+    }
+
+    echo '</ul>';
+    echo '</section>';
+
+    return true;
   }
 }
 
@@ -1280,4 +1317,68 @@ if (!function_exists('get_custom_header')) {
     // Stub: Return empty object
     return (object) array();
   }
+}
+
+// ============================================================================
+// POST THUMBNAIL FUNCTIONS
+// ============================================================================
+
+if (!function_exists('has_post_thumbnail')) {
+    function has_post_thumbnail($post = null) {
+        return false; // No thumbnail support yet
+    }
+}
+
+if (!function_exists('get_post_thumbnail_id')) {
+    function get_post_thumbnail_id($post = null) {
+        return false;
+    }
+}
+
+if (!function_exists('wp_get_attachment_image_src')) {
+    function wp_get_attachment_image_src($attachment_id, $size = 'thumbnail', $icon = false) {
+        return false;
+    }
+}
+
+// ============================================================================
+// POST CLASS FUNCTION
+// ============================================================================
+
+if (!function_exists('post_class')) {
+    function post_class($class = '', $post_id = null) {
+        global $post;
+
+        $classes = array();
+
+        if ($class) {
+            if (!is_array($class)) {
+                $class = preg_split('#\s+#', $class);
+            }
+            $classes = array_merge($classes, $class);
+        }
+
+        // Add basic post classes
+        if ($post) {
+            $classes[] = 'post-' . $post->ID;
+            $classes[] = 'type-' . $post->post_type;
+        }
+
+        $classes = apply_filters('post_class', $classes, $class, $post_id);
+
+        if (!empty($classes)) {
+            echo 'class="' . esc_attr(join(' ', $classes)) . '"';
+        }
+    }
+}
+
+// ============================================================================
+// TWENTY SEVENTEEN SPECIFIC STUBS
+// ============================================================================
+
+if (!function_exists('twentyseventeen_edit_link')) {
+    function twentyseventeen_edit_link($post_id = null) {
+        // Stub - would show edit link for logged in users
+        return;
+    }
 }

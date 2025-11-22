@@ -307,31 +307,6 @@ function remove_action($hook, $callback, $priority = 10) {
  * @return void
  */
 function wp_head() {
-    global $wp_styles, $wp_scripts;
-
-    // Output enqueued styles
-    if (isset($wp_styles) && !empty($wp_styles)) {
-        foreach ($wp_styles as $handle => $style) {
-            $src = $style['src'];
-            if ($style['ver']) {
-                $src .= '?' . $style['ver'];
-            }
-            $media = isset($style['media']) ? $style['media'] : 'all';
-            echo "<link rel='stylesheet' id='" . esc_attr($handle) . "-css' href='" . esc_url($src) . "' type='text/css' media='" . esc_attr($media) . "' />\n";
-        }
-    }
-
-    // Output header scripts
-    if (isset($wp_scripts['header']) && !empty($wp_scripts['header'])) {
-        foreach ($wp_scripts['header'] as $handle => $script) {
-            $src = $script['src'];
-            if ($script['ver']) {
-                $src .= '?' . $script['ver'];
-            }
-            echo "<script type='text/javascript' src='" . esc_url($src) . "' id='" . esc_attr($handle) . "-js'></script>\n";
-        }
-    }
-
     /**
      * Fires in the <head> section of the HTML document.
      *
@@ -345,6 +320,14 @@ function wp_head() {
      * @since WordPress 1.5.0
      */
     do_action('wp_head');
+
+    // Print enqueued styles and scripts
+    if (function_exists('wp_print_styles')) {
+        wp_print_styles();
+    }
+    if (function_exists('wp_print_scripts')) {
+        wp_print_scripts(false); // false = head scripts
+    }
 }
 
 /**
@@ -370,19 +353,6 @@ function wp_head() {
  * @return void
  */
 function wp_footer() {
-    global $wp_scripts;
-
-    // Output footer scripts
-    if (isset($wp_scripts['footer']) && !empty($wp_scripts['footer'])) {
-        foreach ($wp_scripts['footer'] as $handle => $script) {
-            $src = $script['src'];
-            if ($script['ver']) {
-                $src .= '?' . $script['ver'];
-            }
-            echo "<script type='text/javascript' src='" . esc_url($src) . "' id='" . esc_attr($handle) . "-js'></script>\n";
-        }
-    }
-
     /**
      * Fires just before the closing </body> tag in the HTML document.
      *
@@ -397,6 +367,11 @@ function wp_footer() {
      * @since WordPress 1.5.1
      */
     do_action('wp_footer');
+
+    // Print enqueued footer scripts
+    if (function_exists('wp_print_scripts')) {
+        wp_print_scripts(true); // true = footer scripts
+    }
 }
 
 /**

@@ -68,6 +68,17 @@ function get_post_format( $post = null ) {
     if ( function_exists( 'node_load' ) ) {
       $node = node_load( $post_id );
       if ( $node && is_object( $node ) ) {
+        // Ensure node has type property (required by Backdrop entity system)
+        if (!isset($node->type)) {
+          // Query directly from database if missing
+          $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $post_id))->fetchField();
+          if ($type_result) {
+            $node->type = $type_result;
+          } else {
+            // Can't get type, bail
+            return false;
+          }
+        }
         $post = $node;
       } else {
         return false;
@@ -117,6 +128,10 @@ function get_post_format( $post = null ) {
   // Check Backdrop taxonomy system if available
   if ( $post_id > 0 && function_exists( 'taxonomy_term_load_multiple' ) && function_exists( 'field_get_items' ) ) {
     // Check for a post_format field
+    // Make sure $post has type property before calling field_get_items (Backdrop requirement)
+    if (!is_object($post) || !isset($post->type)) {
+      return false; // Can't use field_get_items without proper node entity
+    }
     $field_items = field_get_items( 'node', $post, 'field_post_format' );
     if ( is_array( $field_items ) && ! empty( $field_items ) ) {
       $tid = $field_items[0]['tid'];

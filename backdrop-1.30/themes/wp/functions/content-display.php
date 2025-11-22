@@ -1271,6 +1271,10 @@ function _wp2bd_get_post_terms( $post, $taxonomy ) {
     }
 
     if ( $field_name ) {
+      // Ensure $post has 'type' property (required by Backdrop entity system)
+      if (!is_object($post) || !isset($post->type)) {
+        return array(); // Can't use field_get_items without proper node entity
+      }
       $field_items = field_get_items( 'node', $post, $field_name );
       if ( is_array( $field_items ) ) {
         $tids = array();

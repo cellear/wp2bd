@@ -15,8 +15,9 @@ regions[content] = Content
 regions[sidebar] = Sidebar
 regions[footer] = Footer
 
-; Stylesheets (Twenty Seventeen will handle its own CSS)
-; We're not adding any here, letting WP theme control styling
+; Stylesheets
+; Hardcoded for Twenty Seventeen for now
+stylesheets[all][] = wp-content/themes/twentyseventeen/style.css
 
 ; Scripts
 ; WordPress theme will handle script enqueuing via wp_head/wp_footer
