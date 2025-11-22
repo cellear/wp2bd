@@ -1,0 +1,17 @@
+type = layout
+name = WordPress Twenty Seventeen
+description = Layout optimized for WordPress Twenty Seventeen theme with parallax header support. Includes header, content, sidebar, and footer regions with WordPress-compatible markup.
+version = BACKDROP_VERSION
+backdrop = 1.x
+
+; Regions for WordPress theme structure
+regions[header] = Header
+regions[content] = Content
+regions[sidebar] = Sidebar
+regions[footer] = Footer
+
+; The default region automatically receives the "Main Content" block if needed.
+default region = content
+
+; Preview
+; preview = wordpress-twentyseventeen.png
