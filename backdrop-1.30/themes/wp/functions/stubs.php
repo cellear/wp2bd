@@ -169,14 +169,16 @@ if (!function_exists('wp_enqueue_script')) {
    * Enqueue a script.
    */
   function wp_enqueue_script($handle, $src = '', $deps = array(), $ver = false, $in_footer = false) {
-    // Stub: Log but don't actually enqueue
-    // In a real implementation, this would add scripts to wp_head or wp_footer
-    static $enqueued_scripts = array();
-    $enqueued_scripts[$handle] = array(
+    global $wp_scripts;
+    if (!isset($wp_scripts)) {
+      $wp_scripts = array('header' => array(), 'footer' => array());
+    }
+
+    $location = $in_footer ? 'footer' : 'header';
+    $wp_scripts[$location][$handle] = array(
       'src' => $src,
       'deps' => $deps,
       'ver' => $ver,
-      'in_footer' => $in_footer,
     );
   }
 }
@@ -186,9 +188,12 @@ if (!function_exists('wp_enqueue_style')) {
    * Enqueue a CSS stylesheet.
    */
   function wp_enqueue_style($handle, $src = '', $deps = array(), $ver = false, $media = 'all') {
-    // Stub: Log but don't actually enqueue
-    static $enqueued_styles = array();
-    $enqueued_styles[$handle] = array(
+    global $wp_styles;
+    if (!isset($wp_styles)) {
+      $wp_styles = array();
+    }
+
+    $wp_styles[$handle] = array(
       'src' => $src,
       'deps' => $deps,
       'ver' => $ver,
@@ -954,8 +959,14 @@ if (!function_exists('the_custom_header_markup')) {
    * Display custom header markup.
    */
   function the_custom_header_markup() {
-    // Stub: Display nothing
-    return;
+    // For Twenty Seventeen, output the header image
+    $header_image = get_theme_file_uri('/assets/images/header.jpg');
+    $site_title = get_bloginfo('name');
+
+    // Check if we have a custom header image or use default
+    echo '<div id="wp-custom-header" class="wp-custom-header">';
+    echo '<img src="' . esc_url($header_image) . '" width="2000" height="1200" alt="' . esc_attr($site_title) . '" />';
+    echo '</div>';
   }
 }
 

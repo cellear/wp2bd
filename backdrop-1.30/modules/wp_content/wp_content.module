@@ -130,6 +130,12 @@ function wp_content_init() {
       return $uri;
     }
   }
+
+  // Load the WordPress theme's functions.php
+  $theme_functions = WP2BD_ACTIVE_THEME_DIR . '/functions.php';
+  if (file_exists($theme_functions)) {
+    require_once $theme_functions;
+  }
 }
 
 /**
@@ -212,6 +218,13 @@ function wp_content_block_view($delta = '', $settings = array(), $contexts = arr
 function _wp_content_render_header() {
   // Set up WordPress query for header
   _wp_content_setup_query();
+
+  // Fire wp_enqueue_scripts action so theme can enqueue CSS/JS
+  // This needs to happen before wp_head() is called
+  if (!isset($GLOBALS['wp2bd_scripts_enqueued'])) {
+    do_action('wp_enqueue_scripts');
+    $GLOBALS['wp2bd_scripts_enqueued'] = TRUE;
+  }
 
   ob_start();
 
