@@ -138,24 +138,28 @@ function wp_content_init() {
 function wp_content_block_info() {
   $blocks = array();
 
-  // TEMPORARILY DISABLED - debugging EntityMalformedException
-  // Define the WordPress content block
-  /*
+  // WordPress Header block - renders header.php
+  $blocks['wordpress_header'] = array(
+    'info' => t('WordPress Header'),
+    'description' => t('Renders WordPress theme header (logo, navigation, etc).'),
+  );
+
+  // WordPress Content block - main content area only
   $blocks['wordpress_content'] = array(
     'info' => t('WordPress Content'),
-    'description' => t('Renders node content using a WordPress theme.'),
-    // This block CAN use node context if available, but doesn't require it
-    // (making it required causes errors on pages without nodes, like the home page)
-    'contexts' => array(
-      'node' => 'node',
-    ),
+    'description' => t('Renders main WordPress content without header/footer/sidebar.'),
   );
-  */
 
-  // Also create a block for home/archive pages that doesn't require node context
-  $blocks['wordpress_archive'] = array(
-    'info' => t('WordPress Archive/Home'),
-    'description' => t('Renders multiple nodes using WordPress theme (for home/archive pages).'),
+  // WordPress Sidebar block - renders sidebar.php
+  $blocks['wordpress_sidebar'] = array(
+    'info' => t('WordPress Sidebar'),
+    'description' => t('Renders WordPress theme sidebar with widgets.'),
+  );
+
+  // WordPress Footer block - renders footer.php
+  $blocks['wordpress_footer'] = array(
+    'info' => t('WordPress Footer'),
+    'description' => t('Renders WordPress theme footer.'),
   );
 
   return $blocks;
@@ -174,43 +178,28 @@ function wp_content_block_view($delta = '', $settings = array(), $contexts = arr
   }
 
   switch ($delta) {
-    case 'wordpress_content':
-      // Single node view - skip if no valid node context
-      if (!isset($contexts['node'])) {
-        return array(); // No node context, return empty
-      }
-
-      // Extract node from context
-      $node = NULL;
-      if (isset($contexts['node']->data)) {
-        $node = $contexts['node']->data;
-      } elseif (is_object($contexts['node']) && isset($contexts['node']->nid)) {
-        // Sometimes the context IS the node
-        $node = $contexts['node'];
-      }
-
-      // Validate that we have a proper node
-      if (!$node || !isset($node->nid) || !isset($node->type)) {
-        if (function_exists('dpm')) {
-          dpm('WARNING: node context invalid or missing nid/type');
-        }
-        return array(); // Return empty block
-      }
-
-      if (function_exists('dpm')) {
-        dpm($node, 'Node from context');
-      }
-      $block['subject'] = NULL; // No title (WordPress theme handles it)
-      $block['content'] = _wp_content_render_single_node($node);
+    case 'wordpress_header':
+      // Render WordPress header (header.php)
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_header();
       break;
 
-    case 'wordpress_archive':
-      // Multiple nodes view (home/archive)
-      if (function_exists('dpm')) {
-        dpm('Rendering wordpress_archive block');
-      }
+    case 'wordpress_content':
+      // Main content area only (no header/footer/sidebar)
       $block['subject'] = NULL;
-      $block['content'] = _wp_content_render_archive();
+      $block['content'] = _wp_content_render_main_content();
+      break;
+
+    case 'wordpress_sidebar':
+      // Render WordPress sidebar (sidebar.php)
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_sidebar();
+      break;
+
+    case 'wordpress_footer':
+      // Render WordPress footer (footer.php)
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_footer();
       break;
   }
 
@@ -218,101 +207,147 @@ function wp_content_block_view($delta = '', $settings = array(), $contexts = arr
 }
 
 /**
- * Helper function to render a single node with WordPress theme.
+ * Render WordPress header (header.php).
  */
-function _wp_content_render_single_node($node) {
-  global $wp_query, $post;
+function _wp_content_render_header() {
+  // Set up WordPress query for header
+  _wp_content_setup_query();
 
-  if (function_exists('dpm')) {
-    dpm("_wp_content_render_single_node called with nid: " . (isset($node->nid) ? $node->nid : 'NULL'));
+  ob_start();
+
+  $header_path = get_template_directory() . '/header.php';
+  if (file_exists($header_path)) {
+    include $header_path;
+  } else {
+    echo '<!-- WordPress header.php not found -->';
   }
 
-  // Always reload the node fully to ensure it has all properties including 'type'
-  if (isset($node->nid)) {
-    $full_node = node_load($node->nid);
-    if ($full_node) {
-      $node = $full_node;
-      if (function_exists('dpm')) {
-        dpm("Node fully loaded: nid={$node->nid}, type={$node->type}, title={$node->title}");
-      }
-    }
-  }
+  $output = ob_get_clean();
 
-  // Ensure node has type property (bundle) before converting
-  if (!isset($node->type)) {
-    if (isset($node->nid)) {
-      $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
-      if ($type_result) {
-        $node->type = $type_result;
-      } else {
-        $node->type = 'page'; // Fallback
-      }
-    } else {
-      $node->type = 'page'; // Fallback
-    }
-  }
-
-  // Convert Backdrop node to WordPress post
-  $post = WP_Post::from_node($node);
-
-  if (function_exists('dpm')) {
-    dpm($post, 'WP_Post created from node');
-  }
-
-  // Create a WP_Query with this post
-  $wp_query = new WP_Query(array(
-    'p' => $node->nid,
-    'post_type' => 'post',
-  ));
-
-  // Manually set up the query state
-  $wp_query->posts = array($post);
-  $wp_query->post_count = 1;
-  $wp_query->current_post = -1; // Start before first post
-  $wp_query->is_single = true;
-  $wp_query->is_singular = true;
-  $wp_query->queried_object = $post;
-  $wp_query->queried_object_id = $post->ID;
-
-  if (!isset($wp_query->post)) {
-    $wp_query->post = null;
-  }
-
-  // Store in GLOBALS
-  $GLOBALS['wp_query'] = $wp_query;
-  $GLOBALS['post'] = null; // Reset global post until loop starts
-
-  if (function_exists('dpm')) {
-    dpm($wp_query, 'WP_Query set up');
-    dpm("have_posts() = " . (have_posts() ? 'TRUE' : 'FALSE'));
-  }
-
-  // Render using WordPress template
-  return _wp_content_delegate_to_template();
+  return array('#markup' => $output);
 }
 
 /**
- * Helper function to render archive/home page with WordPress theme.
+ * Render main WordPress content (without header/footer/sidebar).
  */
-function _wp_content_render_archive() {
+function _wp_content_render_main_content() {
+  // Set up WordPress query
+  _wp_content_setup_query();
+
+  ob_start();
+
+  // We need to manually output the content area that normally sits between
+  // get_header() and get_footer() in WordPress templates
+
+  echo '<div class="wrap">';
+
+  // For home/archive pages
+  if (is_home() || is_front_page() || is_archive()) {
+    echo '<div id="primary" class="content-area">';
+    echo '<main id="main" class="site-main" role="main">';
+
+    if (have_posts()) {
+      while (have_posts()) {
+        the_post();
+        // Use WordPress template part for content
+        get_template_part('template-parts/post/content', get_post_format());
+      }
+    } else {
+      get_template_part('template-parts/post/content', 'none');
+    }
+
+    echo '</main>';
+    echo '</div>';
+  }
+  // For single posts/pages
+  elseif (is_single() || is_page()) {
+    echo '<div id="primary" class="content-area">';
+    echo '<main id="main" class="site-main" role="main">';
+
+    while (have_posts()) {
+      the_post();
+      get_template_part('template-parts/page/content', 'page');
+    }
+
+    echo '</main>';
+    echo '</div>';
+  }
+
+  echo '</wrap>';
+
+  $output = ob_get_clean();
+
+  return array('#markup' => $output);
+}
+
+/**
+ * Render WordPress sidebar (sidebar.php).
+ */
+function _wp_content_render_sidebar() {
+  // Set up WordPress query for sidebar
+  _wp_content_setup_query();
+
+  ob_start();
+
+  $sidebar_path = get_template_directory() . '/sidebar.php';
+  if (file_exists($sidebar_path)) {
+    include $sidebar_path;
+  } else {
+    echo '<!-- WordPress sidebar.php not found -->';
+  }
+
+  $output = ob_get_clean();
+
+  return array('#markup' => $output);
+}
+
+/**
+ * Render WordPress footer (footer.php).
+ */
+function _wp_content_render_footer() {
+  // Set up WordPress query for footer
+  _wp_content_setup_query();
+
+  ob_start();
+
+  $footer_path = get_template_directory() . '/footer.php';
+  if (file_exists($footer_path)) {
+    include $footer_path;
+  } else {
+    echo '<!-- WordPress footer.php not found -->';
+  }
+
+  $output = ob_get_clean();
+
+  return array('#markup' => $output);
+}
+
+/**
+ * Helper: Set up WordPress query globals from Backdrop data.
+ */
+function _wp_content_setup_query() {
   global $wp_query, $post;
+
+  // If query already set up, don't redo it
+  if (isset($GLOBALS['wp2bd_query_setup'])) {
+    return;
+  }
 
   // Load published nodes (promoted ones for front page)
   $site_config = config('system.core');
   $select = db_select('node', 'n')
     ->fields('n', array('nid', 'sticky', 'created'))
-    ->condition('n.status', 1) // Published only
+    ->condition('n.status', 1)
     ->orderBy('n.sticky', 'DESC')
     ->orderBy('n.created', 'DESC')
     ->addTag('node_access');
 
-  // Check if we're on front page
   $is_front = backdrop_is_front_page();
   if ($is_front) {
     $select->condition('n.promote', 1);
     $limit = $site_config->get('default_nodes_main') ?: 10;
   } else {
-    $limit = 20; // Archive page default
+    $limit = 20;
   }
 
   $select->range(0, $limit);
@@ -320,50 +355,24 @@ function _wp_content_render_archive() {
 
   $posts = array();
   if (!empty($nids)) {
-    try {
-      $nodes = node_load_multiple($nids);
-      if (function_exists('dpm')) {
-        dpm(count($nodes) . ' nodes loaded');
-      }
-      foreach ($nodes as $node) {
-        // Validate node before processing
-        if (!isset($node->nid)) {
-          if (function_exists('dpm')) {
-            dpm('WARNING: Skipping node without nid');
-          }
+    $nodes = node_load_multiple($nids);
+    foreach ($nodes as $node) {
+      if (!isset($node->nid)) continue;
+
+      if (!isset($node->type)) {
+        $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+        if ($type_result) {
+          $node->type = $type_result;
+        } else {
           continue;
         }
-
-        // Ensure each node has type property
-        if (!isset($node->type)) {
-          if (function_exists('dpm')) {
-            dpm("WARNING: Node {$node->nid} missing type, loading from database");
-          }
-          $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
-          if ($type_result) {
-            $node->type = $type_result;
-          } else {
-            if (function_exists('dpm')) {
-              dpm("ERROR: Could not load type for node {$node->nid}, skipping");
-            }
-            continue; // Skip this node
-          }
-        }
-
-        $posts[] = WP_Post::from_node($node);
       }
-    } catch (Exception $e) {
-      if (function_exists('dpm')) {
-        dpm('Exception loading nodes: ' . $e->getMessage());
-      }
-      // Return early with error message
-      return array(
-        '#markup' => '<p>Error loading content: ' . check_plain($e->getMessage()) . '</p>',
-      );
+
+      $posts[] = WP_Post::from_node($node);
     }
   }
 
-  // Create WP_Query with multiple posts
+  // Set up WP_Query
   $wp_query = new WP_Query(array('post_type' => 'post'));
   $wp_query->posts = $posts;
   $wp_query->post_count = count($posts);
@@ -371,94 +380,9 @@ function _wp_content_render_archive() {
   $wp_query->is_home = $is_front;
   $wp_query->is_archive = !$is_front;
   $wp_query->is_front_page = $is_front;
-
-  if (!isset($wp_query->post)) {
-    $wp_query->post = null;
-  }
+  $wp_query->post = null;
 
   $GLOBALS['wp_query'] = $wp_query;
   $GLOBALS['post'] = null;
-
-  // Render using WordPress template
-  return _wp_content_delegate_to_template();
-}
-
-/**
- * Helper function to delegate rendering to WordPress template.
- */
-function _wp_content_delegate_to_template() {
-  global $wp_query;
-
-  // Start output buffering to capture WordPress template output
-  ob_start();
-
-  // VERY VISIBLE DEBUG OUTPUT
-  echo '<div style="background: red; color: white; padding: 20px; margin: 20px; border: 5px solid yellow; font-size: 24px; font-weight: bold;">';
-  echo '🚨 HELLO FROM THE WORDPRESS BLOCK! 🚨<br>';
-  echo 'This block is definitely rendering!<br>';
-  echo 'Current time: ' . date('H:i:s') . '<br>';
-  echo '</div>';
-
-  if (function_exists('dpm')) {
-    dpm("_wp_content_delegate_to_template called");
-    dpm("have_posts() = " . (have_posts() ? 'TRUE' : 'FALSE'));
-    if (isset($wp_query)) {
-      dpm("wp_query->post_count = " . (isset($wp_query->post_count) ? $wp_query->post_count : 'NULL'));
-      dpm("wp_query->posts array size = " . (isset($wp_query->posts) ? count($wp_query->posts) : 'NULL'));
-    }
-  }
-
-  // Don't manually loop - let the WordPress template do it!
-  // The template (single.php, index.php, etc.) will call have_posts() and the_post().
-
-  // Delegate to WordPress template hierarchy
-  echo '<div style="background: yellow; padding: 10px; margin: 10px;">';
-  echo '<strong>Attempting WordPress template delegation...</strong><br>';
-
-  // Determine which WordPress template to use
-  $wp_template = 'index.php';
-
-  if (is_single()) {
-    if (file_exists(get_template_directory() . '/single.php')) {
-      $wp_template = 'single.php';
-    }
-  } elseif (is_page()) {
-    if (file_exists(get_template_directory() . '/page.php')) {
-      $wp_template = 'page.php';
-    }
-  } elseif (is_home() || is_front_page()) {
-    if (file_exists(get_template_directory() . '/home.php')) {
-      $wp_template = 'home.php';
-    } elseif (file_exists(get_template_directory() . '/front-page.php')) {
-      $wp_template = 'front-page.php';
-    }
-  } elseif (is_archive()) {
-    if (file_exists(get_template_directory() . '/archive.php')) {
-      $wp_template = 'archive.php';
-    }
-  }
-
-  echo 'Template file: ' . $wp_template . '<br>';
-  echo 'Template directory: ' . get_template_directory() . '<br>';
-
-  // Include the WordPress template
-  $template_path = get_template_directory() . '/' . $wp_template;
-  if (file_exists($template_path)) {
-    echo 'Template found! Including: ' . $template_path . '<br>';
-    echo '</div>';
-    include $template_path;
-  } else {
-    echo '<span style="color: red;">ERROR: WordPress template not found: ' . esc_html($wp_template) . '</span><br>';
-    echo 'Searched in: ' . esc_html(get_template_directory()) . '<br>';
-    echo '</div>';
-    // Fallback to simple content
-    echo $content;
-  }
-
-  // Return the buffered output as block content
-  $output = ob_get_clean();
-
-  return array(
-    '#markup' => $output,
-  );
+  $GLOBALS['wp2bd_query_setup'] = TRUE;
 }
