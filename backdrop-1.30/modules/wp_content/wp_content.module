@@ -320,19 +320,15 @@ function _wp_content_render_header() {
 
   $output = ob_get_clean();
 
-  // Strip out HTML page structure tags (DOCTYPE, html, head, body)
-  // WordPress header.php outputs a complete page, but we only want the header content
-  $output = preg_replace('/^.*?<body[^>]*>/is', '', $output); // Remove everything up to and including <body>
-  $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output); // Remove closing body/html tags
+  // SIMPLIFIED: Only strip HTML page structure that Backdrop controls
+  // Remove everything from start through opening <body> tag (DOCTYPE, html, head, body)
+  $output = preg_replace('/^.*?<body[^>]*>/is', '', $output);
 
-  // Also strip the opening <div id="page" class="site"> and related wrappers
-  // We'll add these at the layout level instead so all blocks are inside them
-  $output = preg_replace('/<div\s+id="page"\s+class="site">\s*/is', '', $output);
-  $output = preg_replace('/<a\s+class="skip-link[^>]*>.*?<\/a>/is', '', $output); // Remove skip link
+  // Remove closing </body> and </html> tags if present
+  $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output);
 
-  // Strip the opening site-content-contain and site-content divs from header
-  // These should wrap the content blocks, not be in the header
-  $output = preg_replace('/<div\s+class="site-content-contain">\s*<div\s+id="content"\s+class="site-content">\s*$/is', '', $output);
+  // IMPORTANT: We do NOT strip theme wrapper divs (#page, skip-link, etc.)
+  // The theme controls its own structure - we only prevent duplicate html/body tags
 
   return array('#markup' => $output);
 }
@@ -445,15 +441,12 @@ function _wp_content_render_footer() {
 
   $output = ob_get_clean();
 
-  // Strip the closing </div> for #content at the start of footer
-  $output = preg_replace('/^\s*<\/div>\s*<!--\s*#content\s*-->/is', '', $output);
+  // SIMPLIFIED: Only strip closing HTML page structure that Backdrop controls
+  // Remove closing </body> and </html> tags
+  $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output);
 
-  // Strip the closing </div> for .site-content-contain and #page
-  $output = preg_replace('/<\/div>\s*<!--\s*\.site-content-contain\s*-->\s*<\/div>\s*<!--\s*#page\s*-->/is', '', $output);
-
-  // Strip out closing HTML page structure tags
-  // WordPress footer.php outputs closing body/html tags, but Backdrop handles those
-  $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output); // Remove closing body/html tags
+  // IMPORTANT: We do NOT strip theme wrapper closing divs (#page, #content, etc.)
+  // The theme opened them in header.php and will close them in footer.php
 
   return array('#markup' => $output);
 }
