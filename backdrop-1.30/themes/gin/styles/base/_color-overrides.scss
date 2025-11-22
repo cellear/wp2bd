@@ -1,0 +1,50 @@
+// Color
+a,
+.link,
+button.link,
+.tabs__link.is-active
+{
+  color: var(--gin-color-primary);
+  text-decoration-style: var(--gin-link-decoration-style);
+
+  &:hover {
+    color: var(--gin-color-primary-hover);
+    text-decoration: none;
+  }
+
+  &:active {
+    color: var(--gin-color-primary-active);
+  }
+}
+
+*|*:any-link:not(svg|a) {
+  text-decoration: underline;
+  text-decoration-style: var(--gin-link-decoration-style);
+}
+
+// Only hover
+.is-horizontal .tabs__link,
+.action-link
+{
+  &:hover {
+    color: var(--gin-color-primary-hover);
+  }
+}
+
+// Border color
+.form-boolean--type-checkbox:checked,
+.form-boolean--type-radio:checked:not(:disabled),
+.is-horizontal .tabs__link.is-active::before,
+.tabs__tab.is-active::before,
+.vertical-tabs__menu-item.is-selected .vertical-tabs__menu-link::before
+{
+  border-color: var(--gin-color-primary);
+
+  &:hover {
+    border-color: var(--gin-color-primary-hover);
+  }
+
+  &:active {
+    border-color: var(--gin-color-primary-active);
+  }
+}

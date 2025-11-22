@@ -1,0 +1,87 @@
+#admin-bar {
+  #admin-bar-wrapper > #admin-bar-menu > li > .dropdown > li > a.civicrm {
+    // This can be removed when it's out of the CiviCRM Backdrop module.
+    background-image: none;
+  }
+
+  .civicrm::before {
+    mask-image: icon('civicrm');
+  }
+}
+
+.crm-container {
+  details.crm-accordion-bold {
+    > summary {
+      width: calc(100% - 18px);
+
+
+      &::before {
+        // Hard-coding white for now since CiviCRM background is dark.
+        background-color: #fff;
+        left: unset;
+        content: "";
+        width: var(--gin-spacing-m);
+      }
+
+      > span:first-child {
+        padding-inline-start: 1.5rem;
+      }
+    }
+
+    > div.crm-accordion-body {
+      border-color: var(--gin-border-color);
+      padding: .75rem 1.5rem;
+    }
+  }
+}
+
+.admin-bar {
+  body.gin--horizontal-toolbar {
+    &.crm-menubar-below-cms-menu {
+      padding-block-start: var(--gin-toolbar-height);
+
+      > #civicrm-menu-nav {
+        #civicrm-menu.sm-civicrm {
+          @include mq(medium) {
+            height: 40px;
+            top: var(--gin-toolbar-height);
+            border: none;
+          }
+        }
+      }
+
+      .admin-bar--fixed .region-sticky {
+        @include mq(medium) {
+          top: calc(var(--gin-toolbar-height) + 40px);
+        }
+      }
+    }
+
+    &.crm-menubar-over-cms-menu {
+      .admin-bar--fixed .region-sticky {
+        @include mq(medium) {
+          top: 40px;
+        }
+      }
+    }
+  }
+}
+
+.crm-menubar-visible {
+  #civicrm-menu-nav {
+    .crm-logo-sm {
+      background-image: none;
+      mask-image: icon('civicrm');
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      background-color: #FFF;
+      height: 24px;
+      width: 24px;
+    }
+  }
+}
+
+.crm-menubar-visible .page-content {
+  margin-block-start: var(--gin-height-sticky);
+}

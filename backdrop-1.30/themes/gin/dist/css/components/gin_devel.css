@@ -1,0 +1,5 @@
+#admin-bar .admin-devel::before {
+  -webkit-mask-image: url("../../media/sprite.svg#tool-view");
+          mask-image: url("../../media/sprite.svg#tool-view");
+}
+

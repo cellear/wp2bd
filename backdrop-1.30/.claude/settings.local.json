@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ddev bee dblog:*)",
+      "Bash(ddev bee cc:*)",
+      "Bash(ddev bee log:*)",
+      "Bash(wget:*)",
+      "Bash(ddev logs:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

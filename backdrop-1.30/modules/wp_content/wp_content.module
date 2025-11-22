@@ -1,0 +1,540 @@
+<?php
+/**
+ * @file
+ * WordPress Content Block Module
+ *
+ * Provides a block that renders WordPress theme output for Backdrop nodes.
+ */
+
+/**
+ * Implements hook_init().
+ *
+ * Load WordPress compatibility layer on every page load.
+ */
+function wp_content_init() {
+  // Don't load WordPress compatibility on admin pages
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
+  // Path to the wp theme that contains WordPress compatibility layer
+  $wp_theme_path = BACKDROP_ROOT . '/themes/wp';
+
+  // Only proceed if wp theme exists
+  if (!file_exists($wp_theme_path . '/template.php')) {
+    return;
+  }
+
+  // Define the active WordPress theme (hard-coded for now)
+  if (!defined('WP2BD_ACTIVE_THEME')) {
+    define('WP2BD_ACTIVE_THEME', 'twentyseventeen');
+  }
+
+  // Define paths
+  if (!defined('WP2BD_THEME_DIR')) {
+    define('WP2BD_THEME_DIR', $wp_theme_path);
+    define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wp-content/themes');
+    define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
+  }
+
+  // Initialize WordPress globals if not already done
+  global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version;
+  if (!isset($wp_filter)) {
+    $wp_filter = array();
+  }
+  if (!isset($wp_actions)) {
+    $wp_actions = array();
+  }
+  if (!isset($wp_current_filter)) {
+    $wp_current_filter = array();
+  }
+  if (!isset($post)) {
+    $post = null;
+  }
+  if (!isset($wp_version)) {
+    $wp_version = '4.9';
+    $GLOBALS['wp_version'] = '4.9';
+  }
+
+  // Load WordPress compatibility classes
+  require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
+  require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
+
+  // Load WordPress compatibility functions
+  require_once WP2BD_THEME_DIR . '/functions/hooks.php';
+  require_once WP2BD_THEME_DIR . '/functions/escaping.php';
+  require_once WP2BD_THEME_DIR . '/functions/loop.php';
+  require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
+  require_once WP2BD_THEME_DIR . '/functions/content-display.php';
+  require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
+  require_once WP2BD_THEME_DIR . '/functions/utilities.php';
+  require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
+  require_once WP2BD_THEME_DIR . '/functions/stubs.php';
+
+  // Define WordPress helper functions if not already defined
+  if (!function_exists('get_template_directory')) {
+    function get_template_directory() {
+      // if (function_exists('dpm')) {
+      //   dpm('get_template_directory() called from wp_content module, returning: ' . WP2BD_ACTIVE_THEME_DIR);
+      // }
+      return WP2BD_ACTIVE_THEME_DIR;
+    }
+  }
+
+  if (!function_exists('get_template_directory_uri')) {
+    function get_template_directory_uri() {
+      global $base_url;
+      if (!$base_url) {
+        $base_url = $GLOBALS['base_url'];
+      }
+      $theme_path = str_replace($_SERVER['DOCUMENT_ROOT'], '', WP2BD_ACTIVE_THEME_DIR);
+      return $base_url . $theme_path;
+    }
+  }
+
+  if (!function_exists('get_stylesheet_directory')) {
+    function get_stylesheet_directory() {
+      return get_template_directory();
+    }
+  }
+
+  if (!function_exists('get_stylesheet_directory_uri')) {
+    function get_stylesheet_directory_uri() {
+      return get_template_directory_uri();
+    }
+  }
+
+  if (!function_exists('get_template')) {
+    function get_template() {
+      return WP2BD_ACTIVE_THEME;
+    }
+  }
+
+  if (!function_exists('get_stylesheet')) {
+    function get_stylesheet() {
+      return WP2BD_ACTIVE_THEME;
+    }
+  }
+
+  if (!function_exists('get_parent_theme_file_path')) {
+    function get_parent_theme_file_path($file = '') {
+      $path = get_template_directory();
+      if (!empty($file)) {
+        $path .= '/' . ltrim($file, '/');
+      }
+      return $path;
+    }
+  }
+
+  if (!function_exists('get_theme_file_uri')) {
+    function get_theme_file_uri($file = '') {
+      $uri = get_template_directory_uri();
+      if (!empty($file)) {
+        $uri .= '/' . ltrim($file, '/');
+      }
+      return $uri;
+    }
+  }
+
+  // Only load WordPress theme functions.php on frontend pages (not admin)
+  // Check if we're using the wp theme on the current page
+  global $theme_key;
+  if ($theme_key === 'wp' && !path_is_admin(current_path())) {
+    $theme_functions = WP2BD_ACTIVE_THEME_DIR . '/functions.php';
+    if (file_exists($theme_functions)) {
+      require_once $theme_functions;
+    }
+  }
+
+  // Add content filters to convert Backdrop attributes to WordPress classes
+  if (function_exists('add_filter')) {
+    add_filter('the_content', 'wp_content_convert_backdrop_attributes', 10);
+  }
+}
+
+/**
+ * Implements hook_preprocess_html().
+ *
+ * Add WordPress body classes to Backdrop's <body> tag.
+ */
+function wp_content_preprocess_html(&$variables) {
+  // Only add WordPress classes on frontend pages using wp theme
+  global $theme_key;
+  if ($theme_key !== 'wp' || path_is_admin(current_path())) {
+    return;
+  }
+
+  // Initialize WordPress compatibility if not already done
+  wp_content_init();
+
+  // Get WordPress body classes
+  if (function_exists('get_body_class')) {
+    $wp_body_classes = get_body_class();
+
+    // Add WordPress classes to Backdrop's body classes
+    if (!empty($wp_body_classes)) {
+      foreach ($wp_body_classes as $class) {
+        $variables['classes'][] = $class;
+      }
+    }
+  }
+}
+
+/**
+ * Convert Backdrop data-align attributes to WordPress alignment classes.
+ *
+ * Backdrop uses data-align="right|left|center" on images, but WordPress themes
+ * expect class="alignright|alignleft|aligncenter". This filter converts between them.
+ */
+function wp_content_convert_backdrop_attributes($content) {
+  // Convert data-align="right" to class="alignright"
+  $content = preg_replace_callback(
+    '/<img([^>]*?)data-align="(right|left|center)"([^>]*?)>/i',
+    function($matches) {
+      $before = $matches[1];
+      $align = $matches[2];
+      $after = $matches[3];
+
+      // Check if class attribute already exists
+      if (preg_match('/class="([^"]*)"/', $before . $after, $class_match)) {
+        // Add alignment class to existing classes
+        $existing_classes = $class_match[1];
+        $new_classes = trim($existing_classes . ' align' . $align);
+        $result = preg_replace('/class="[^"]*"/', 'class="' . $new_classes . '"', $before . $after);
+        return '<img' . $result . '>';
+      } else {
+        // Add new class attribute
+        return '<img' . $before . 'class="align' . $align . '"' . $after . '>';
+      }
+    },
+    $content
+  );
+
+  return $content;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function wp_content_block_info() {
+  $blocks = array();
+
+  // WordPress Header block - renders header.php
+  $blocks['wordpress_header'] = array(
+    'info' => t('WordPress Header'),
+    'description' => t('Renders WordPress theme header (logo, navigation, etc).'),
+  );
+
+  // WordPress Content block - main content area only
+  $blocks['wordpress_content'] = array(
+    'info' => t('WordPress Content'),
+    'description' => t('Renders main WordPress content without header/footer/sidebar.'),
+  );
+
+  // WordPress Sidebar block - renders sidebar.php
+  $blocks['wordpress_sidebar'] = array(
+    'info' => t('WordPress Sidebar'),
+    'description' => t('Renders WordPress theme sidebar with widgets.'),
+  );
+
+  // WordPress Footer block - renders footer.php
+  $blocks['wordpress_footer'] = array(
+    'info' => t('WordPress Footer'),
+    'description' => t('Renders WordPress theme footer.'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function wp_content_block_view($delta = '', $settings = array(), $contexts = array()) {
+  $block = array();
+
+  // DEBUG: Log that block is being called
+  // if (function_exists('dpm')) {
+  //   dpm("wp_content_block_view called with delta: $delta");
+  //   dpm($contexts, 'Block contexts');
+  // }
+
+  switch ($delta) {
+    case 'wordpress_header':
+      // Render WordPress header (header.php)
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_header();
+      break;
+
+    case 'wordpress_content':
+      // Main content area only (no header/footer/sidebar)
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_main_content();
+      break;
+
+    case 'wordpress_sidebar':
+      // Render WordPress sidebar (sidebar.php)
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_sidebar();
+      break;
+
+    case 'wordpress_footer':
+      // Render WordPress footer (footer.php)
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_footer();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Render WordPress header (header.php).
+ */
+function _wp_content_render_header() {
+  // Set up WordPress query for header
+  _wp_content_setup_query();
+
+  // Fire wp_enqueue_scripts action so theme can enqueue CSS/JS
+  // This needs to happen before wp_head() is called
+  if (!isset($GLOBALS['wp2bd_scripts_enqueued'])) {
+    do_action('wp_enqueue_scripts');
+    $GLOBALS['wp2bd_scripts_enqueued'] = TRUE;
+  }
+
+  ob_start();
+
+  $header_path = get_template_directory() . '/header.php';
+  if (file_exists($header_path)) {
+    try {
+      include $header_path;
+    } catch (Exception $e) {
+      echo '<!-- WordPress header.php EXCEPTION: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Header failed: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    } catch (Error $e) {
+      echo '<!-- WordPress header.php FATAL ERROR: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Header FATAL: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    }
+  } else {
+    echo '<!-- WordPress header.php not found -->';
+  }
+
+  $output = ob_get_clean();
+
+  // Strip out HTML page structure tags (DOCTYPE, html, head, body)
+  // WordPress header.php outputs a complete page, but we only want the header content
+  $output = preg_replace('/^.*?<body[^>]*>/is', '', $output); // Remove everything up to and including <body>
+  $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output); // Remove closing body/html tags
+
+  // Also strip the opening <div id="page" class="site"> and related wrappers
+  // We'll add these at the layout level instead so all blocks are inside them
+  $output = preg_replace('/<div\s+id="page"\s+class="site">\s*/is', '', $output);
+  $output = preg_replace('/<a\s+class="skip-link[^>]*>.*?<\/a>/is', '', $output); // Remove skip link
+
+  // Strip the opening site-content-contain and site-content divs from header
+  // These should wrap the content blocks, not be in the header
+  $output = preg_replace('/<div\s+class="site-content-contain">\s*<div\s+id="content"\s+class="site-content">\s*$/is', '', $output);
+
+  return array('#markup' => $output);
+}
+
+/**
+ * Render main WordPress content (without header/footer/sidebar).
+ */
+function _wp_content_render_main_content() {
+  // Set up WordPress query
+  _wp_content_setup_query();
+
+  ob_start();
+
+  // We need to manually output the content area that normally sits between
+  // get_header() and get_footer() in WordPress templates
+
+  echo '<div class="wrap">';
+
+  // For home/archive pages
+  if (is_home() || is_front_page() || is_archive()) {
+    echo '<div id="primary" class="content-area">';
+    echo '<main id="main" class="site-main" role="main">';
+
+    if (have_posts()) {
+      while (have_posts()) {
+        the_post();
+        // Use WordPress template part for content
+        get_template_part('template-parts/post/content', get_post_format());
+      }
+    } else {
+      get_template_part('template-parts/post/content', 'none');
+    }
+
+    echo '</main>';
+    echo '</div>';
+  }
+  // For single posts/pages
+  elseif (is_single() || is_page()) {
+    echo '<div id="primary" class="content-area">';
+    echo '<main id="main" class="site-main" role="main">';
+
+    while (have_posts()) {
+      the_post();
+      get_template_part('template-parts/page/content', 'page');
+    }
+
+    echo '</main>';
+    echo '</div>';
+  }
+
+  echo '</wrap>';
+
+  $output = ob_get_clean();
+
+  return array('#markup' => $output);
+}
+
+/**
+ * Render WordPress sidebar (sidebar.php).
+ */
+function _wp_content_render_sidebar() {
+  // Set up WordPress query for sidebar
+  _wp_content_setup_query();
+
+  ob_start();
+
+  $sidebar_path = get_template_directory() . '/sidebar.php';
+  if (file_exists($sidebar_path)) {
+    try {
+      include $sidebar_path;
+    } catch (Exception $e) {
+      echo '<!-- WordPress sidebar.php EXCEPTION: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Sidebar failed: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    } catch (Error $e) {
+      echo '<!-- WordPress sidebar.php FATAL ERROR: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Sidebar FATAL: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    }
+  } else {
+    echo '<!-- WordPress sidebar.php not found -->';
+  }
+
+  $output = ob_get_clean();
+
+  return array('#markup' => $output);
+}
+
+/**
+ * Render WordPress footer (footer.php).
+ */
+function _wp_content_render_footer() {
+  // Set up WordPress query for footer
+  _wp_content_setup_query();
+
+  ob_start();
+
+  $footer_path = get_template_directory() . '/footer.php';
+  if (file_exists($footer_path)) {
+    try {
+      include $footer_path;
+    } catch (Exception $e) {
+      echo '<!-- WordPress footer.php EXCEPTION: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Footer failed: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    } catch (Error $e) {
+      echo '<!-- WordPress footer.php FATAL ERROR: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Footer FATAL: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    }
+  } else {
+    echo '<!-- WordPress footer.php not found -->';
+  }
+
+  $output = ob_get_clean();
+
+  // Strip the closing </div> for #content at the start of footer
+  $output = preg_replace('/^\s*<\/div>\s*<!--\s*#content\s*-->/is', '', $output);
+
+  // Strip the closing </div> for .site-content-contain and #page
+  $output = preg_replace('/<\/div>\s*<!--\s*\.site-content-contain\s*-->\s*<\/div>\s*<!--\s*#page\s*-->/is', '', $output);
+
+  // Strip out closing HTML page structure tags
+  // WordPress footer.php outputs closing body/html tags, but Backdrop handles those
+  $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output); // Remove closing body/html tags
+
+  return array('#markup' => $output);
+}
+
+/**
+ * Helper: Set up WordPress query globals from Backdrop data.
+ */
+function _wp_content_setup_query() {
+  global $wp_query, $post;
+
+  // If query already set up, don't redo it
+  if (isset($GLOBALS['wp2bd_query_setup'])) {
+    return;
+  }
+
+  // Load published nodes (promoted ones for front page)
+  $site_config = config('system.core');
+  $select = db_select('node', 'n')
+    ->fields('n', array('nid', 'type', 'sticky', 'created'))
+    ->condition('n.status', 1)
+    ->orderBy('n.sticky', 'DESC')
+    ->orderBy('n.created', 'DESC')
+    ->addTag('node_access');
+
+  $is_front = backdrop_is_front_page();
+  if ($is_front) {
+    $select->condition('n.promote', 1);
+    $limit = $site_config->get('default_nodes_main') ?: 10;
+  } else {
+    $limit = 20;
+  }
+
+  $select->range(0, $limit);
+  $nids = $select->execute()->fetchCol();
+
+  $posts = array();
+  if (!empty($nids)) {
+    $nodes = node_load_multiple($nids);
+    foreach ($nodes as $node) {
+      // Skip if not a valid node object
+      if (!is_object($node) || !isset($node->nid)) {
+        continue;
+      }
+
+      // Ensure node has all required properties
+      if (!isset($node->type)) {
+        // Try to reload the node fully
+        $full_node = node_load($node->nid);
+        if ($full_node && isset($full_node->type)) {
+          $node = $full_node;
+        } else {
+          // Last resort: query database directly
+          $type_result = db_query('SELECT type FROM {node} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+          if ($type_result) {
+            $node->type = $type_result;
+          } else {
+            continue;
+          }
+        }
+      }
+
+      // Double-check we have type before creating WP_Post
+      if (!isset($node->type)) {
+        continue;
+      }
+
+      $posts[] = WP_Post::from_node($node);
+    }
+  }
+
+  // Set up WP_Query
+  $wp_query = new WP_Query(array('post_type' => 'post'));
+  $wp_query->posts = $posts;
+  $wp_query->post_count = count($posts);
+  $wp_query->current_post = -1;
+  $wp_query->is_home = $is_front;
+  $wp_query->is_archive = !$is_front;
+  $wp_query->is_front_page = $is_front;
+  $wp_query->post = null;
+
+  $GLOBALS['wp_query'] = $wp_query;
+  $GLOBALS['post'] = null;
+  $GLOBALS['wp2bd_query_setup'] = TRUE;
+}
