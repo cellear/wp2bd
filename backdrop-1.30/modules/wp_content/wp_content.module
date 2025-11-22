@@ -78,6 +78,7 @@ function wp_content_init() {
   require_once WP2BD_THEME_DIR . '/functions/utilities.php';
   require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
   require_once WP2BD_THEME_DIR . '/functions/stubs.php';
+  require_once WP2BD_THEME_DIR . '/functions/widgets.php';
 
   // Define WordPress helper functions if not already defined
   if (!function_exists('get_template_directory')) {
