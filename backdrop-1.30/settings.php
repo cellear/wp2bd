@@ -14,12 +14,26 @@
  *   - Multiple connections
  * See the documentation at https://docs.backdropcms.org/database-configuration
  */
-$database = array(
-  'database' => 'database_name',
-  'username' => 'user',
-  'password' => 'pass',
-  'host' => 'localhost',
-);
+// Database configuration will be set during installation
+// Uncomment and configure one of the following:
+
+// For MySQL/MariaDB:
+// $database = array(
+//   'database' => 'backdrop_wp2bd',
+//   'username' => 'root',
+//   'password' => '',
+//   'host' => 'localhost',
+//   'driver' => 'mysql',
+// );
+
+// For SQLite (if PDO SQLite is available):
+// $database = 'sqlite://sites/default/files/.ht.sqlite';
+
+// Temporary: Allow installation
+// Remove this after installation completes
+if (empty($database)) {
+  $database = array();
+}
 
 /**
  * Configuration storage

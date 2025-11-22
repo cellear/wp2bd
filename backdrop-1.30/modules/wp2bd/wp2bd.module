@@ -1,0 +1,84 @@
+<?php
+/**
+ * @file
+ * WordPress to Backdrop Theme Compatibility Layer (WP2BD)
+ *
+ * Enables WordPress themes (specifically Twenty Seventeen) to run on Backdrop CMS 1.30
+ * by implementing WordPress function stubs that map to Backdrop's API.
+ */
+
+/**
+ * Implements hook_init().
+ *
+ * Load all WordPress compatibility functions and classes.
+ */
+function wp2bd_init() {
+  $module_path = backdrop_get_path('module', 'wp2bd');
+
+  // Load WordPress mock classes
+  require_once $module_path . '/classes/WP_Post.php';
+  require_once $module_path . '/classes/WP_Query.php';
+
+  // Load WordPress function implementations
+  require_once $module_path . '/functions/loop.php';
+  require_once $module_path . '/functions/template-loading.php';
+  require_once $module_path . '/functions/content-display.php';
+  require_once $module_path . '/functions/conditionals.php';
+  require_once $module_path . '/functions/escaping.php';
+  require_once $module_path . '/functions/hooks.php';
+  require_once $module_path . '/functions/utilities.php';
+  require_once $module_path . '/functions/post-metadata.php';
+}
+
+/**
+ * Implements hook_help().
+ */
+function wp2bd_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#wp2bd':
+      return '<p>' . t('The WP2BD module provides a WordPress theme compatibility layer for Backdrop CMS. This allows classic WordPress themes (pre-Block Editor era) to run on Backdrop without modification.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function wp2bd_menu() {
+  $items = array();
+
+  $items['admin/config/system/wp2bd'] = array(
+    'title' => 'WP2BD Settings',
+    'description' => 'Configure WordPress to Backdrop theme compatibility settings',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('wp2bd_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Settings form for WP2BD.
+ */
+function wp2bd_admin_settings($form, &$form_state) {
+  $config = config('wp2bd.settings');
+
+  $form['#config'] = 'wp2bd.settings';
+
+  $form['wp2bd_enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable WordPress theme compatibility'),
+    '#default_value' => $config->get('enabled'),
+    '#description' => t('Enable the WordPress theme compatibility layer.'),
+  );
+
+  $form['wp2bd_debug'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable debug mode'),
+    '#default_value' => $config->get('debug'),
+    '#description' => t('Log WordPress function calls for debugging purposes.'),
+  );
+
+  return system_settings_form($form);
+}

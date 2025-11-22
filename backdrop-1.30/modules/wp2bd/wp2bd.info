@@ -1,0 +1,12 @@
+name = WP2BD
+description = WordPress to Backdrop Theme Compatibility Layer - Enables WordPress themes to run on Backdrop CMS
+type = module
+backdrop = 1.x
+package = WordPress Compatibility
+
+dependencies[] = system
+
+; Files
+files[] = wp2bd.module
+files[] = classes/WP_Post.php
+files[] = classes/WP_Query.php
