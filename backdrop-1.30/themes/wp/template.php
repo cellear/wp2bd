@@ -340,6 +340,18 @@ function wp_preprocess_page(&$variables) {
       $GLOBALS['wp_query'] = $wp_query;
     }
   }
+
+  // Add WordPress body classes to Backdrop's body tag
+  if (function_exists('get_body_class')) {
+    $wp_body_classes = get_body_class();
+
+    // Add WordPress classes to Backdrop's body classes
+    if (!empty($wp_body_classes)) {
+      foreach ($wp_body_classes as $class) {
+        $variables['classes'][] = $class;
+      }
+    }
+  }
 }
 
 /**

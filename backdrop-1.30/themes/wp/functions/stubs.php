@@ -212,6 +212,60 @@ if (!function_exists('wp_register_script')) {
   }
 }
 
+if (!function_exists('wp_print_scripts')) {
+  /**
+   * Print enqueued scripts.
+   */
+  function wp_print_scripts($in_footer = false) {
+    global $wp_scripts;
+    if (!isset($wp_scripts)) {
+      return;
+    }
+
+    $location = $in_footer ? 'footer' : 'header';
+    if (!isset($wp_scripts[$location])) {
+      return;
+    }
+
+    foreach ($wp_scripts[$location] as $handle => $script) {
+      $src = $script['src'];
+      $ver = $script['ver'];
+
+      // Add version query string if specified
+      if ($ver) {
+        $src .= '?' . (is_string($ver) ? 'ver=' . $ver : 'ver=' . time());
+      }
+
+      echo '<script type="text/javascript" src="' . esc_url($src) . '"></script>' . "\n";
+    }
+  }
+}
+
+if (!function_exists('wp_print_styles')) {
+  /**
+   * Print enqueued styles.
+   */
+  function wp_print_styles() {
+    global $wp_styles;
+    if (!isset($wp_styles)) {
+      return;
+    }
+
+    foreach ($wp_styles as $handle => $style) {
+      $src = $style['src'];
+      $ver = $style['ver'];
+      $media = isset($style['media']) ? $style['media'] : 'all';
+
+      // Add version query string if specified
+      if ($ver) {
+        $src .= '?' . (is_string($ver) ? 'ver=' . $ver : 'ver=' . time());
+      }
+
+      echo '<link rel="stylesheet" href="' . esc_url($src) . '" media="' . esc_attr($media) . '" />' . "\n";
+    }
+  }
+}
+
 if (!function_exists('wp_register_style')) {
   /**
    * Register a CSS stylesheet.
@@ -1293,9 +1347,9 @@ if (!function_exists('has_header_image')) {
    * Check if the site has a header image.
    */
   function has_header_image() {
-    // Stub: Return false (no header image)
-    // In a real implementation, this would check theme mods or custom header settings
-    return false;
+    // Twenty Seventeen has a default header image
+    // Return true to add has-header-image body class
+    return true;
   }
 }
 

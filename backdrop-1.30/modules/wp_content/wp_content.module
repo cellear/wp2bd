@@ -145,6 +145,72 @@ function wp_content_init() {
       require_once $theme_functions;
     }
   }
+
+  // Add content filters to convert Backdrop attributes to WordPress classes
+  if (function_exists('add_filter')) {
+    add_filter('the_content', 'wp_content_convert_backdrop_attributes', 10);
+  }
+}
+
+/**
+ * Implements hook_preprocess_html().
+ *
+ * Add WordPress body classes to Backdrop's <body> tag.
+ */
+function wp_content_preprocess_html(&$variables) {
+  // Only add WordPress classes on frontend pages using wp theme
+  global $theme_key;
+  if ($theme_key !== 'wp' || path_is_admin(current_path())) {
+    return;
+  }
+
+  // Initialize WordPress compatibility if not already done
+  wp_content_init();
+
+  // Get WordPress body classes
+  if (function_exists('get_body_class')) {
+    $wp_body_classes = get_body_class();
+
+    // Add WordPress classes to Backdrop's body classes
+    if (!empty($wp_body_classes)) {
+      foreach ($wp_body_classes as $class) {
+        $variables['classes'][] = $class;
+      }
+    }
+  }
+}
+
+/**
+ * Convert Backdrop data-align attributes to WordPress alignment classes.
+ *
+ * Backdrop uses data-align="right|left|center" on images, but WordPress themes
+ * expect class="alignright|alignleft|aligncenter". This filter converts between them.
+ */
+function wp_content_convert_backdrop_attributes($content) {
+  // Convert data-align="right" to class="alignright"
+  $content = preg_replace_callback(
+    '/<img([^>]*?)data-align="(right|left|center)"([^>]*?)>/i',
+    function($matches) {
+      $before = $matches[1];
+      $align = $matches[2];
+      $after = $matches[3];
+
+      // Check if class attribute already exists
+      if (preg_match('/class="([^"]*)"/', $before . $after, $class_match)) {
+        // Add alignment class to existing classes
+        $existing_classes = $class_match[1];
+        $new_classes = trim($existing_classes . ' align' . $align);
+        $result = preg_replace('/class="[^"]*"/', 'class="' . $new_classes . '"', $before . $after);
+        return '<img' . $result . '>';
+      } else {
+        // Add new class attribute
+        return '<img' . $before . 'class="align' . $align . '"' . $after . '>';
+      }
+    },
+    $content
+  );
+
+  return $content;
 }
 
 /**
@@ -259,6 +325,15 @@ function _wp_content_render_header() {
   $output = preg_replace('/^.*?<body[^>]*>/is', '', $output); // Remove everything up to and including <body>
   $output = preg_replace('/<\/body>\s*<\/html>\s*$/is', '', $output); // Remove closing body/html tags
 
+  // Also strip the opening <div id="page" class="site"> and related wrappers
+  // We'll add these at the layout level instead so all blocks are inside them
+  $output = preg_replace('/<div\s+id="page"\s+class="site">\s*/is', '', $output);
+  $output = preg_replace('/<a\s+class="skip-link[^>]*>.*?<\/a>/is', '', $output); // Remove skip link
+
+  // Strip the opening site-content-contain and site-content divs from header
+  // These should wrap the content blocks, not be in the header
+  $output = preg_replace('/<div\s+class="site-content-contain">\s*<div\s+id="content"\s+class="site-content">\s*$/is', '', $output);
+
   return array('#markup' => $output);
 }
 
@@ -369,6 +444,12 @@ function _wp_content_render_footer() {
   }
 
   $output = ob_get_clean();
+
+  // Strip the closing </div> for #content at the start of footer
+  $output = preg_replace('/^\s*<\/div>\s*<!--\s*#content\s*-->/is', '', $output);
+
+  // Strip the closing </div> for .site-content-contain and #page
+  $output = preg_replace('/<\/div>\s*<!--\s*\.site-content-contain\s*-->\s*<\/div>\s*<!--\s*#page\s*-->/is', '', $output);
 
   // Strip out closing HTML page structure tags
   // WordPress footer.php outputs closing body/html tags, but Backdrop handles those
