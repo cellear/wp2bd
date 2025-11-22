@@ -25,9 +25,17 @@ function wp_content_init() {
     return;
   }
 
-  // Define the active WordPress theme (hard-coded for now)
+  // Define the active WordPress theme from config
   if (!defined('WP2BD_ACTIVE_THEME')) {
-    define('WP2BD_ACTIVE_THEME', 'twentyseventeen');
+    $config = config('wp_content.settings');
+    $active_theme = $config->get('active_theme');
+
+    // Fallback to twentyseventeen if config not set
+    if (empty($active_theme)) {
+      $active_theme = 'twentyseventeen';
+    }
+
+    define('WP2BD_ACTIVE_THEME', $active_theme);
   }
 
   // Define paths
