@@ -161,6 +161,70 @@ if (!function_exists('esc_html_x')) {
 }
 
 // ============================================================================
+// TITLE & META
+// ============================================================================
+
+if (!function_exists('wp_title')) {
+  /**
+   * Display or retrieve page title for all areas of blog.
+   *
+   * @param string $sep Optional separator.
+   * @param bool $display Whether to display or retrieve title.
+   * @param string $seplocation Where to place the separator ('left' or 'right').
+   * @return string|void String if $display is false, void otherwise.
+   */
+  function wp_title($sep = '&raquo;', $display = true, $seplocation = '') {
+    global $wp_query, $post;
+
+    $title = '';
+    $site_name = get_bloginfo('name');
+
+    // Get page title based on context
+    if (is_single() || is_page()) {
+      if ($post) {
+        $title = get_the_title($post->ID);
+      }
+    }
+    elseif (is_home() || is_front_page()) {
+      $title = $site_name;
+      $description = get_bloginfo('description');
+      if ($description) {
+        $title .= ' ' . $sep . ' ' . $description;
+      }
+      if ($display) {
+        echo $title;
+      }
+      return $title;
+    }
+    elseif (is_archive()) {
+      $title = 'Archives';
+    }
+    elseif (is_search()) {
+      $title = 'Search Results';
+    }
+    elseif (is_404()) {
+      $title = 'Page Not Found';
+    }
+
+    // Build full title with separator
+    if ($title) {
+      if ($seplocation == 'right') {
+        $full_title = $title . ' ' . $sep . ' ' . $site_name;
+      } else {
+        $full_title = $site_name . ' ' . $sep . ' ' . $title;
+      }
+    } else {
+      $full_title = $site_name;
+    }
+
+    if ($display) {
+      echo $full_title;
+    }
+    return $full_title;
+  }
+}
+
+// ============================================================================
 // SCRIPT & STYLE ENQUEUING
 // ============================================================================
 
@@ -520,6 +584,17 @@ if (!function_exists('get_the_tag_list')) {
   function get_the_tag_list($before = '', $sep = '', $after = '', $id = 0) {
     // Stub: Return empty string
     return '';
+  }
+}
+
+if (!function_exists('get_object_taxonomies')) {
+  /**
+   * Return the names or objects of the taxonomies registered for the requested object or object type.
+   */
+  function get_object_taxonomies($object, $output = 'names') {
+    // Stub: Return empty array for now
+    // In full implementation, would return array of taxonomy names/objects for the object type
+    return array();
   }
 }
 

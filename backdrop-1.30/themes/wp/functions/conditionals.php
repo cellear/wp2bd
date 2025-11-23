@@ -707,6 +707,42 @@ function is_front_page() {
  * }
  * ```
  */
+function is_paged() {
+  global $wp_query;
+
+  // Check if we're on page 2+ of paginated content
+  if (isset($wp_query) && is_object($wp_query) && method_exists($wp_query, 'is_paged')) {
+    return $wp_query->is_paged();
+  }
+
+  // Fallback: check for page parameter in URL
+  $paged = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+  if ($paged > 1) {
+    return true;
+  }
+
+  // Check arg() for pager
+  if (function_exists('arg')) {
+    $args = explode('/', $_GET['q']);
+    if (in_array('page', $args)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function is_attachment() {
+  global $post;
+
+  // Check if current post is an attachment
+  if (isset($post) && is_object($post)) {
+    return isset($post->post_type) && $post->post_type === 'attachment';
+  }
+
+  return false;
+}
+
 function is_home() {
   global $wp_query;
 

@@ -514,10 +514,20 @@ function _wp_content_render_main_content() {
       while (have_posts()) {
         the_post();
         // Use WordPress template part for content
-        get_template_part('template-parts/post/content', get_post_format());
+        // Try new path first (Twenty Seventeen+), fall back to old path (Twenty Fourteen-Sixteen)
+        $format = get_post_format();
+        if (locate_template('template-parts/post/content-' . $format . '.php') || locate_template('template-parts/post/content.php')) {
+          get_template_part('template-parts/post/content', $format);
+        } else {
+          get_template_part('content', $format);
+        }
       }
     } else {
-      get_template_part('template-parts/post/content', 'none');
+      if (locate_template('template-parts/post/content-none.php')) {
+        get_template_part('template-parts/post/content', 'none');
+      } else {
+        get_template_part('content', 'none');
+      }
     }
 
     echo '</main>';
@@ -530,7 +540,12 @@ function _wp_content_render_main_content() {
 
     while (have_posts()) {
       the_post();
-      get_template_part('template-parts/page/content', 'page');
+      // Try new path first, fall back to old path
+      if (locate_template('template-parts/page/content-page.php')) {
+        get_template_part('template-parts/page/content', 'page');
+      } else {
+        get_template_part('content', 'page');
+      }
     }
 
     echo '</main>';

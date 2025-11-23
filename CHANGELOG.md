@@ -1,7 +1,12 @@
-# WP2BD Changelog
+## [1123h] 2025-11-23 - COMPAT-FIX: Add get_object_taxonomies() to complete home page rendering
+
+## [1123g] 2025-11-23 - COMPAT-FIX: Fix home page rendering - add locate_template(), is_attachment(), fix template paths for older themes
+
+## [1123f] 2025-11-23 - THEME-HARDCODE: Hardcode theme to twentyfourteen for testing (reverted dynamic theme loading)
+
+## [1123e] 2025-11-23 - THEME-SWITCHING: Fix theme switching to actually work - removed hardcoded theme, added missing functions (wp_title, is_paged, $pagenow)
 
 ## [1123d] 2025-11-23 - VERSION-TRACKING: Add CHANGELOG and visible version indicator
-Added CHANGELOG.md and footer version indicator to track what's deployed. Tag format: `[date+letter] AREA: description`
 
 ## [1123c] 2025-11-23 - COMPAT-FIX: Add $pagenow global to WordPress compatibility layer
 Fixed PHP warnings about undefined $pagenow variable in Twenty Fourteen theme functions.
