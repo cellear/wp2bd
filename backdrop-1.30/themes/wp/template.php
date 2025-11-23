@@ -8,7 +8,7 @@
  */
 
 // Define the active WordPress theme (HARDCODED for testing)
-define('WP2BD_ACTIVE_THEME', 'twentyfourteen');
+define('WP2BD_ACTIVE_THEME', 'twentyfifteen');
 
 // Define paths
 if (!defined('WP2BD_THEME_DIR')) {

@@ -1,3 +1,5 @@
+## [1123j] 2025-11-23 - THEME-HARDCODE: Change hardcoded theme to twentyfifteen for testing
+
 ## [1123i] 2025-11-23 - VERSION-TRACKING: Auto-read version from CHANGELOG for footer indicator
 
 ## [1123h] 2025-11-23 - COMPAT-FIX: Add get_object_taxonomies() to complete home page rendering
