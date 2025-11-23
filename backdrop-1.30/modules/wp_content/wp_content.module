@@ -46,7 +46,7 @@ function wp_content_init() {
   }
 
   // Initialize WordPress globals if not already done
-  global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version;
+  global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version, $pagenow;
   if (!isset($wp_filter)) {
     $wp_filter = array();
   }
@@ -62,6 +62,11 @@ function wp_content_init() {
   if (!isset($wp_version)) {
     $wp_version = '4.9';
     $GLOBALS['wp_version'] = '4.9';
+  }
+  if (!isset($pagenow)) {
+    // Set pagenow to 'index.php' for frontend pages (WordPress default)
+    $pagenow = 'index.php';
+    $GLOBALS['pagenow'] = 'index.php';
   }
 
   // Load WordPress compatibility classes
