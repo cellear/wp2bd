@@ -36,6 +36,9 @@ function wp_content_init() {
     }
 
     define('WP2BD_ACTIVE_THEME', $active_theme);
+    
+    // DEBUG: Log active theme selection
+    watchdog('wp_content', 'WP2BD Init: Active theme set to @theme', array('@theme' => $active_theme), WATCHDOG_INFO);
   }
 
   // Define paths

@@ -5,7 +5,10 @@
       "Bash(ddev bee cc:*)",
       "Bash(ddev bee log:*)",
       "Bash(wget:*)",
-      "Bash(ddev logs:*)"
+      "Bash(ddev logs:*)",
+      "Bash(ddev mutagen sync:*)",
+      "Bash(curl:*)",
+      "Bash(ddev bee dblog:show:*)"
     ],
     "deny": [],
     "ask": []
