@@ -357,63 +357,8 @@ if (!function_exists('register_sidebar')) {
   }
 }
 
-if (!function_exists('is_active_sidebar')) {
-  /**
-   * Check if a sidebar is active (has widgets).
-   */
-  function is_active_sidebar($index) {
-    // Only sidebar-1 (main sidebar) is active
-    // Footer sidebars (sidebar-2, sidebar-3) are not active for now
-    if ($index === 'sidebar-1' || $index === 1) {
-      return true;
-    }
-    return false;
-  }
-}
-
-if (!function_exists('dynamic_sidebar')) {
-  /**
-   * Display dynamic sidebar.
-   */
-  function dynamic_sidebar($index = 1) {
-    // Only display widgets for the main sidebar (sidebar-1)
-    // Footer sidebars (sidebar-2, sidebar-3) remain empty for now
-    if ($index !== 'sidebar-1' && $index !== 1) {
-      return false;
-    }
-
-    // Display a placeholder widget structure matching Twenty Seventeen's widget styles
-    echo '<section id="search-2" class="widget widget_search">';
-    echo '<h2 class="widget-title">Search</h2>';
-    echo '<form role="search" method="get" class="search-form" action="' . esc_url(url('<front>')) . '">';
-    echo '<label><span class="screen-reader-text">Search for:</span>';
-    echo '<input type="search" class="search-field" placeholder="Search..." value="" name="s" /></label>';
-    echo '<button type="submit" class="search-submit"><svg class="icon icon-search" aria-hidden="true" role="img"> <use href="#icon-search" xlink:href="#icon-search"></use> </svg><span class="screen-reader-text">Search</span></button>';
-    echo '</form>';
-    echo '</section>';
-
-    echo '<section id="recent-posts-2" class="widget widget_recent_entries">';
-    echo '<h2 class="widget-title">Recent Posts</h2>';
-    echo '<ul>';
-
-    // Get recent published posts
-    $query = db_select('node', 'n')
-      ->fields('n', array('nid', 'title'))
-      ->condition('n.status', 1)
-      ->orderBy('n.created', 'DESC')
-      ->range(0, 5)
-      ->execute();
-
-    while ($record = $query->fetchObject()) {
-      echo '<li><a href="' . url('node/' . $record->nid) . '">' . check_plain($record->title) . '</a></li>';
-    }
-
-    echo '</ul>';
-    echo '</section>';
-
-    return true;
-  }
-}
+// Widget functions (is_active_sidebar, dynamic_sidebar) are now defined in widgets.php
+// Removed old stubs to use the real implementations
 
 // ============================================================================
 // COMMENT FUNCTIONS

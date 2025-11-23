@@ -297,6 +297,20 @@ function wp_content_block_view($delta = '', $settings = array(), $contexts = arr
 }
 
 /**
+ * Implements hook_preprocess_block().
+ *
+ * Add custom template suggestion for WordPress blocks to bypass HTML validation.
+ */
+function wp_content_preprocess_block(&$variables) {
+  // Check if this is a WordPress block
+  if (isset($variables['block']->delta) && strpos($variables['block']->delta, 'wordpress_') === 0) {
+    // Add template suggestion for raw output (no wrapper divs)
+    // This will use block--wp-content.tpl.php from the wp theme
+    $variables['theme_hook_suggestions'][] = 'block__wp_content';
+  }
+}
+
+/**
  * Render WordPress header (header.php).
  */
 function _wp_content_render_header() {
@@ -339,7 +353,10 @@ function _wp_content_render_header() {
   // IMPORTANT: We do NOT strip theme wrapper divs (#page, skip-link, etc.)
   // The theme controls its own structure - we only prevent duplicate html/body tags
 
-  return array('#markup' => $output);
+  return array(
+    '#type' => 'markup',
+    '#markup' => $output,
+  );
 }
 
 /**
@@ -353,8 +370,7 @@ function _wp_content_render_main_content() {
 
   // We need to manually output the content area that normally sits between
   // get_header() and get_footer() in WordPress templates
-
-  echo '<div class="wrap">';
+  // NOTE: The .wrap div is added by the layout template to wrap both content and sidebar
 
   // For home/archive pages
   if (is_home() || is_front_page() || is_archive()) {
@@ -388,11 +404,12 @@ function _wp_content_render_main_content() {
     echo '</div>';
   }
 
-  echo '</wrap>';
-
   $output = ob_get_clean();
 
-  return array('#markup' => $output);
+  return array(
+    '#type' => 'markup',
+    '#markup' => $output,
+  );
 }
 
 /**
@@ -421,7 +438,10 @@ function _wp_content_render_sidebar() {
 
   $output = ob_get_clean();
 
-  return array('#markup' => $output);
+  return array(
+    '#type' => 'markup',
+    '#markup' => $output,
+  );
 }
 
 /**
@@ -457,7 +477,10 @@ function _wp_content_render_footer() {
   // IMPORTANT: We do NOT strip theme wrapper closing divs (#page, #content, etc.)
   // The theme opened them in header.php and will close them in footer.php
 
-  return array('#markup' => $output);
+  return array(
+    '#type' => 'markup',
+    '#markup' => $output,
+  );
 }
 
 /**

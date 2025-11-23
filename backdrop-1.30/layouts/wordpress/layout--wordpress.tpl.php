@@ -45,15 +45,18 @@
     <?php print $content['header']; ?>
   <?php endif; ?>
 
-  <!-- WordPress Content Block: Outputs main content area -->
-  <?php if (!empty($content['content'])): ?>
-    <?php print $content['content']; ?>
-  <?php endif; ?>
+  <!-- Wrap div contains both content and sidebar for two-column layout -->
+  <div class="wrap">
+    <!-- WordPress Content Block: Outputs main content area -->
+    <?php if (!empty($content['content'])): ?>
+      <?php print $content['content']; ?>
+    <?php endif; ?>
 
-  <!-- WordPress Sidebar Block: Outputs theme sidebar -->
-  <?php if (!empty($content['sidebar'])): ?>
-    <?php print $content['sidebar']; ?>
-  <?php endif; ?>
+    <!-- WordPress Sidebar Block: Outputs theme sidebar -->
+    <?php if (!empty($content['sidebar'])): ?>
+      <?php print $content['sidebar']; ?>
+    <?php endif; ?>
+  </div><!-- .wrap -->
 
   <!-- WordPress Footer Block: Outputs footer and closes all theme divs -->
   <?php if (!empty($content['footer'])): ?>
