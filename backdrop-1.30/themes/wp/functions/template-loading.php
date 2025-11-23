@@ -9,6 +9,49 @@
  */
 
 /**
+ * Retrieve the name of the highest priority template file that exists.
+ *
+ * @param string|array $template_names Template file(s) to search for, in order.
+ * @param bool $load If true the template file will be loaded if it is found.
+ * @param bool $require_once Whether to require_once or require. Default true.
+ * @return string The template filename if one is located.
+ */
+if (!function_exists('locate_template')) {
+  function locate_template($template_names, $load = false, $require_once = true) {
+    $located = '';
+
+    if (!is_array($template_names)) {
+      $template_names = array($template_names);
+    }
+
+    $theme_dir = get_template_directory();
+
+    foreach ($template_names as $template_name) {
+      if (!$template_name) {
+        continue;
+      }
+
+      $file = $theme_dir . '/' . $template_name;
+
+      if (file_exists($file)) {
+        $located = $file;
+        break;
+      }
+    }
+
+    if ($load && '' !== $located) {
+      if ($require_once) {
+        require_once($located);
+      } else {
+        require($located);
+      }
+    }
+
+    return $located;
+  }
+}
+
+/**
  * Load header template.
  *
  * Includes the header template for a theme or if a name is specified then a

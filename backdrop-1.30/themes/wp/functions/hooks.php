@@ -48,7 +48,8 @@ if (!isset($wp_current_filter)) {
  * @param int      $accepted_args Optional. Number of arguments callback accepts. Default 1.
  * @return bool Always returns true.
  */
-function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
+function add_filter($hook, $callback, $priority = 10, $accepted_args = 1)
+{
     global $wp_filter;
 
     // Validate callback is callable
@@ -71,7 +72,7 @@ function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
 
     // Store callback with metadata
     $wp_filter[$hook][$priority][$callback_id] = array(
-        'function'      => $callback,
+        'function' => $callback,
         'accepted_args' => $accepted_args
     );
 
@@ -92,7 +93,8 @@ function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
  * @param mixed  ...$args Additional arguments to pass to callbacks.
  * @return mixed The filtered value after all callbacks have been applied.
  */
-function apply_filters($hook, $value, ...$args) {
+function apply_filters($hook, $value, ...$args)
+{
     global $wp_filter, $wp_current_filter;
 
     // Track current filter for nested calls
@@ -147,7 +149,8 @@ function apply_filters($hook, $value, ...$args) {
  * @param int      $priority Optional. The priority level. Default 10.
  * @return bool True if callback was removed, false otherwise.
  */
-function remove_filter($hook, $callback, $priority = 10) {
+function remove_filter($hook, $callback, $priority = 10)
+{
     global $wp_filter;
 
     // Check if hook exists
@@ -204,7 +207,8 @@ function remove_filter($hook, $callback, $priority = 10) {
  * @param int      $accepted_args Optional. Number of arguments callback accepts. Default 1.
  * @return bool Always returns true.
  */
-function add_action($hook, $callback, $priority = 10, $accepted_args = 1) {
+function add_action($hook, $callback, $priority = 10, $accepted_args = 1)
+{
     return add_filter($hook, $callback, $priority, $accepted_args);
 }
 
@@ -222,7 +226,8 @@ function add_action($hook, $callback, $priority = 10, $accepted_args = 1) {
  * @param mixed  ...$args Optional arguments to pass to callbacks.
  * @return void
  */
-function do_action($hook, ...$args) {
+function do_action($hook, ...$args)
+{
     global $wp_filter, $wp_actions, $wp_current_filter;
 
     // Track how many times this action has fired
@@ -279,7 +284,8 @@ function do_action($hook, ...$args) {
  * @param int      $priority Optional. The priority level. Default 10.
  * @return bool True if callback was removed, false otherwise.
  */
-function remove_action($hook, $callback, $priority = 10) {
+function remove_action($hook, $callback, $priority = 10)
+{
     return remove_filter($hook, $callback, $priority);
 }
 
@@ -306,7 +312,8 @@ function remove_action($hook, $callback, $priority = 10) {
  *
  * @return void
  */
-function wp_head() {
+function wp_head()
+{
     /**
      * Fires in the <head> section of the HTML document.
      *
@@ -319,14 +326,24 @@ function wp_head() {
      *
      * @since WordPress 1.5.0
      */
+
+    // Buffer output to capture meta tags, inline styles, etc.
+    ob_start();
+
     do_action('wp_head');
 
-    // Print enqueued styles and scripts
-    if (function_exists('wp_print_styles')) {
-        wp_print_styles();
-    }
-    if (function_exists('wp_print_scripts')) {
-        wp_print_scripts(false); // false = head scripts
+    // Note: wp_print_styles and wp_print_scripts are NOT called here anymore.
+    // They are handled by wp_enqueue_style/script calling drupal_add_css/js directly.
+
+    $output = ob_get_clean();
+
+    // Inject captured content into Backdrop's head
+    if (!empty($output)) {
+        $element = array(
+            '#type' => 'markup',
+            '#markup' => $output,
+        );
+        backdrop_add_html_head($element, 'wp_head_output');
     }
 }
 
@@ -352,7 +369,8 @@ function wp_head() {
  *
  * @return void
  */
-function wp_footer() {
+function wp_footer()
+{
     /**
      * Fires just before the closing </body> tag in the HTML document.
      *
@@ -368,10 +386,8 @@ function wp_footer() {
      */
     do_action('wp_footer');
 
-    // Print enqueued footer scripts
-    if (function_exists('wp_print_scripts')) {
-        wp_print_scripts(true); // true = footer scripts
-    }
+    // Note: wp_print_scripts is NOT called here anymore.
+    // Handled by wp_enqueue_script calling drupal_add_js directly.
 }
 
 /**
@@ -387,7 +403,8 @@ function wp_footer() {
  * @param int      $priority The priority level.
  * @return string Unique identifier for this callback.
  */
-function _wp_filter_build_unique_id($hook, $callback, $priority) {
+function _wp_filter_build_unique_id($hook, $callback, $priority)
+{
     if (is_string($callback)) {
         // Simple function name
         return $callback;
@@ -421,7 +438,8 @@ function _wp_filter_build_unique_id($hook, $callback, $priority) {
  * @param callable|bool $callback_to_check Optional. Specific callback to check. Default false.
  * @return bool|int False if no callbacks registered, or priority of callback if checking specific one.
  */
-function has_filter($hook, $callback_to_check = false) {
+function has_filter($hook, $callback_to_check = false)
+{
     global $wp_filter;
 
     if (!isset($wp_filter[$hook])) {
@@ -452,7 +470,8 @@ function has_filter($hook, $callback_to_check = false) {
  * @param callable|bool $callback_to_check Optional. Specific callback to check. Default false.
  * @return bool|int False if no callbacks registered, or priority of callback if checking specific one.
  */
-function has_action($hook, $callback_to_check = false) {
+function has_action($hook, $callback_to_check = false)
+{
     return has_filter($hook, $callback_to_check);
 }
 
@@ -462,7 +481,8 @@ function has_action($hook, $callback_to_check = false) {
  * @param string $hook The action hook name.
  * @return int The number of times this action has fired.
  */
-function did_action($hook) {
+function did_action($hook)
+{
     global $wp_actions;
 
     if (!isset($wp_actions[$hook])) {
@@ -477,7 +497,8 @@ function did_action($hook) {
  *
  * @return string|false The current filter/action name, or false if none.
  */
-function current_filter() {
+function current_filter()
+{
     global $wp_current_filter;
 
     if (empty($wp_current_filter)) {
@@ -492,7 +513,8 @@ function current_filter() {
  *
  * @return string|false The current action name, or false if none.
  */
-function current_action() {
+function current_action()
+{
     return current_filter();
 }
 
@@ -502,7 +524,8 @@ function current_action() {
  * @param string|null $hook Optional. Filter to check. Default null (checks if any filter is running).
  * @return bool True if the filter is currently being processed.
  */
-function doing_filter($hook = null) {
+function doing_filter($hook = null)
+{
     global $wp_current_filter;
 
     if ($hook === null) {
@@ -518,6 +541,7 @@ function doing_filter($hook = null) {
  * @param string|null $hook Optional. Action to check. Default null (checks if any action is running).
  * @return bool True if the action is currently being processed.
  */
-function doing_action($hook = null) {
+function doing_action($hook = null)
+{
     return doing_filter($hook);
 }

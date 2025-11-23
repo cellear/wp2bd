@@ -30,12 +30,15 @@ function wp_content_init() {
     $config = config('wp_content.settings');
     $active_theme = $config->get('active_theme');
 
-    // Fallback to twentyseventeen if config not set
+    // Fallback to twentysixteen if config not set
     if (empty($active_theme)) {
-      $active_theme = 'twentyseventeen';
+      $active_theme = 'twentysixteen';
     }
 
     define('WP2BD_ACTIVE_THEME', $active_theme);
+    
+    // DEBUG: Log active theme selection
+    watchdog('wp_content', 'WP2BD Init: Active theme set to @theme', array('@theme' => $active_theme), WATCHDOG_INFO);
   }
 
   // Define paths
@@ -46,7 +49,7 @@ function wp_content_init() {
   }
 
   // Initialize WordPress globals if not already done
-  global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version;
+  global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version, $pagenow;
   if (!isset($wp_filter)) {
     $wp_filter = array();
   }
@@ -62,6 +65,11 @@ function wp_content_init() {
   if (!isset($wp_version)) {
     $wp_version = '4.9';
     $GLOBALS['wp_version'] = '4.9';
+  }
+  if (!isset($pagenow)) {
+    // Set pagenow to 'index.php' for frontend pages (WordPress default)
+    $pagenow = 'index.php';
+    $GLOBALS['pagenow'] = 'index.php';
   }
 
   // Load WordPress compatibility classes
@@ -159,6 +167,144 @@ function wp_content_init() {
   if (function_exists('add_filter')) {
     add_filter('the_content', 'wp_content_convert_backdrop_attributes', 10);
   }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function wp_content_menu() {
+  $items = array();
+
+  $items['admin/config/content/wp-content'] = array(
+    'title' => 'WordPress Content',
+    'description' => 'Configure WordPress theme settings',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('wp_content_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Settings form for WordPress Content module.
+ */
+function wp_content_settings_form($form, &$form_state) {
+  $config = config('wp_content.settings');
+
+  // Get available themes by scanning the directory
+  $themes_dir = BACKDROP_ROOT . '/themes/wp/wp-content/themes';
+  $available_themes = array();
+
+  if (is_dir($themes_dir)) {
+    $theme_dirs = scandir($themes_dir);
+    foreach ($theme_dirs as $dir) {
+      if ($dir != '.' && $dir != '..' && is_dir($themes_dir . '/' . $dir)) {
+        // Check if it has a style.css (basic theme validation)
+        if (file_exists($themes_dir . '/' . $dir . '/style.css')) {
+          // Try to read theme name from style.css
+          $style_css = file_get_contents($themes_dir . '/' . $dir . '/style.css', false, null, 0, 500);
+          if (preg_match('/Theme Name:\s*(.+)/i', $style_css, $matches)) {
+            $theme_name = trim($matches[1]);
+          } else {
+            $theme_name = ucwords(str_replace(array('-', '_'), ' ', $dir));
+          }
+          $available_themes[$dir] = $theme_name;
+        }
+      }
+    }
+  }
+
+  // Sort themes alphabetically by name
+  asort($available_themes);
+
+  $form['active_theme'] = array(
+    '#type' => 'select',
+    '#title' => t('Active WordPress Theme'),
+    '#description' => t('Select which WordPress theme to use for rendering content.'),
+    '#options' => $available_themes,
+    '#default_value' => $config->get('active_theme') ?: 'twentysixteen',
+    '#required' => TRUE,
+  );
+
+  $form['theme_directory'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Theme Directory'),
+    '#description' => t('Path to WordPress themes directory (relative to Backdrop root).'),
+    '#default_value' => $config->get('theme_directory') ?: 'themes/wp/wp-content/themes',
+    '#required' => TRUE,
+  );
+
+  $form['available_themes'] = array(
+    '#type' => 'value',
+    '#value' => array_keys($available_themes),
+  );
+
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for WordPress Content settings form.
+ */
+function wp_content_settings_form_submit($form, &$form_state) {
+  $config = config('wp_content.settings');
+
+  $config->set('active_theme', $form_state['values']['active_theme']);
+  $config->set('theme_directory', $form_state['values']['theme_directory']);
+  $config->set('available_themes', $form_state['values']['available_themes']);
+
+  $config->save();
+
+  backdrop_set_message(t('WordPress theme configuration has been saved. You may need to clear the cache for changes to take effect.'));
+
+  // Optionally clear cache automatically
+  backdrop_flush_all_caches();
+  backdrop_set_message(t('Cache cleared.'));
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Add version indicator to bottom of page.
+ */
+function wp_content_page_alter(&$page) {
+  // Don't show on admin pages
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
+  // Get current version info from CHANGELOG
+  $changelog_path = dirname(BACKDROP_ROOT) . '/CHANGELOG.md';
+  $version_tag = '1123h';
+  $version_area = 'COMPAT-FIX';
+
+  // Try to read actual version from CHANGELOG
+  if (file_exists($changelog_path)) {
+    $first_line = file($changelog_path, FILE_IGNORE_NEW_LINES)[0];
+    if (preg_match('/\[(\w+)\].*?-\s*([A-Z-]+):/', $first_line, $matches)) {
+      $version_tag = $matches[1];
+      $version_area = $matches[2];
+    }
+  }
+
+  $active_theme = defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : 'unknown';
+  $theme_dir = defined('WP2BD_ACTIVE_THEME_DIR') ? basename(WP2BD_ACTIVE_THEME_DIR) : 'unknown';
+
+  // Build version message
+  $message = "WP2BD: [{$version_tag}] {$version_area} | Theme: {$active_theme}";
+
+  // Add version indicator div with inline styles
+  $page['page_bottom']['wp_version'] = array(
+    '#markup' => '<div style="position: fixed; bottom: 0; right: 0; background: rgba(0,0,0,0.85); color: #0f0; padding: 8px 12px; font-family: \'Courier New\', monospace; font-size: 11px; z-index: 99999; border-top-left-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.5);">' . htmlspecialchars($message) . '</div>',
+    '#weight' => 1000,
+  );
 }
 
 /**
@@ -381,10 +527,20 @@ function _wp_content_render_main_content() {
       while (have_posts()) {
         the_post();
         // Use WordPress template part for content
-        get_template_part('template-parts/post/content', get_post_format());
+        // Try new path first (Twenty Seventeen+), fall back to old path (Twenty Fourteen-Sixteen)
+        $format = get_post_format();
+        if (locate_template('template-parts/post/content-' . $format . '.php') || locate_template('template-parts/post/content.php')) {
+          get_template_part('template-parts/post/content', $format);
+        } else {
+          get_template_part('content', $format);
+        }
       }
     } else {
-      get_template_part('template-parts/post/content', 'none');
+      if (locate_template('template-parts/post/content-none.php')) {
+        get_template_part('template-parts/post/content', 'none');
+      } else {
+        get_template_part('content', 'none');
+      }
     }
 
     echo '</main>';
@@ -397,7 +553,12 @@ function _wp_content_render_main_content() {
 
     while (have_posts()) {
       the_post();
-      get_template_part('template-parts/page/content', 'page');
+      // Try new path first, fall back to old path
+      if (locate_template('template-parts/page/content-page.php')) {
+        get_template_part('template-parts/page/content', 'page');
+      } else {
+        get_template_part('content', 'page');
+      }
     }
 
     echo '</main>';
@@ -476,6 +637,25 @@ function _wp_content_render_footer() {
 
   // IMPORTANT: We do NOT strip theme wrapper closing divs (#page, #content, etc.)
   // The theme opened them in header.php and will close them in footer.php
+
+  // Add version indicator before closing body
+  $changelog_path = dirname(BACKDROP_ROOT) . '/CHANGELOG.md';
+  $version_tag = '1123i';
+  $version_area = 'VERSION-TRACKING';
+
+  if (file_exists($changelog_path)) {
+    $first_line = file($changelog_path, FILE_IGNORE_NEW_LINES)[0];
+    if (preg_match('/\[(\w+)\].*?-\s*([A-Z-]+):/', $first_line, $matches)) {
+      $version_tag = $matches[1];
+      $version_area = $matches[2];
+    }
+  }
+
+  $active_theme = defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : 'unknown';
+  $message = "WP2BD: [{$version_tag}] {$version_area} | Theme: {$active_theme}";
+  $version_div = '<div style="position: fixed; bottom: 0; right: 0; background: rgba(0,0,0,0.85); color: #0f0; padding: 8px 12px; font-family: \'Courier New\', monospace; font-size: 11px; z-index: 99999; border-top-left-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.5);">' . htmlspecialchars($message) . '</div>';
+
+  $output .= $version_div;
 
   return array(
     '#type' => 'markup',

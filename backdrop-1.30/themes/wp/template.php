@@ -7,22 +7,26 @@
  * rendering to a WordPress theme.
  */
 
-// Define the active WordPress theme (hard-coded for now)
-define('WP2BD_ACTIVE_THEME', 'twentyseventeen');
+// Define the active WordPress theme (HARDCODED for testing)
+define('WP2BD_ACTIVE_THEME', 'twentyfifteen');
 
 // Define paths
-define('WP2BD_THEME_DIR', __DIR__);
-define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wp-content/themes');
-define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
+if (!defined('WP2BD_THEME_DIR')) {
+  define('WP2BD_THEME_DIR', __DIR__);
+  define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wp-content/themes');
+  define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
+}
 
 // Initialize WordPress globals
-global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version;
+global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version, $pagenow;
 $wp_filter = array();
 $wp_actions = array();
 $wp_current_filter = array();
 $post = null;
 $wp_version = '4.9'; // WordPress 4.9 compatibility
 $GLOBALS['wp_version'] = '4.9';
+$pagenow = 'index.php'; // Default to index.php for theme compatibility
+$GLOBALS['pagenow'] = 'index.php';
 
 // Load WordPress compatibility classes
 require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
@@ -370,4 +374,17 @@ if (file_exists($functions_file)) {
 function wp_preprocess_html(&$variables) {
   // WordPress themes expect <html> tag to have language attributes
   $variables['html_attributes'] = language_attributes(false);
+
+  // Dynamically add the active WordPress theme's stylesheet
+  if (defined('WP2BD_ACTIVE_THEME')) {
+    $theme_css_path = 'wp-content/themes/' . WP2BD_ACTIVE_THEME . '/style.css';
+    $full_path = backdrop_get_path('theme', 'wp') . '/' . $theme_css_path;
+    backdrop_add_css($full_path, array(
+      'group' => CSS_THEME,
+      'every_page' => TRUE,
+      'weight' => 100,
+    ));
+    // Debug
+    watchdog('wp_theme', 'Added CSS: @path for theme @theme', array('@path' => $full_path, '@theme' => WP2BD_ACTIVE_THEME));
+  }
 }

@@ -16,8 +16,8 @@ regions[sidebar] = Sidebar
 regions[footer] = Footer
 
 ; Stylesheets
-; Hardcoded for Twenty Seventeen for now
-stylesheets[all][] = wp-content/themes/twentyseventeen/style.css
+; Hardcoded for Twenty Fifteen for testing
+stylesheets[all][] = wp-content/themes/twentyfifteen/style.css
 
 ; Scripts
 ; WordPress theme will handle script enqueuing via wp_head/wp_footer

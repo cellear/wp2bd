@@ -1,0 +1,9 @@
+Type	wp_content
+Date	Sunday, November 23, 2025 - 8:15am
+User	Anonymous (not verified)
+Location	https://wp2bd-verify-nov22.ddev.site/
+Referrer	
+Message	Template part content.php FATAL: Call to undefined function get_object_taxonomies()
+Trace: #0 /var/www/html/themes/wp/functions/template-loading.php(242): require() #1 /var/www/html/modules/wp_content/wp_content.module(522): get_template_part() #2 /var/www/html/modules/wp_content/wp_content.module(413): _wp_content_render_main_content() #3 /var/www/html/core/includes/module.inc(942): wp_content_block_view() #4 /var/www/html/core/modules/layout/includes/block_legacy.class.inc(24): module_invoke() #5 /var/www/html/core/modules/layout/includes/block_legacy.class.inc(50): BlockLegacy->buildBlock() #6 /var/www/html/core/modules/layout/plugins/renderers/layout_renderer_standard.inc(523): BlockLegacy->getContent() #7 /var/www/html/core/modules/layout/plugins/renderers/layout_renderer_standard.inc(493): LayoutRendererStandard->renderBlock() #8 /var/www/html/core/modules/layout/plugins/renderers/layout_renderer_standard.inc(384): LayoutRendererStandard->renderBlocks() #9 /var/www/html/core/modules/layout/plugins/renderers/layout_renderer_standard.inc(364): LayoutRendererStandard->renderLayout() #10 /var/www/html/core/modules/layout/layout.pages.inc(30): LayoutRendererStandard->render() #11 /var/www/html/core/includes/menu.inc(587): layout_page_callback() #12 /var/www/html/core/modules/layout/layout.module(766): menu_default_route_handler() #13 /var/www/html/core/includes/menu.inc(534): layout_route_handler() #14 /var/www/html/index.php(21): menu_execute_active_handler() #15 {main}
+Severity	Error
+Hostname	172.18.0.5
