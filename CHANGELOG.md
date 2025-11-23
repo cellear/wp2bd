@@ -1,3 +1,5 @@
+## [1123i] 2025-11-23 - VERSION-TRACKING: Auto-read version from CHANGELOG for footer indicator
+
 ## [1123h] 2025-11-23 - COMPAT-FIX: Add get_object_taxonomies() to complete home page rendering
 
 ## [1123g] 2025-11-23 - COMPAT-FIX: Fix home page rendering - add locate_template(), is_attachment(), fix template paths for older themes
