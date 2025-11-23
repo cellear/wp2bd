@@ -1,0 +1,10 @@
+{
+    "_config_name": "field.bundle.node.post",
+    "bundle": "post",
+    "entity_type": "node",
+    "view_modes": [],
+    "extra_fields": {
+        "form": [],
+        "display": []
+    }
+}
