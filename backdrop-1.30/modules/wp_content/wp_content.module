@@ -30,9 +30,9 @@ function wp_content_init() {
     $config = config('wp_content.settings');
     $active_theme = $config->get('active_theme');
 
-    // Fallback to twentyseventeen if config not set
+    // Fallback to twentysixteen if config not set
     if (empty($active_theme)) {
-      $active_theme = 'twentyseventeen';
+      $active_theme = 'twentysixteen';
     }
 
     define('WP2BD_ACTIVE_THEME', $active_theme);
@@ -216,7 +216,7 @@ function wp_content_settings_form($form, &$form_state) {
     '#title' => t('Active WordPress Theme'),
     '#description' => t('Select which WordPress theme to use for rendering content.'),
     '#options' => $available_themes,
-    '#default_value' => $config->get('active_theme') ?: 'twentyseventeen',
+    '#default_value' => $config->get('active_theme') ?: 'twentysixteen',
     '#required' => TRUE,
   );
 
