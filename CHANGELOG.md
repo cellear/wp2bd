@@ -1,3 +1,30 @@
+## [1123s] 2025-11-23 - THEME-SWITCH-VERIFY: Successfully verified theme switching works via database config
+Demonstrated theme switching from twentysixteen to twentyseventeen using `ddev bee config-set wp_content.settings active_theme twentyseventeen`. Key discovery: database config takes precedence over JSON files and hard-coded fallbacks. Created HOWTO-switch-wordpress-themes.md documentation.
+
+## [1123r] 2025-11-23 - ADMIN-UI: Fix admin settings page for theme switching
+Added minimal WordPress compatibility loading on admin pages to prevent fatal errors. Users can now switch themes via the UI at `/admin/config/content/wp-content`.
+
+## [1123q] 2025-11-23 - FIX-SINGLE-POST: Implement wp_attachment_is_image()
+Added `wp_attachment_is_image()` stub to `stubs.php` to fix fatal error on single post pages.
+
+## [1123p] 2025-11-23 - FIX-2016-AVATAR: Implement get_avatar()
+Added `get_avatar()` stub to `stubs.php` to fix fatal error in Twenty Sixteen.
+
+## [1123o] 2025-11-23 - FIX-2016-EXCERPT: Implement has_excerpt()
+Added `has_excerpt()` to `content-display.php` to fix fatal error in Twenty Sixteen.
+
+## [1123n] 2025-11-23 - FIX-2016-LOOP: Fix template loading for Twenty Sixteen
+Updated `wp_content.module` to search `template-parts/` root for content templates, fixing missing posts in Twenty Sixteen.
+
+## [1123m] 2025-11-23 - THEME-VERIFY: Verified Twenty Seventeen and fixed config switching
+Confirmed Twenty Seventeen layout works correctly. Fixed theme switching by using `bee config-set`.
+
+## [1123l] 2025-11-23 - LAYOUT-DEBUG: Debugging sidebar visibility and font sizing
+Attempting to fix "very large" display and missing sidebar.
+
+## [1123k] 2025-11-23 - LAYOUT-FIX: Fix asset loading and cleanup layouts
+Fixed asset loading by using `backdrop_add_css/js` and buffering `wp_head`. Removed obsolete Twenty Seventeen layout.
+
 ## [1123j] 2025-11-23 - THEME-HARDCODE: Change hardcoded theme to twentyfifteen for testing
 
 ## [1123i] 2025-11-23 - VERSION-TRACKING: Auto-read version from CHANGELOG for footer indicator

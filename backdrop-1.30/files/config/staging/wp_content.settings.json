@@ -1,0 +1,11 @@
+{
+    "_config_name": "wp_content.settings",
+    "active_theme": "twentyseventeen",
+    "available_themes": [
+        "twentyfourteen",
+        "twentyfifteen",
+        "twentysixteen",
+        "twentyseventeen"
+    ],
+    "theme_directory": "themes/wp/wp-content/themes"
+}

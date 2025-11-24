@@ -8,7 +8,7 @@
     "module": "standard",
     "weight": 0,
     "storage": 2,
-    "layout_template": "wordpress_twentyseventeen",
+    "layout_template": "wordpress",
     "disabled": false,
     "settings": {
         "title": "Welcome to Backdrop",
