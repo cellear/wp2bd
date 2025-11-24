@@ -309,7 +309,7 @@ if (!function_exists('wp_enqueue_style')) {
         watchdog('wp_content', 'Enqueuing CSS: @src', array('@src' => $src), WATCHDOG_DEBUG);
       }
 
-      backdrop_add_css($src, array('type' => 'external', 'media' => $media));
+      backdrop_add_css($src, array('type' => 'external', 'media' => $media, 'group' => CSS_THEME, 'weight' => 100));
     }
   }
 }
@@ -797,6 +797,34 @@ if (!function_exists('post_password_required')) {
   {
     // Stub: Return false (no password protection)
     return false;
+  }
+}
+
+if (!function_exists('get_background_image')) {
+  function get_background_image()
+  {
+    return '';
+  }
+}
+
+if (!function_exists('get_background_color')) {
+  function get_background_color()
+  {
+    return '';
+  }
+}
+
+if (!function_exists('background_image')) {
+  function background_image()
+  {
+    echo get_background_image();
+  }
+}
+
+if (!function_exists('background_color')) {
+  function background_color()
+  {
+    echo get_background_color();
   }
 }
 
@@ -1560,9 +1588,33 @@ if (!function_exists('wp_get_attachment_image_src')) {
   }
 }
 
+if (!function_exists('get_avatar')) {
+  /**
+   * Retrieve the avatar for a user who provided their email address or user ID.
+   */
+  function get_avatar($id_or_email, $size = 96, $default = '', $alt = '', $args = null)
+  {
+    // Stub: Return a generic avatar image or empty string
+    // For now, return a simple placeholder image tag
+    $url = 'https://www.gravatar.com/avatar/' . md5(strtolower(trim(is_string($id_or_email) ? $id_or_email : ''))) . '?s=' . $size . '&d=mm';
+    return '<img alt="' . esc_attr($alt) . '" src="' . esc_url($url) . '" class="avatar avatar-' . $size . ' photo" height="' . $size . '" width="' . $size . '" />';
+  }
+}
+
 // ============================================================================
 // POST CLASS FUNCTION
 // ============================================================================
+
+if (!function_exists('wp_attachment_is_image')) {
+  /**
+   * Check if the attachment is an image.
+   */
+  function wp_attachment_is_image($post = null)
+  {
+    // Stub: Return false for now
+    return false;
+  }
+}
 
 if (!function_exists('post_class')) {
   function post_class($class = '', $post_id = null)

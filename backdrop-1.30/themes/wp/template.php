@@ -7,8 +7,21 @@
  * rendering to a WordPress theme.
  */
 
-// Define the active WordPress theme (HARDCODED for testing)
-define('WP2BD_ACTIVE_THEME', 'twentyfifteen');
+// Define the active WordPress theme
+if (!defined('WP2BD_ACTIVE_THEME')) {
+  $active_theme = 'twentyseventeen'; // Default fallback
+  try {
+    if (function_exists('config')) {
+      $config_theme = config('wp_content.settings')->get('active_theme');
+      if (!empty($config_theme)) {
+        $active_theme = $config_theme;
+      }
+    }
+  } catch (Exception $e) {
+    // Config might not be available yet
+  }
+  define('WP2BD_ACTIVE_THEME', $active_theme);
+}
 
 // Define paths
 if (!defined('WP2BD_THEME_DIR')) {
@@ -45,13 +58,15 @@ require_once WP2BD_THEME_DIR . '/functions/stubs.php';
 
 // Override get_template_directory() to return WordPress theme directory
 if (!function_exists('get_template_directory')) {
-  function get_template_directory() {
+  function get_template_directory()
+  {
     return WP2BD_ACTIVE_THEME_DIR;
   }
 }
 
 if (!function_exists('get_template_directory_uri')) {
-  function get_template_directory_uri() {
+  function get_template_directory_uri()
+  {
     global $base_url;
     if (!$base_url) {
       $base_url = $GLOBALS['base_url'];
@@ -62,25 +77,29 @@ if (!function_exists('get_template_directory_uri')) {
 }
 
 if (!function_exists('get_stylesheet_directory')) {
-  function get_stylesheet_directory() {
+  function get_stylesheet_directory()
+  {
     return get_template_directory();
   }
 }
 
 if (!function_exists('get_stylesheet_directory_uri')) {
-  function get_stylesheet_directory_uri() {
+  function get_stylesheet_directory_uri()
+  {
     return get_template_directory_uri();
   }
 }
 
 if (!function_exists('get_template')) {
-  function get_template() {
+  function get_template()
+  {
     return WP2BD_ACTIVE_THEME;
   }
 }
 
 if (!function_exists('get_stylesheet')) {
-  function get_stylesheet() {
+  function get_stylesheet()
+  {
     return WP2BD_ACTIVE_THEME;
   }
 }
@@ -92,7 +111,8 @@ if (!function_exists('get_stylesheet')) {
  * @return string The path of the file.
  */
 if (!function_exists('get_parent_theme_file_path')) {
-  function get_parent_theme_file_path($file = '') {
+  function get_parent_theme_file_path($file = '')
+  {
     $path = get_template_directory();
     if (!empty($file)) {
       $path .= '/' . ltrim($file, '/');
@@ -108,7 +128,8 @@ if (!function_exists('get_parent_theme_file_path')) {
  * @return string The URL of the file.
  */
 if (!function_exists('get_theme_file_uri')) {
-  function get_theme_file_uri($file = '') {
+  function get_theme_file_uri($file = '')
+  {
     $uri = get_template_directory_uri();
     if (!empty($file)) {
       $uri .= '/' . ltrim($file, '/');
@@ -122,7 +143,8 @@ if (!function_exists('get_theme_file_uri')) {
  *
  * Initialize WordPress query for the current page.
  */
-function wp_preprocess_page(&$variables) {
+function wp_preprocess_page(&$variables)
+{
   global $wp_query, $post;
 
   // Get current Backdrop node if viewing a node
@@ -137,7 +159,7 @@ function wp_preprocess_page(&$variables) {
         $node = $full_node;
       }
     }
-    
+
     // Double-check: ensure node has type property (bundle) before converting
     // This prevents "Missing bundle property" errors
     if (!isset($node->type)) {
@@ -153,7 +175,7 @@ function wp_preprocess_page(&$variables) {
         $node->type = 'page'; // Fallback
       }
     }
-    
+
     // Convert Backdrop node to WordPress post
     $post = WP_Post::from_node($node);
 
@@ -171,22 +193,22 @@ function wp_preprocess_page(&$variables) {
     $wp_query->is_singular = true;
     $wp_query->queried_object = $post;
     $wp_query->queried_object_id = $post->ID;
-    
+
     // Ensure the query object is properly initialized
     if (!isset($wp_query->post)) {
       $wp_query->post = null;
     }
-    
+
     // Store in GLOBALS to ensure it persists across all scopes
     $GLOBALS['wp_query'] = $wp_query;
     $GLOBALS['post'] = null; // Reset global post until loop starts
   } else {
     // For home/archive pages, load published nodes
     // On home page, Backdrop shows promoted nodes (like node_page_default())
-    
+
     // Check if we're on the front page
     $is_front = isset($variables['is_front']) && $variables['is_front'];
-    
+
     // Try to load published nodes
     if (function_exists('node_load_multiple')) {
       // Use db_select like Backdrop's node_page_default() does
@@ -198,7 +220,7 @@ function wp_preprocess_page(&$variables) {
           ->orderBy('n.sticky', 'DESC')
           ->orderBy('n.created', 'DESC')
           ->addTag('node_access');
-        
+
         // On front page, only show promoted nodes (like Backdrop does)
         if ($is_front) {
           $select->condition('n.promote', 1);
@@ -207,13 +229,13 @@ function wp_preprocess_page(&$variables) {
           // On other archive pages, show all published
           $limit = 10;
         }
-        
+
         $select->range(0, $limit);
         $nids = $select->execute()->fetchCol();
-        
+
         if (!empty($nids)) {
           $nodes = node_load_multiple($nids);
-          
+
           // Convert to WP_Post objects
           $posts = array();
           foreach ($nodes as $node) {
@@ -231,16 +253,16 @@ function wp_preprocess_page(&$variables) {
                 $node->type = 'page'; // Fallback
               }
             }
-            
+
             $wp_post = WP_Post::from_node($node);
             if ($wp_post) {
               $posts[] = $wp_post;
             }
           }
-          
+
           // Create WP_Query object - use a query that returns empty, then override
           $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999))); // Invalid IDs to return empty
-          
+
           // Immediately override with our manually loaded posts
           $wp_query->posts = $posts;
           $wp_query->post_count = count($posts);
@@ -253,12 +275,12 @@ function wp_preprocess_page(&$variables) {
           $wp_query->is_single = false;
           $wp_query->is_page = false;
           $wp_query->is_singular = false;
-          
+
           // Ensure the query object is properly initialized
           if (!isset($wp_query->post)) {
             $wp_query->post = null;
           }
-          
+
           // Store in GLOBALS to ensure it persists across all scopes
           $GLOBALS['wp_query'] = $wp_query;
           $GLOBALS['post'] = null; // Reset global post until loop starts
@@ -273,14 +295,14 @@ function wp_preprocess_page(&$variables) {
         $query->propertyCondition('status', 1); // Published only
         $query->propertyOrderBy('created', 'DESC');
         $query->range(0, 10);
-        
+
         try {
           $result = $query->execute();
-          
+
           if (isset($result['node'])) {
             $nids = array_keys($result['node']);
             $nodes = node_load_multiple($nids);
-            
+
             // Convert to WP_Post objects
             $posts = array();
             foreach ($nodes as $node) {
@@ -298,16 +320,16 @@ function wp_preprocess_page(&$variables) {
                   $node->type = 'page'; // Fallback
                 }
               }
-              
+
               $wp_post = WP_Post::from_node($node);
               if ($wp_post) {
                 $posts[] = $wp_post;
               }
             }
-            
+
             // Create WP_Query object
             $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999)));
-            
+
             // Override with our manually loaded posts
             $wp_query->posts = $posts;
             $wp_query->post_count = count($posts);
@@ -320,11 +342,11 @@ function wp_preprocess_page(&$variables) {
             $wp_query->is_single = false;
             $wp_query->is_page = false;
             $wp_query->is_singular = false;
-            
+
             if (!isset($wp_query->post)) {
               $wp_query->post = null;
             }
-            
+
             $GLOBALS['wp_query'] = $wp_query;
             $GLOBALS['post'] = null;
           } else {
@@ -345,17 +367,7 @@ function wp_preprocess_page(&$variables) {
     }
   }
 
-  // Add WordPress body classes to Backdrop's body tag
-  if (function_exists('get_body_class')) {
-    $wp_body_classes = get_body_class();
-
-    // Add WordPress classes to Backdrop's body classes
-    if (!empty($wp_body_classes)) {
-      foreach ($wp_body_classes as $class) {
-        $variables['classes'][] = $class;
-      }
-    }
-  }
+  // Body classes are now handled in wp_content.module
 }
 
 /**
@@ -371,20 +383,10 @@ if (file_exists($functions_file)) {
  *
  * Set up HTML attributes using WordPress functions.
  */
-function wp_preprocess_html(&$variables) {
+function wp_preprocess_html(&$variables)
+{
   // WordPress themes expect <html> tag to have language attributes
   $variables['html_attributes'] = language_attributes(false);
 
-  // Dynamically add the active WordPress theme's stylesheet
-  if (defined('WP2BD_ACTIVE_THEME')) {
-    $theme_css_path = 'wp-content/themes/' . WP2BD_ACTIVE_THEME . '/style.css';
-    $full_path = backdrop_get_path('theme', 'wp') . '/' . $theme_css_path;
-    backdrop_add_css($full_path, array(
-      'group' => CSS_THEME,
-      'every_page' => TRUE,
-      'weight' => 100,
-    ));
-    // Debug
-    watchdog('wp_theme', 'Added CSS: @path for theme @theme', array('@path' => $full_path, '@theme' => WP2BD_ACTIVE_THEME));
-  }
+  // CSS is now loaded via wp_enqueue_scripts -> stubs.php
 }

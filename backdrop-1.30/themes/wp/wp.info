@@ -16,8 +16,9 @@ regions[sidebar] = Sidebar
 regions[footer] = Footer
 
 ; Stylesheets
-; Hardcoded for Twenty Fifteen for testing
-stylesheets[all][] = wp-content/themes/twentyfifteen/style.css
+; Stylesheets
+; Dynamic loading via wp_enqueue_style handles this now
+
 
 ; Scripts
 ; WordPress theme will handle script enqueuing via wp_head/wp_footer
