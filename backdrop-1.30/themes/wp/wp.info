@@ -16,9 +16,9 @@ regions[sidebar] = Sidebar
 regions[footer] = Footer
 
 ; Stylesheets
-; Stylesheets
-; Dynamic loading via wp_enqueue_style handles this now
-
+; Hardcoded for Twenty Seventeen for now
+; TODO: Make this dynamic based on active_theme config
+stylesheets[all][] = wp-content/themes/twentyseventeen/style.css
 
 ; Scripts
 ; WordPress theme will handle script enqueuing via wp_head/wp_footer

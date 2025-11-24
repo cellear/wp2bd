@@ -12,9 +12,8 @@
  * Load WordPress compatibility layer on every page load.
  */
 function wp_content_init() {
-  // Load minimal WordPress compatibility on admin pages
+  // Don't load WordPress compatibility on admin pages
   if (path_is_admin(current_path())) {
-    _wp_content_load_minimal_compat();
     return;
   }
 
@@ -33,13 +32,10 @@ function wp_content_init() {
 
     // Fallback to twentysixteen if config not set
     if (empty($active_theme)) {
-      $active_theme = 'twentyseventeen';
+      $active_theme = 'twentysixteen';
     }
 
     define('WP2BD_ACTIVE_THEME', $active_theme);
-    
-    // DEBUG: Log active theme selection
-    watchdog('wp_content', 'WP2BD Init: Active theme set to @theme', array('@theme' => $active_theme), WATCHDOG_INFO);
   }
 
   // Define paths
@@ -171,52 +167,6 @@ function wp_content_init() {
 }
 
 /**
- * Load minimal WordPress compatibility on admin pages.
- *
- * This prevents fatal errors when theme functions.php is loaded on admin pages.
- * We only load the bare minimum stubs needed to prevent crashes.
- */
-function _wp_content_load_minimal_compat() {
-  $wp_theme_path = BACKDROP_ROOT . '/themes/wp';
-  
-  // Only load if wp theme exists
-  if (!file_exists($wp_theme_path . '/template.php')) {
-    return;
-  }
-  
-  // Define minimal constants
-  if (!defined('WP2BD_THEME_DIR')) {
-    $config = config('wp_content.settings');
-    $active_theme = $config->get('active_theme') ?: 'twentyseventeen';
-    
-    define('WP2BD_ACTIVE_THEME', $active_theme);
-    define('WP2BD_THEME_DIR', $wp_theme_path);
-    define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wp-content/themes');
-    define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
-  }
-  
-  // Load only essential compatibility files
-  require_once WP2BD_THEME_DIR . '/functions/widgets.php';
-  require_once WP2BD_THEME_DIR . '/functions/stubs.php';
-  require_once WP2BD_THEME_DIR . '/functions/hooks.php';
-  require_once WP2BD_THEME_DIR . '/functions/escaping.php';
-  
-  // Define get_template_directory for admin pages
-  if (!function_exists('get_template_directory')) {
-    function get_template_directory() {
-      return WP2BD_ACTIVE_THEME_DIR;
-    }
-  }
-  
-  if (!function_exists('get_template_directory_uri')) {
-    function get_template_directory_uri() {
-      global $base_url;
-      return $base_url . '/themes/wp/wp-content/themes/' . WP2BD_ACTIVE_THEME;
-    }
-  }
-}
-
-/**
  * Implements hook_menu().
  */
 function wp_content_menu() {
@@ -271,7 +221,7 @@ function wp_content_settings_form($form, &$form_state) {
     '#title' => t('Active WordPress Theme'),
     '#description' => t('Select which WordPress theme to use for rendering content.'),
     '#options' => $available_themes,
-    '#default_value' => $config->get('active_theme') ?: 'twentyseventeen',
+    '#default_value' => $config->get('active_theme') ?: 'twentysixteen',
     '#required' => TRUE,
   );
 
@@ -307,52 +257,57 @@ function wp_content_settings_form_submit($form, &$form_state) {
   $config->set('theme_directory', $form_state['values']['theme_directory']);
   $config->set('available_themes', $form_state['values']['available_themes']);
 
-  $config->save();
 
-  backdrop_set_message(t('WordPress theme configuration has been saved. You may need to clear the cache for changes to take effect.'));
-
-  // Optionally clear cache automatically
   backdrop_flush_all_caches();
   backdrop_set_message(t('Cache cleared.'));
 }
 
 /**
- * Implements hook_page_alter().
+ * Implements hook_css_alter().
  *
- * Add version indicator to bottom of page.
+ * Dynamically add the active WordPress theme's stylesheet.
+ * 
+ * @todo This is currently disabled because it causes ksort() errors.
+ * For now, stylesheet is hardcoded in themes/wp/wp.info
  */
-function wp_content_page_alter(&$page) {
-  // Don't show on admin pages
+/*
+function wp_content_css_alter(&$css) {
+  // Safety check - ensure $css is an array
+  if (!is_array($css)) {
+    $css = array();
+  }
+
+  // Only add CSS on frontend pages
   if (path_is_admin(current_path())) {
     return;
   }
 
-  // Get current version info from CHANGELOG
-  $changelog_path = dirname(BACKDROP_ROOT) . '/CHANGELOG.md';
-  $version_tag = '1123h';
-  $version_area = 'COMPAT-FIX';
-
-  // Try to read actual version from CHANGELOG
-  if (file_exists($changelog_path)) {
-    $first_line = file($changelog_path, FILE_IGNORE_NEW_LINES)[0];
-    if (preg_match('/\[(\w+)\].*?-\s*([A-Z-]+):/', $first_line, $matches)) {
-      $version_tag = $matches[1];
-      $version_area = $matches[2];
-    }
+  // Get active theme from config
+  $config = config('wp_content.settings');
+  $active_theme = $config->get('active_theme');
+  
+  if (empty($active_theme)) {
+    $active_theme = 'twentysixteen'; // Fallback
   }
 
-  $active_theme = defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : 'unknown';
-  $theme_dir = defined('WP2BD_ACTIVE_THEME_DIR') ? basename(WP2BD_ACTIVE_THEME_DIR) : 'unknown';
-
-  // Build version message
-  $message = "WP2BD: [{$version_tag}] {$version_area} | Theme: {$active_theme}";
-
-  // Add version indicator div with inline styles
-  $page['page_bottom']['wp_version'] = array(
-    '#markup' => '<div style="position: fixed; bottom: 0; right: 0; background: rgba(0,0,0,0.85); color: #0f0; padding: 8px 12px; font-family: \'Courier New\', monospace; font-size: 11px; z-index: 99999; border-top-left-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.5);">' . htmlspecialchars($message) . '</div>',
-    '#weight' => 1000,
-  );
+  // Build path to theme stylesheet
+  $theme_css_path = "themes/wp/wp-content/themes/{$active_theme}/style.css";
+  
+  // Check if file exists
+  if (file_exists(BACKDROP_ROOT . '/' . $theme_css_path)) {
+    // Add the stylesheet
+    $css[$theme_css_path] = array(
+      'data' => $theme_css_path,
+      'type' => 'file',
+      'group' => CSS_DEFAULT,
+      'weight' => 100, // Load after other CSS
+      'media' => 'all',
+      'preprocess' => TRUE,
+      'every_page' => FALSE,
+    );
+  }
 }
+*/
 
 /**
  * Implements hook_preprocess_html().
@@ -490,30 +445,6 @@ function wp_content_block_view($delta = '', $settings = array(), $contexts = arr
 }
 
 /**
- * Implements hook_preprocess_page().
- *
- * Add WordPress body classes to the Backdrop page.
- */
-function wp_content_preprocess_page(&$variables) {
-  // Only proceed if we are viewing a node that uses WP content or if WP is active
-  // For now, we assume if the module is active and we are on a non-admin page, we want the classes
-  if (!path_is_admin(current_path()) && defined('WP2BD_ACTIVE_THEME')) {
-    // Ensure WP query is set up so is_home(), is_front_page() etc work
-    _wp_content_setup_query();
-
-    if (function_exists('get_body_class')) {
-      $wp_classes = get_body_class();
-      
-      // Add to Backdrop classes
-      // Backdrop uses $variables['classes'] as an array in preprocess
-      if (isset($variables['classes']) && is_array($variables['classes'])) {
-        $variables['classes'] = array_merge($variables['classes'], $wp_classes);
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_preprocess_block().
  *
  * Add custom template suggestion for WordPress blocks to bypass HTML validation.
@@ -598,30 +529,10 @@ function _wp_content_render_main_content() {
       while (have_posts()) {
         the_post();
         // Use WordPress template part for content
-        // Try new path first (Twenty Seventeen+), fall back to old path (Twenty Fourteen-Sixteen)
-        $format = get_post_format();
-        if (function_exists('watchdog')) {
-             watchdog('wp_debug', 'Processing post @id with format @format', array('@id' => get_the_ID(), '@format' => $format), WATCHDOG_DEBUG);
-        }
-
-        if (locate_template('template-parts/post/content-' . $format . '.php') || locate_template('template-parts/post/content.php')) {
-          if (function_exists('watchdog')) watchdog('wp_debug', 'Found template in template-parts/post/', array(), WATCHDOG_DEBUG);
-          get_template_part('template-parts/post/content', $format);
-        } elseif (locate_template('template-parts/content-' . $format . '.php') || locate_template('template-parts/content.php')) {
-           // Added support for Twenty Sixteen style
-           if (function_exists('watchdog')) watchdog('wp_debug', 'Found template in template-parts/', array(), WATCHDOG_DEBUG);
-           get_template_part('template-parts/content', $format);
-        } else {
-          if (function_exists('watchdog')) watchdog('wp_debug', 'Falling back to root content.php', array(), WATCHDOG_DEBUG);
-          get_template_part('content', $format);
-        }
+        get_template_part('template-parts/post/content', get_post_format());
       }
     } else {
-      if (locate_template('template-parts/post/content-none.php')) {
-        get_template_part('template-parts/post/content', 'none');
-      } else {
-        get_template_part('content', 'none');
-      }
+      get_template_part('template-parts/post/content', 'none');
     }
 
     echo '</main>';
@@ -634,12 +545,7 @@ function _wp_content_render_main_content() {
 
     while (have_posts()) {
       the_post();
-      // Try new path first, fall back to old path
-      if (locate_template('template-parts/page/content-page.php')) {
-        get_template_part('template-parts/page/content', 'page');
-      } else {
-        get_template_part('content', 'page');
-      }
+      get_template_part('template-parts/page/content', 'page');
     }
 
     echo '</main>';
@@ -660,14 +566,6 @@ function _wp_content_render_main_content() {
 function _wp_content_render_sidebar() {
   // Set up WordPress query for sidebar
   _wp_content_setup_query();
-
-  // PREVENT DUPLICATION:
-  // Some themes (like Twenty Fifteen) call get_sidebar() within header.php.
-  // If that happened, the sidebar is already rendered in the header block.
-  // We check did_action('get_sidebar') to see if it ran.
-  if (did_action('get_sidebar')) {
-    return '<!-- WordPress Sidebar already rendered by theme header -->';
-  }
 
   ob_start();
 
@@ -726,33 +624,6 @@ function _wp_content_render_footer() {
 
   // IMPORTANT: We do NOT strip theme wrapper closing divs (#page, #content, etc.)
   // The theme opened them in header.php and will close them in footer.php
-
-  // Add version indicator before closing body
-  // CHANGELOG.md might be in web root or parent directory
-  $changelog_paths = array(
-    BACKDROP_ROOT . '/CHANGELOG.md',
-    dirname(BACKDROP_ROOT) . '/CHANGELOG.md',
-  );
-  
-  $version_tag = 'unknown';
-  $version_area = 'VERSION';
-
-  foreach ($changelog_paths as $path) {
-    if (file_exists($path)) {
-      $first_line = file($path, FILE_IGNORE_NEW_LINES)[0];
-      if (preg_match('/\[(\w+)\].*?-\s*([A-Z0-9-]+):/', $first_line, $matches)) {
-        $version_tag = $matches[1];
-        $version_area = $matches[2];
-        break; // Found it, stop looking
-      }
-    }
-  }
-
-  $active_theme = defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : 'unknown';
-  $message = "WP2BD: [{$version_tag}] {$version_area} | Theme: {$active_theme}";
-  $version_div = '<div style="position: fixed; bottom: 0; right: 0; background: rgb(242 238 214 / 85%); color: #1e211e; padding: 3px 12px; font-family: \'Courier New\', monospace; font-size: 16px; z-index: 99999; border-top-left-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.5); font-weight: bold;">' . htmlspecialchars($message) . '</div>';
-
-  $output .= $version_div;
 
   return array(
     '#type' => 'markup',
