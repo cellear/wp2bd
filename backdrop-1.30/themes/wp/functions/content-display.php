@@ -331,13 +331,6 @@ function get_the_content($more_link_text = null, $strip_teaser = false)
     return '';
   }
 
-  if (function_exists('watchdog')) {
-    watchdog('wp_debug', 'get_the_content: Post ID @id, Body set? @body_set', array(
-      '@id' => isset($post->ID) ? $post->ID : (isset($post->nid) ? $post->nid : 'unknown'),
-      '@body_set' => isset($post->body) ? 'Yes' : 'No'
-    ), WATCHDOG_DEBUG);
-  }
-
   // Initialize global variables if not set
   // These are normally set by setup_postdata() in WordPress
   if (!isset($page)) {
@@ -1826,6 +1819,11 @@ function get_body_class($class = '')
   // Front page
   if (is_front_page()) {
     $classes[] = 'home';
+
+    // Theme-specific front page class (e.g., Twenty Seventeen needs this for full-height header)
+    if (defined('WP2BD_ACTIVE_THEME')) {
+      $classes[] = WP2BD_ACTIVE_THEME . '-front-page';
+    }
   }
 
   // Blog home (posts page)

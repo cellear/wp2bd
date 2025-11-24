@@ -21,4 +21,10 @@ regions[footer] = Footer
 stylesheets[all][] = active-theme.css
 
 ; Scripts
-; WordPress theme will handle script enqueuing via wp_head/wp_footer
+; Header class support script
+scripts[] = js/header-class.js
+; Twenty Seventeen theme scripts (TODO: make dynamic like CSS)
+scripts[] = wp-content/themes/twentyseventeen/assets/js/skip-link-focus-fix.js
+scripts[] = wp-content/themes/twentyseventeen/assets/js/navigation.js
+scripts[] = wp-content/themes/twentyseventeen/assets/js/global.js
+scripts[] = wp-content/themes/twentyseventeen/assets/js/jquery.scrollTo.js
