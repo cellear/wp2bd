@@ -1,4 +1,11 @@
+## [1123u] 2025-11-23 - THEME-SWITCH-2017: Switching to Twenty Seventeen theme
+Switched active theme to twentyseventeen using `ddev bee config-set wp_content.settings active_theme twentyseventeen`.
+
+## [1123t] 2025-11-23 - THEME-SWITCH-2014: Switching to Twenty Fourteen theme
+Switched active theme to twentyfourteen using `ddev bee config-set wp_content.settings active_theme twentyfourteen`.
+
 ## [1123s] 2025-11-23 - THEME-SWITCH-VERIFY: Successfully verified theme switching works via database config
+
 Demonstrated theme switching from twentysixteen to twentyseventeen using `ddev bee config-set wp_content.settings active_theme twentyseventeen`. Key discovery: database config takes precedence over JSON files and hard-coded fallbacks. Created HOWTO-switch-wordpress-themes.md documentation.
 
 ## [1123r] 2025-11-23 - ADMIN-UI: Fix admin settings page for theme switching

@@ -728,17 +728,23 @@ function _wp_content_render_footer() {
   // The theme opened them in header.php and will close them in footer.php
 
   // Add version indicator before closing body
-  // CHANGELOG.md must be in the web root to be accessible by the container
-  $changelog_path = BACKDROP_ROOT . '/CHANGELOG.md';
-  $version_tag = '1123i';
-  $version_area = 'VERSION-TRACKING';
+  // CHANGELOG.md might be in web root or parent directory
+  $changelog_paths = array(
+    BACKDROP_ROOT . '/CHANGELOG.md',
+    dirname(BACKDROP_ROOT) . '/CHANGELOG.md',
+  );
+  
+  $version_tag = 'unknown';
+  $version_area = 'VERSION';
 
-  if (file_exists($changelog_path)) {
-    $first_line = file($changelog_path, FILE_IGNORE_NEW_LINES)[0];
-    
-    if (preg_match('/\[(\w+)\].*?-\s*([A-Z-]+):/', $first_line, $matches)) {
-      $version_tag = $matches[1];
-      $version_area = $matches[2];
+  foreach ($changelog_paths as $path) {
+    if (file_exists($path)) {
+      $first_line = file($path, FILE_IGNORE_NEW_LINES)[0];
+      if (preg_match('/\[(\w+)\].*?-\s*([A-Z0-9-]+):/', $first_line, $matches)) {
+        $version_tag = $matches[1];
+        $version_area = $matches[2];
+        break; // Found it, stop looking
+      }
     }
   }
 
