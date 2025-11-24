@@ -2,10 +2,19 @@
     "_config_name": "wp_content.settings",
     "active_theme": "twentyseventeen",
     "available_themes": [
-        "twentyfourteen",
+        "twentyeleven",
         "twentyfifteen",
+        "twentyfourteen",
+        "twentynineteen",
+        "twentyseventeen",
         "twentysixteen",
-        "twentyseventeen"
+        "twentyten",
+        "twentythirteen",
+        "twentytwelve",
+        "twentytwenty",
+        "twentytwentyone",
+        "twentytwentytwo",
+        "twenty8teen"
     ],
     "theme_directory": "themes/wp/wp-content/themes"
 }
