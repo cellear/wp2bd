@@ -972,6 +972,23 @@ if (!function_exists('esc_attr')) {
 if (!function_exists('get_option')) {
   function get_option($option, $default = false)
   {
+    // Custom header support  
+    // The following lines are intended for a function that builds CSS classes (e.g., body_class),
+    // not for get_option(). Inserting them here would cause a syntax error due to undefined $classes.
+    // If the intent was to add these classes to a body_class-like function, that function
+    // would need to be present or created, and $classes initialized.
+    // For now, these lines are commented out to maintain syntactical correctness of get_option().
+    /*
+    if (function_exists('get_header_image') && get_header_image()) {
+      $classes[] = 'has-header-image';
+    }
+
+    if (function_exists('has_header_video') && has_header_video()) {
+      $classes[] = 'has-header-video';
+    }
+    */
+
+    // User login status (Backdrop integration)
     // In a full Backdrop implementation, this would check Backdrop's config/variable system
     // For now, return defaults that make sense for modern HTML5
     if ($option === 'html_type') {
@@ -2022,6 +2039,16 @@ function get_body_class($class = '')
   // Custom logo
   if (function_exists('has_custom_logo') && has_custom_logo()) {
     $classes[] = 'wp-custom-logo';
+  }
+
+  // Custom header image
+  if (function_exists('get_header_image') && get_header_image()) {
+    $classes[] = 'has-header-image';
+  }
+
+  // Custom header video
+  if (function_exists('has_header_video') && has_header_video()) {
+    $classes[] = 'has-header-video';
   }
 
   // Pagination classes
