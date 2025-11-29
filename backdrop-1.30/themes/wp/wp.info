@@ -23,8 +23,11 @@ stylesheets[all][] = active-theme.css
 ; Scripts
 ; Header class support script
 scripts[] = js/header-class.js
-; Twenty Seventeen theme scripts (TODO: make dynamic like CSS)
-scripts[] = wp-content/themes/twentyseventeen/assets/js/skip-link-focus-fix.js
-scripts[] = wp-content/themes/twentyseventeen/assets/js/navigation.js
-scripts[] = wp-content/themes/twentyseventeen/assets/js/global.js
-scripts[] = wp-content/themes/twentyseventeen/assets/js/jquery.scrollTo.js
+; Theme scripts are now loaded dynamically via wp_enqueue_script() in stubs.php
+; The following Twenty Seventeen scripts are commented out as fallback - they should
+; be loaded via wp_enqueue_script() in the theme's functions.php, but kept here in
+; case dynamic loading isn't working properly yet.
+; scripts[] = wp-content/themes/twentyseventeen/assets/js/skip-link-focus-fix.js
+; scripts[] = wp-content/themes/twentyseventeen/assets/js/navigation.js
+; scripts[] = wp-content/themes/twentyseventeen/assets/js/global.js
+; scripts[] = wp-content/themes/twentyseventeen/assets/js/jquery.scrollTo.js

@@ -84,6 +84,11 @@ function wp_content_init() {
   require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
   require_once WP2BD_THEME_DIR . '/functions/stubs.php';
   require_once WP2BD_THEME_DIR . '/functions/widgets.php';
+  
+  // Load auto-generated stubs (1000+ WordPress functions)
+  if (file_exists(WP2BD_THEME_DIR . '/functions/auto-stubs.php')) {
+    require_once WP2BD_THEME_DIR . '/functions/auto-stubs.php';
+  }
 
   // Define WordPress helper functions if not already defined
   if (!function_exists('get_template_directory')) {
@@ -545,10 +550,20 @@ function _wp_content_render_main_content() {
       while (have_posts()) {
         the_post();
         // Use WordPress template part for content
-        get_template_part('template-parts/post/content', get_post_format());
+        // Twenty Seventeen uses template-parts/post/content
+        // Twenty Sixteen uses template-parts/content
+        if (file_exists(get_template_directory() . '/template-parts/post/content.php')) {
+          get_template_part('template-parts/post/content', get_post_format());
+        } else {
+          get_template_part('template-parts/content', get_post_format());
+        }
       }
     } else {
-      get_template_part('template-parts/post/content', 'none');
+      if (file_exists(get_template_directory() . '/template-parts/post/content-none.php')) {
+        get_template_part('template-parts/post/content', 'none');
+      } else {
+        get_template_part('template-parts/content', 'none');
+      }
     }
 
     echo '</main>';
