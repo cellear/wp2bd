@@ -194,6 +194,57 @@ if (!function_exists('wp_enqueue_script')) {
       $wp_scripts = array('header' => array(), 'footer' => array());
     }
 
+    // If src is provided, add it to Backdrop
+    if (!empty($src)) {
+      // Handle absolute URLs (CDN, etc.)
+      if (strpos($src, 'http') === 0 || strpos($src, '//') === 0) {
+        $path = $src;
+        $type = 'external';
+      } else {
+        // Handle relative paths - assume relative to active theme directory
+        // But drupal_add_js expects path relative to Backdrop root
+        // We need to resolve this carefully
+
+        // If path starts with /, it's relative to domain root, which drupal_add_js handles
+        if (strpos($src, '/') === 0) {
+          $path = $src;
+          $type = 'file';
+        } else {
+          // Relative path - prepend active theme directory
+          // backdrop_add_js() expects path relative to Backdrop root
+          // get_template_directory() returns absolute path, convert to relative
+          $template_dir = get_template_directory();
+          $backdrop_root = BACKDROP_ROOT;
+          
+          // Convert absolute path to relative path from Backdrop root
+          $relative_template_dir = substr($template_dir, strlen($backdrop_root));
+          $relative_template_dir = ltrim($relative_template_dir, '/');
+          $path = $relative_template_dir . '/' . $src;
+          
+          $type = 'file';
+        }
+      }
+
+      // Add to Backdrop
+      // We map 'in_footer' to scope 'footer'
+      $options = array(
+        'type' => $type,
+        'scope' => $in_footer ? 'footer' : 'header',
+        'group' => 100, // JS_THEME constant value
+        'every_page' => FALSE,
+        'weight' => 0,
+      );
+
+      // Add version as query string if provided
+      if ($ver) {
+        $options['version'] = $ver;
+      }
+
+      if (function_exists('drupal_add_js')) {
+        drupal_add_js($path, $options);
+      }
+    }
+
     $location = $in_footer ? 'footer' : 'header';
     $wp_scripts[$location][$handle] = array(
       'src' => $src,
@@ -1533,5 +1584,73 @@ if (!function_exists('twentyseventeen_edit_link')) {
   {
     // Stub - would show edit link for logged in users
     return;
+  }
+}
+
+// ============================================================================
+// AVATAR FUNCTIONS
+// ============================================================================
+
+if (!function_exists('get_avatar')) {
+  /**
+   * Retrieve the avatar `<img>` tag for a user, email address, MD5 hash, comment, or post.
+   *
+   * @param mixed $id_or_email The Gravatar to retrieve. Accepts a user ID, Gravatar MD5 hash,
+   *                           user email, WP_User object, WP_Post object, or WP_Comment object.
+   * @param int    $size       Optional. Height and width of the avatar image file in pixels. Default 96.
+   * @param string $default    Optional. URL for the default image or a default type. Default 'mystery'.
+   * @param string $alt        Optional. Alternative text to use in the avatar image tag. Default empty.
+   * @param array  $args       Optional. Extra arguments to retrieve the avatar.
+   * @return string|false `<img>` tag for the user's avatar. False on failure.
+   */
+  function get_avatar($id_or_email, $size = 96, $default = '', $alt = '', $args = null)
+  {
+    // Stub: Return a simple placeholder avatar
+    // In a full implementation, this would integrate with Gravatar or Backdrop's user picture system
+
+    if (empty($alt)) {
+      $alt = 'Avatar';
+    }
+
+    // Return a simple gray circle SVG as placeholder
+    $svg = '<svg width="' . (int) $size . '" height="' . (int) $size . '" xmlns="http://www.w3.org/2000/svg">'
+      . '<circle cx="' . ((int) $size / 2) . '" cy="' . ((int) $size / 2) . '" r="' . ((int) $size / 2) . '" fill="#cccccc"/>'
+      . '</svg>';
+
+    $avatar = '<img alt="' . esc_attr($alt) . '" src="data:image/svg+xml;base64,' . base64_encode($svg) . '" '
+      . 'class="avatar avatar-' . (int) $size . ' photo" height="' . (int) $size . '" width="' . (int) $size . '" />';
+
+    return $avatar;
+  }
+}
+
+// ============================================================================
+// BACKGROUND IMAGE FUNCTIONS
+// ============================================================================
+
+if (!function_exists('get_background_image')) {
+  /**
+   * Retrieve background image for current theme.
+   *
+   * @return string Background image URL or empty string.
+   */
+  function get_background_image()
+  {
+    // Stub: Return empty string (no background image)
+    // In a full implementation, this would check theme mods or custom background settings
+    return '';
+  }
+}
+
+if (!function_exists('get_background_color')) {
+  /**
+   * Retrieve background color for current theme.
+   *
+   * @return string Background color (hex) or empty string.
+   */
+  function get_background_color()
+  {
+    // Stub: Return empty string (no custom background color)
+    return '';
   }
 }
