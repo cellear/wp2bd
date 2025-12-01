@@ -491,3 +491,157 @@ function get_stylesheet() {
     return basename(get_stylesheet_directory());
 }
 }
+
+/**
+ * Display or retrieve page title for all areas of blog.
+ *
+ * WordPress Behavior:
+ * - Generates appropriate title based on current page context
+ * - Supports separator and separator location
+ * - Can display or return the title
+ *
+ * Backdrop Mapping:
+ * - Uses backdrop_get_title() for current page title
+ * - Uses backdrop_set_title() context
+ * - Falls back to site name for home page
+ *
+ * @since WordPress 1.0.0
+ * @since WP2BD 1.0.0
+ *
+ * @param string $sep         Optional. How to separate the various items within the page title.
+ *                            Default '&raquo;'.
+ * @param bool   $display     Optional. Whether to display or retrieve title. Default true.
+ * @param string $seplocation Optional. Direction to display title, 'right' or 'left'.
+ * @return string|null String on retrieve, null when displaying.
+ */
+if (!function_exists('wp_title')) {
+function wp_title($sep = '&raquo;', $display = true, $seplocation = '') {
+    global $wp_query, $post;
+
+    $title = '';
+
+    // Try to get the page title from Backdrop
+    if (function_exists('backdrop_get_title')) {
+        $title = backdrop_get_title();
+    }
+
+    // If we have a post object, use its title
+    if (empty($title) && isset($post) && is_object($post) && !empty($post->post_title)) {
+        $title = $post->post_title;
+    }
+
+    // For single posts/pages
+    if (empty($title) && function_exists('is_single') && (is_single() || is_page())) {
+        if (function_exists('single_post_title')) {
+            $title = single_post_title('', false);
+        }
+    }
+
+    // Apply separator if title exists
+    if (!empty($title)) {
+        $prefix = '';
+        if (!empty($sep)) {
+            $prefix = " $sep ";
+        }
+
+        if ('right' === $seplocation) {
+            $title = $title . $prefix;
+        } else {
+            $title = $prefix . $title;
+        }
+    }
+
+    // Apply filter
+    if (function_exists('apply_filters')) {
+        $title = apply_filters('wp_title', $title, $sep, $seplocation);
+    }
+
+    if ($display) {
+        echo $title;
+        return null;
+    }
+
+    return $title;
+}
+}
+
+/**
+ * Retrieves the names of the taxonomies that are registered for the given object type.
+ *
+ * WordPress Behavior:
+ * - Returns array of taxonomy names for a given object type (post type)
+ * - Common examples: 'post' returns ['category', 'post_tag']
+ * - 'page' typically has no taxonomies by default
+ * - Custom post types return their registered taxonomies
+ *
+ * Backdrop Mapping:
+ * - Maps post types to known WordPress taxonomy relationships
+ * - 'post' and 'article' return ['category', 'post_tag'] 
+ * - 'page' returns empty array
+ * - Other types may have custom mappings
+ *
+ * @since WordPress 2.0.0
+ * @since WP2BD 1.0.0
+ *
+ * @param string|string[] $object_type Name of the object type string or array of the object types.
+ * @param string          $output      Optional. The type of output to return in the array. Accepts
+ *                                     either 'names' or 'objects'. Default 'names'.
+ * @return string[]|WP_Taxonomy[] The names of all taxonomies of `$object_type`.
+ */
+if (!function_exists('get_object_taxonomies')) {
+    function get_object_taxonomies($object_type, $output = 'names') {
+        // Define default taxonomy mappings for common post types
+        static $taxonomy_map = array(
+            'post' => array('category', 'post_tag'),
+            'article' => array('category', 'post_tag'), // Backdrop equivalent
+            'page' => array(),
+            'attachment' => array(),
+        );
+        
+        // Handle array of object types
+        if (is_array($object_type)) {
+            $taxonomies = array();
+            foreach ($object_type as $type) {
+                $type_taxonomies = get_object_taxonomies($type, $output);
+                $taxonomies = array_merge($taxonomies, $type_taxonomies);
+            }
+            return array_unique($taxonomies);
+        }
+        
+        // Get taxonomies for single object type
+        $object_type = (string) $object_type;
+        
+        // Check our mapping
+        if (isset($taxonomy_map[$object_type])) {
+            return $taxonomy_map[$object_type];
+        }
+        
+        // For custom post types in Backdrop, try to get from the entity
+        if (function_exists('field_info_instances')) {
+            // Check if there are taxonomy reference fields
+            $instances = field_info_instances('node', $object_type);
+            $taxonomies = array();
+            
+            if ($instances) {
+                foreach ($instances as $field_name => $instance) {
+                    $field = field_info_field($field_name);
+                    if ($field && $field['type'] === 'taxonomy_term_reference') {
+                        // Get the vocabulary from the field settings
+                        if (!empty($field['settings']['allowed_values'][0]['vocabulary'])) {
+                            $taxonomies[] = $field['settings']['allowed_values'][0]['vocabulary'];
+                        }
+                    }
+                }
+            }
+            
+            return $taxonomies;
+        }
+        
+        // Default: return 'category' for posts, empty for others
+        if (in_array($object_type, array('post', 'article', 'blog'))) {
+            return array('category', 'post_tag');
+        }
+        
+        return array();
+    }
+}

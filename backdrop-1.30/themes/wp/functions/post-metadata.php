@@ -463,6 +463,29 @@ function get_the_author() {
 }
 
 /**
+ * Display the name of the author of the current post.
+ *
+ * WordPress Behavior:
+ * - Echoes the author's display name
+ * - Also returns the value for backward compatibility
+ *
+ * @since WordPress 0.71
+ * @since WP2BD 1.0.0
+ *
+ * @see get_the_author()
+ *
+ * @param string $deprecated      Deprecated.
+ * @param bool   $deprecated_echo Deprecated.
+ * @return string The author's display name.
+ */
+function the_author( $deprecated = '', $deprecated_echo = true ) {
+  if ( $deprecated_echo ) {
+    echo get_the_author();
+  }
+  return get_the_author();
+}
+
+/**
  * Retrieve the requested data of the author.
  *
  * WordPress Behavior:

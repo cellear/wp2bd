@@ -131,7 +131,37 @@ This module depends on the `wp` theme which contains:
 
 - `/themes/wp/classes/` - WP_Post, WP_Query classes
 - `/themes/wp/functions/` - WordPress function stubs
+  - `stubs.php` - Manually implemented WordPress function stubs
+  - `auto-stubs.php` - Auto-generated stubs (1000+ functions) - see below
 - `/themes/wp/wp-content/themes/twentyseventeen/` - WordPress theme files
+
+### Auto-Generated Stubs
+
+The `auto-stubs.php` file contains 1000+ WordPress function stubs that are automatically
+generated from WordPress documentation. This file is loaded by `wp_content.module` if it exists.
+
+**Regenerating auto-stubs.php:**
+
+The stubs are generated using the script at `/scripts/generate_stubs_from_docs.php`, which
+requires a local copy of the WordPress developer documentation.
+
+**Documentation Source:**
+
+The `developer.wordpress.org/` directory (NOT committed to repository, ~3.1GB) contains
+a local mirror of the WordPress function reference documentation. It can be downloaded using:
+
+```bash
+wget --recursive --no-parent --no-host-directories \
+     --cut-dirs=1 --accept=html \
+     https://developer.wordpress.org/reference/functions/
+```
+
+This creates a `developer.wordpress.org/` directory with HTML files for each WordPress function.
+The generator script parses these files to extract function signatures and generate stub implementations.
+
+**Note:** The `developer.wordpress.org/` directory is intentionally NOT committed to the repository
+due to its size (~3.1GB, 31,000+ files). Keep it locally for regeneration when needed. The generated
+`auto-stubs.php` file is what gets loaded at runtime.
 
 ## Development
 

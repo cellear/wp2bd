@@ -13,5 +13,8 @@ regions[footer] = Footer
 ; The default region automatically receives the "Main Content" block if needed.
 default region = content
 
+; Layout CSS for flex layout of content and sidebar
+stylesheets[all][] = wordpress.css
+
 ; Preview (optional - can add later)
 ; preview = wordpress.png
