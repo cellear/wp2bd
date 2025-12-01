@@ -1,0 +1,107 @@
+/**
+ * @file
+ * CSS for the WordPress layout template.
+ *
+ * This provides base styling for the layout wrapper that works with
+ * both simple themes (Outlined) and complex themes (Twenty Seventeen).
+ */
+
+/**
+ * Main content wrapper - provides flex layout for themes that need it.
+ * 
+ * For themes like Outlined that don't have their own wrapper structure,
+ * this provides the flexbox container for content + sidebar.
+ *
+ * For themes like Twenty Seventeen that have their own .site-content wrapper
+ * in header.php, this wrapper sits inside it and should be transparent.
+ */
+.l-main-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  max-width: 1260px; /* Match common theme max-width */
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+/**
+ * Content area takes available space.
+ */
+.l-main-content > .content-area,
+.l-main-content > #primary,
+.l-main-content > main,
+.l-main-content > .site-main {
+  flex: 1 1 0;
+  min-width: 0; /* Prevents flex item from overflowing */
+  max-width: 100%;
+}
+
+/**
+ * Sidebar has fixed width on larger screens.
+ * Falls back to full width on mobile.
+ * Target various sidebar patterns from different themes.
+ */
+.l-main-content > .sidebar,
+.l-main-content > .widget-area,
+.l-main-content > #secondary,
+.l-main-content > aside {
+  flex: 0 0 300px;
+  max-width: 100%;
+}
+
+/**
+ * ============================================
+ * THEME-SPECIFIC FIXES
+ * ============================================
+ */
+
+/**
+ * Twenty Fourteen: Left sidebar layout
+ * Theme expects sidebar BEFORE content in DOM, but we render content first.
+ * Use flexbox order to put sidebar on left visually.
+ */
+.l-main-content > div#secondary:not(.sidebar) {
+  flex: 0 0 182px;
+  order: -1; /* Move sidebar before content visually */
+}
+
+/* Twenty Fourteen content area needs proper sizing */
+.l-main-content > #primary.content-area {
+  flex: 1 1 0;
+}
+
+/**
+ * Twenty Sixteen: Right sidebar layout
+ * Uses aside#secondary.sidebar
+ */
+.l-main-content > aside#secondary.sidebar {
+  flex: 0 0 300px;
+}
+
+/* Reset any theme floats that conflict with flexbox */
+.l-main-content > #primary,
+.l-main-content > #secondary {
+  float: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: auto !important;
+}
+
+/**
+ * Responsive: Stack content and sidebar on smaller screens.
+ */
+@media (max-width: 768px) {
+  .l-main-content {
+    flex-direction: column;
+  }
+  
+  .l-main-content > .sidebar,
+  .l-main-content > .widget-area,
+  .l-main-content > #secondary,
+  .l-main-content > aside {
+    flex: 1 1 auto;
+    order: 0; /* Reset order on mobile */
+  }
+}
+

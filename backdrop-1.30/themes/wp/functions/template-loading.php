@@ -189,6 +189,10 @@ function get_footer($name = null) {
 function get_sidebar($name = null) {
     do_action('get_sidebar', $name);
 
+    // Set flag to indicate sidebar was rendered via get_sidebar()
+    // This helps prevent duplicate rendering in the sidebar block
+    $GLOBALS['wp2bd_sidebar_rendered'] = TRUE;
+
     // Get the WordPress theme directory (not Backdrop theme!)
     $theme_dir = get_template_directory();
 

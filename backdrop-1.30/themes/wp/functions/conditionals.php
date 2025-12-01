@@ -1211,3 +1211,123 @@ function is_404() {
   // Default: not a 404
   return false;
 }
+
+/**
+ * Determines whether the query is for a feed.
+ *
+ * WordPress Behavior:
+ * - Returns true when viewing an RSS/Atom feed
+ * - Returns false for regular HTML pages
+ * - Used to conditionally output feed-specific content
+ *
+ * Backdrop Mapping:
+ * - Backdrop uses different paths for feeds (e.g., /rss.xml, /feed)
+ * - Check current path for feed-related patterns
+ * - Check for feed query parameters
+ * - Always returns false in web page context (feeds handled separately)
+ *
+ * @since WordPress 1.5.0
+ * @since WP2BD 1.0.0
+ *
+ * @param string|array $feeds Optional. Feed type or array of feed types to check.
+ * @return bool Whether the query is for a feed.
+ */
+function is_feed($feeds = '') {
+  // In the context of rendering WordPress themes in Backdrop,
+  // we are always rendering HTML pages, not feeds.
+  // Feeds in Backdrop are handled by separate paths/modules.
+  
+  // Check for feed-related paths
+  if (function_exists('current_path')) {
+    $path = current_path();
+    $feed_patterns = array('rss.xml', 'feed', 'atom.xml', 'rss', 'atom');
+    
+    foreach ($feed_patterns as $pattern) {
+      if (strpos($path, $pattern) !== false) {
+        return true;
+      }
+    }
+  }
+  
+  // Check for feed parameter in URL
+  if (isset($_GET['feed']) && !empty($_GET['feed'])) {
+    return true;
+  }
+  
+  // Default: not a feed (we're rendering HTML)
+  return false;
+}
+
+/**
+ * Determines whether the current post uses a specific page template.
+ *
+ * WordPress Behavior:
+ * - Checks if the current page is using a specific page template file
+ * - Takes optional template parameter to check for specific template
+ * - Returns true if viewing a page with matching template
+ * - Returns false for non-page content or no matching template
+ *
+ * Backdrop Mapping:
+ * - In WP2BD context, we don't have page templates like WordPress
+ * - Always returns false unless we implement template tracking
+ *
+ * @since WordPress 2.5.0
+ * @since WP2BD 1.0.0
+ *
+ * @param string|string[] $template The specific template filename or array of filenames to check for.
+ * @return bool Whether the current page uses the given template.
+ */
+function is_page_template($template = '') {
+    global $wp_post;
+    
+    // If not on a page, return false
+    if (!is_page()) {
+        return false;
+    }
+    
+    // Get the current post
+    $post = null;
+    if (isset($wp_post) && is_object($wp_post)) {
+        $post = $wp_post;
+    } elseif (function_exists('menu_get_object')) {
+        $post = menu_get_object('node');
+    }
+    
+    if (!$post) {
+        return false;
+    }
+    
+    // Get page template from post meta
+    $page_template = '';
+    if (function_exists('get_post_meta')) {
+        $page_template = get_post_meta(
+            isset($post->ID) ? $post->ID : (isset($post->nid) ? $post->nid : 0),
+            '_wp_page_template',
+            true
+        );
+    }
+    
+    // If no specific template requested, check if any template is set
+    if (empty($template)) {
+        return !empty($page_template) && $page_template !== 'default';
+    }
+    
+    // Normalize template parameter to array
+    if (!is_array($template)) {
+        $template = array($template);
+    }
+    
+    // Check if current template matches any of the requested templates
+    foreach ($template as $t) {
+        // Handle both 'template.php' and 'templates/template.php' formats
+        if ($page_template === $t) {
+            return true;
+        }
+        // Also check if template matches basename
+        if (basename($page_template) === basename($t)) {
+            return true;
+        }
+    }
+    
+    return false;
+}

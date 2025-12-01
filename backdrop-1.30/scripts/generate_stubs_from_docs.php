@@ -6,6 +6,24 @@
  * Parses WordPress documentation HTML files and generates function stubs.
  * 
  * Usage: php generate_stubs_from_docs.php /path/to/developer.wordpress.org/reference/functions
+ * 
+ * Documentation Source:
+ * This script requires a local copy of the WordPress developer documentation.
+ * The documentation can be downloaded from https://developer.wordpress.org/ using wget:
+ * 
+ *   wget --recursive --no-parent --no-host-directories \
+ *        --cut-dirs=1 --accept=html \
+ *        https://developer.wordpress.org/reference/functions/
+ * 
+ * This will create a local directory structure mirroring the online documentation.
+ * The resulting directory (typically named "developer.wordpress.org/") contains
+ * HTML files for each WordPress function, which this script parses to extract
+ * function signatures and generate stub implementations.
+ * 
+ * Note: The developer.wordpress.org/ directory is NOT committed to the repository
+ * (it's ~3.1GB with 31,000+ files). It should be kept locally for regeneration
+ * of auto-stubs.php when needed. The generated auto-stubs.php file is what gets
+ * loaded at runtime.
  */
 
 if ($argc < 2) {

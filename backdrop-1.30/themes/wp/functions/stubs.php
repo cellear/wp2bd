@@ -119,6 +119,40 @@ if (!function_exists('_ex')) {
   }
 }
 
+if (!function_exists('_n')) {
+  /**
+   * Translates and retrieves the singular or plural form based on the supplied number.
+   *
+   * @param string $single The text to be used if the number is singular.
+   * @param string $plural The text to be used if the number is plural.
+   * @param int    $number The number to compare against to use either the singular or plural form.
+   * @param string $domain Optional. Text domain. Default 'default'.
+   * @return string The translated singular or plural form.
+   */
+  function _n($single, $plural, $number, $domain = 'default')
+  {
+    // Simple implementation: return singular if 1, plural otherwise
+    return ($number == 1) ? $single : $plural;
+  }
+}
+
+if (!function_exists('_nx')) {
+  /**
+   * Translates and retrieves the singular or plural form with gettext context.
+   *
+   * @param string $single  The text to be used if the number is singular.
+   * @param string $plural  The text to be used if the number is plural.
+   * @param int    $number  The number to compare against.
+   * @param string $context Context information for the translators.
+   * @param string $domain  Optional. Text domain. Default 'default'.
+   * @return string The translated singular or plural form.
+   */
+  function _nx($single, $plural, $number, $context, $domain = 'default')
+  {
+    return ($number == 1) ? $single : $plural;
+  }
+}
+
 if (!function_exists('esc_html__')) {
   /**
    * Retrieve the translation of $text and escapes it for safe use in HTML output.
@@ -849,6 +883,119 @@ if (!function_exists('get_queried_object_id')) {
   }
 }
 
+if (!function_exists('get_queried_object')) {
+  /**
+   * Retrieves the currently queried object.
+   *
+   * @return WP_Term|WP_Post|WP_Post_Type|WP_User|null The queried object.
+   */
+  function get_queried_object()
+  {
+    global $wp_query, $wp_post;
+    
+    // Try to get from WP_Query if available
+    if (isset($wp_query) && is_object($wp_query)) {
+      if (method_exists($wp_query, 'get_queried_object')) {
+        return $wp_query->get_queried_object();
+      }
+      if (isset($wp_query->queried_object)) {
+        return $wp_query->queried_object;
+      }
+    }
+    
+    // Fallback to current post
+    if (isset($wp_post) && is_object($wp_post)) {
+      return $wp_post;
+    }
+    
+    // Try Backdrop's menu system
+    if (function_exists('menu_get_object')) {
+      $node = menu_get_object('node');
+      if ($node) {
+        return $node;
+      }
+      $term = menu_get_object('taxonomy_term');
+      if ($term) {
+        return $term;
+      }
+    }
+    
+    return null;
+  }
+}
+
+if (!function_exists('get_query_var')) {
+  /**
+   * Retrieves the value of a query variable in the WP_Query class.
+   *
+   * @param string $var     The variable key to retrieve.
+   * @param mixed  $default Optional. Value to return if the query variable is not set. Default empty string.
+   * @return mixed Contents of the query variable.
+   */
+  function get_query_var($var, $default = '') {
+    global $wp_query;
+    
+    if (isset($wp_query) && is_object($wp_query)) {
+      // Try to get from WP_Query if available
+      if (method_exists($wp_query, 'get')) {
+        return $wp_query->get($var, $default);
+      }
+      // Check query_vars property
+      if (isset($wp_query->query_vars[$var])) {
+        return $wp_query->query_vars[$var];
+      }
+    }
+    
+    // Fallback to URL parameters
+    switch ($var) {
+      case 'paged':
+        return isset($_GET['paged']) ? (int)$_GET['paged'] : (isset($_GET['page']) ? (int)$_GET['page'] : 1);
+      case 'page':
+        return isset($_GET['page']) ? (int)$_GET['page'] : 1;
+      case 's':
+        return isset($_GET['s']) ? sanitize_text_field($_GET['s']) : $default;
+      case 'cat':
+        return isset($_GET['cat']) ? (int)$_GET['cat'] : $default;
+      case 'tag':
+        return isset($_GET['tag']) ? sanitize_text_field($_GET['tag']) : $default;
+      case 'year':
+        return isset($_GET['year']) ? (int)$_GET['year'] : $default;
+      case 'monthnum':
+        return isset($_GET['monthnum']) ? (int)$_GET['monthnum'] : $default;
+      case 'day':
+        return isset($_GET['day']) ? (int)$_GET['day'] : $default;
+      case 'm':
+        return isset($_GET['m']) ? sanitize_text_field($_GET['m']) : $default;
+      case 'author':
+        return isset($_GET['author']) ? (int)$_GET['author'] : $default;
+      case 'post_type':
+        return isset($_GET['post_type']) ? sanitize_text_field($_GET['post_type']) : $default;
+      default:
+        return isset($_GET[$var]) ? $_GET[$var] : $default;
+    }
+  }
+}
+
+if (!function_exists('set_query_var')) {
+  /**
+   * Sets the value of a query variable in the WP_Query class.
+   *
+   * @param string $var   Query variable key.
+   * @param mixed  $value Query variable value.
+   */
+  function set_query_var($var, $value) {
+    global $wp_query;
+    
+    if (isset($wp_query) && is_object($wp_query)) {
+      if (method_exists($wp_query, 'set')) {
+        $wp_query->set($var, $value);
+      } elseif (isset($wp_query->query_vars)) {
+        $wp_query->query_vars[$var] = $value;
+      }
+    }
+  }
+}
+
 if (!function_exists('get_search_form')) {
   /**
    * Display search form.
@@ -999,6 +1146,27 @@ if (!function_exists('get_header_textcolor')) {
   {
     // Stub: Return empty string
     return '';
+  }
+}
+
+if (!function_exists('display_header_text')) {
+  /**
+   * Whether to display the header text.
+   *
+   * @return bool True if the header text should be displayed, false otherwise.
+   */
+  function display_header_text()
+  {
+    // Default: display header text
+    // Check theme mod if available
+    if (function_exists('get_theme_mod')) {
+      $header_text = get_theme_mod('header_textcolor');
+      // If header text color is 'blank', hide text
+      if ($header_text === 'blank') {
+        return false;
+      }
+    }
+    return true;
   }
 }
 
@@ -1369,6 +1537,19 @@ if (!function_exists('set_theme_mod')) {
 // MISCELLANEOUS
 // ============================================================================
 
+if (!function_exists('absint')) {
+  /**
+   * Convert value to non-negative integer.
+   *
+   * @param mixed $maybeint Data you wish to have converted to a non-negative integer.
+   * @return int A non-negative integer.
+   */
+  function absint($maybeint)
+  {
+    return abs(intval($maybeint));
+  }
+}
+
 if (!function_exists('is_customize_preview')) {
   /**
    * Check if we're in customizer preview mode.
@@ -1652,5 +1833,249 @@ if (!function_exists('get_background_color')) {
   {
     // Stub: Return empty string (no custom background color)
     return '';
+  }
+}
+
+// ============================================================================
+// POST QUERY FUNCTIONS
+// ============================================================================
+
+if (!function_exists('get_posts')) {
+  /**
+   * Retrieve list of posts based on query arguments.
+   *
+   * @param array $args Optional. Query arguments.
+   * @return array Array of WP_Post objects.
+   */
+  function get_posts($args = array())
+  {
+    // Parse defaults
+    $defaults = array(
+      'numberposts' => 5,
+      'offset' => 0,
+      'category' => 0,
+      'orderby' => 'post_date',
+      'order' => 'DESC',
+      'include' => '',
+      'exclude' => '',
+      'meta_key' => '',
+      'meta_value' => '',
+      'post_type' => 'post',
+      'post_status' => 'publish',
+      'suppress_filters' => true,
+    );
+
+    $r = wp_parse_args($args, $defaults);
+
+    // Query Backdrop nodes
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node');
+
+    // Map post_type to Backdrop bundle
+    if ($r['post_type'] === 'post') {
+      $query->entityCondition('bundle', 'post');
+    } elseif ($r['post_type'] === 'page') {
+      $query->entityCondition('bundle', 'page');
+    } elseif ($r['post_type'] !== 'any') {
+      $query->entityCondition('bundle', $r['post_type']);
+    }
+
+    // Post status
+    if ($r['post_status'] === 'publish') {
+      $query->propertyCondition('status', 1);
+    }
+
+    // Order
+    $order_direction = strtoupper($r['order']) === 'ASC' ? 'ASC' : 'DESC';
+    if ($r['orderby'] === 'post_date' || $r['orderby'] === 'date') {
+      $query->propertyOrderBy('created', $order_direction);
+    } elseif ($r['orderby'] === 'title') {
+      $query->propertyOrderBy('title', $order_direction);
+    } elseif ($r['orderby'] === 'modified') {
+      $query->propertyOrderBy('changed', $order_direction);
+    }
+
+    // Limit
+    if ($r['numberposts'] > 0) {
+      $query->range($r['offset'], $r['numberposts']);
+    }
+
+    // Execute query
+    try {
+      $result = $query->execute();
+
+      if (isset($result['node'])) {
+        $nids = array_keys($result['node']);
+        $nodes = node_load_multiple($nids);
+
+        // Convert nodes to WP_Post objects
+        $posts = array();
+        foreach ($nodes as $node) {
+          $posts[] = WP_Post::from_node($node);
+        }
+
+        return $posts;
+      }
+    } catch (Exception $e) {
+      watchdog('wp_content', 'get_posts() query error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    }
+
+    return array();
+  }
+}
+
+if (!function_exists('wp_get_recent_posts')) {
+  /**
+   * Retrieve a list of recent posts.
+   *
+   * @param array $args Optional. Query arguments.
+   * @param string $output Optional. The required return type. One of OBJECT, ARRAY_A, or ARRAY_N.
+   * @return array Array of recent posts.
+   */
+  function wp_get_recent_posts($args = array(), $output = ARRAY_A)
+  {
+    // Handle deprecated numeric argument
+    if (is_numeric($args)) {
+      $args = array('numberposts' => absint($args));
+    }
+
+    // Set default arguments
+    $defaults = array(
+      'numberposts' => 10,
+      'offset' => 0,
+      'category' => 0,
+      'orderby' => 'post_date',
+      'order' => 'DESC',
+      'include' => '',
+      'exclude' => '',
+      'meta_key' => '',
+      'meta_value' => '',
+      'post_type' => 'post',
+      'post_status' => 'publish',
+      'suppress_filters' => true,
+    );
+
+    $r = wp_parse_args($args, $defaults);
+
+    // Get posts
+    $results = get_posts($r);
+
+    // Format output
+    if (ARRAY_A == $output) {
+      $output_posts = array();
+      foreach ($results as $post) {
+        $output_posts[] = array(
+          'ID' => $post->ID,
+          'post_author' => $post->post_author,
+          'post_date' => $post->post_date,
+          'post_date_gmt' => $post->post_date_gmt,
+          'post_content' => $post->post_content,
+          'post_title' => $post->post_title,
+          'post_excerpt' => $post->post_excerpt,
+          'post_status' => $post->post_status,
+          'comment_status' => $post->comment_status,
+          'ping_status' => $post->ping_status,
+          'post_password' => $post->post_password,
+          'post_name' => $post->post_name,
+          'to_ping' => $post->to_ping,
+          'pinged' => $post->pinged,
+          'post_modified' => $post->post_modified,
+          'post_modified_gmt' => $post->post_modified_gmt,
+          'post_content_filtered' => $post->post_content_filtered,
+          'post_parent' => $post->post_parent,
+          'guid' => $post->guid,
+          'menu_order' => $post->menu_order,
+          'post_type' => $post->post_type,
+          'post_mime_type' => $post->post_mime_type,
+          'comment_count' => $post->comment_count,
+        );
+      }
+      return $output_posts ? $output_posts : array();
+    }
+
+    return $results ? $results : false;
+  }
+}
+
+if (!function_exists('wp_get_archives')) {
+  /**
+   * Display archive links based on type.
+   *
+   * @param string|array $args Optional. Default archive links arguments.
+   * @return string|void String when retrieving.
+   */
+  function wp_get_archives($args = '')
+  {
+    global $wpdb, $wp_locale;
+
+    $defaults = array(
+      'type' => 'monthly',
+      'limit' => '',
+      'format' => 'html',
+      'before' => '',
+      'after' => '',
+      'show_post_count' => false,
+      'echo' => 1,
+      'order' => 'DESC',
+    );
+
+    $r = wp_parse_args($args, $defaults);
+
+    $output = '';
+
+    // Query Backdrop for post dates
+    if ($r['type'] === 'monthly') {
+      // Get distinct year-month combinations from published posts
+      $query = db_select('node', 'n');
+      $query->addExpression('FROM_UNIXTIME(created, \'%Y-%m\')', 'yearmonth');
+      $query->addExpression('COUNT(*)', 'post_count');
+      $query->condition('type', 'post');
+      $query->condition('status', 1);
+      $query->groupBy('yearmonth');
+      $query->orderBy('yearmonth', $r['order']);
+
+      if ($r['limit']) {
+        $query->range(0, (int) $r['limit']);
+      }
+
+      try {
+        $results = $query->execute()->fetchAll();
+
+        foreach ($results as $row) {
+          $yearmonth = $row->yearmonth;
+          $post_count = $row->post_count;
+
+          // Parse year and month
+          list($year, $month) = explode('-', $yearmonth);
+          $month_name = date('F', mktime(0, 0, 0, $month, 1, $year));
+
+          // Build archive URL
+          $url = home_url('/' . $year . '/' . $month . '/');
+
+          // Build output
+          if ($r['format'] === 'html') {
+            $text = $month_name . ' ' . $year;
+            if ($r['show_post_count']) {
+              $text .= '&nbsp;(' . $post_count . ')';
+            }
+            $output .= $r['before'] . '<li><a href="' . esc_url($url) . '">' . $text . '</a></li>' . $r['after'] . "\n";
+          } elseif ($r['format'] === 'option') {
+            $text = $month_name . ' ' . $year;
+            if ($r['show_post_count']) {
+              $text .= '&nbsp;(' . $post_count . ')';
+            }
+            $output .= '<option value="' . esc_attr($url) . '">' . $text . '</option>' . "\n";
+          }
+        }
+      } catch (Exception $e) {
+        watchdog('wp_content', 'wp_get_archives() error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+      }
+    }
+
+    if ($r['echo']) {
+      echo $output;
+    } else {
+      return $output;
+    }
   }
 }

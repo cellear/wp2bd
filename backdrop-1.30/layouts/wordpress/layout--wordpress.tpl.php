@@ -45,8 +45,10 @@
     <?php print $content['header']; ?>
   <?php endif; ?>
 
-  <!-- Wrap div contains both content and sidebar for two-column layout -->
-  <div class="wrap">
+  <!-- Main content wrapper - uses neutral class to avoid conflicts with theme CSS -->
+  <!-- Themes like Twenty Seventeen provide their own .site-content in header.php -->
+  <!-- Themes like Outlined need our wrapper for flex layout -->
+  <div class="l-main-content">
     <!-- WordPress Content Block: Outputs main content area -->
     <?php if (!empty($content['content'])): ?>
       <?php print $content['content']; ?>
@@ -56,7 +58,7 @@
     <?php if (!empty($content['sidebar'])): ?>
       <?php print $content['sidebar']; ?>
     <?php endif; ?>
-  </div><!-- .wrap -->
+  </div><!-- .l-main-content -->
 
   <!-- WordPress Footer Block: Outputs footer and closes all theme divs -->
   <?php if (!empty($content['footer'])): ?>
