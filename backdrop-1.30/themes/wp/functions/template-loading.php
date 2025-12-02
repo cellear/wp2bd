@@ -103,13 +103,18 @@ function get_header($name = null) {
         $template_file = $theme_dir . '/' . $template;
 
         if (file_exists($template_file)) {
-            // Load the template
-            require_once $template_file;
+            try {
+                require $template_file;
+            } catch (Error $e) {
+                echo "<!-- Header error: " . htmlspecialchars($e->getMessage()) . " -->\n";
+                watchdog('wp_content', 'Header error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+            }
             return true;
         }
     }
 
     // No header template found
+    echo "<!-- No header template found -->\n";
     return false;
 }
 
@@ -165,8 +170,12 @@ function get_footer($name = null) {
         $template_file = $theme_dir . '/' . $template;
 
         if (file_exists($template_file)) {
-            // Load the template
-            require_once $template_file;
+            try {
+                require $template_file;
+            } catch (Error $e) {
+                echo "<!-- Footer error: " . htmlspecialchars($e->getMessage()) . " -->\n";
+                watchdog('wp_content', 'Footer error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+            }
             return true;
         }
     }
@@ -205,7 +214,12 @@ function get_sidebar($name = null) {
     foreach ($templates as $template) {
         $template_file = $theme_dir . '/' . $template;
         if (file_exists($template_file)) {
-            require_once $template_file;
+            try {
+                require $template_file;
+            } catch (Error $e) {
+                echo "<!-- Sidebar error: " . htmlspecialchars($e->getMessage()) . " -->\n";
+                watchdog('wp_content', 'Sidebar error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+            }
             return true;
         }
     }

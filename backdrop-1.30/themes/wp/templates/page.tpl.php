@@ -1,61 +1,74 @@
 <?php
 /**
  * @file
- * Default theme implementation to display the basic html structure of a single
- * Backdrop page.
+ * Page template for WordPress theme integration.
  *
- * Variables:
- * - $css: An array of CSS files for the current page.
- * - $language: (object) The language the site is being displayed in.
- *   $language->langcode contains its textual representation.
- *   $language->dir contains the language direction.
- *   It will either be 'ltr' or 'rtl'.
- * - $head_title: A modified version of the page title, for use in the TITLE
- *   tag.
- * - $head_title_array: (array) An associative array containing the string parts
- *   that were used to generate the $head_title variable, already prepared to be
- *   output as TITLE tag. The key/value pairs may contain one or more of the
- *   following, depending on conditions:
- *   - title: The title of the current page, if any.
- *   - name: The name of the site.
- *   - slogan: The slogan of the site, if any, and if there is no title.
- * - $head: Markup for the HEAD section (including meta tags, keyword tags, and
- *   so on).
- * - $styles: Style tags necessary to import all CSS files for the page.
- * - $scripts: Script tags necessary to load the JavaScript files and settings
- *   for the page.
- *   page. This variable should always be output first, before all other dynamic
- *   content.
- * - $page: The rendered page content.
- * - $page_bottom: Final closing markup from any modules that have altered the
- *   page. This variable should always be output last, after all other dynamic
- *   content.
- * - $classes Array of classes that can be used to style contextually through
- *   CSS.
- *
- * @see template_preprocess()
- * @see template_preprocess_page()
- *
- * @ingroup themeable
+ * This template bypasses Backdrop's normal block/layout system and directly
+ * renders the WordPress theme. WordPress themes provide their own complete
+ * HTML structure (DOCTYPE, html, head, body) via header.php/footer.php.
+ * 
+ * Backdrop's CSS, JS, and other assets are INJECTED into the WordPress output.
  */
-?><!DOCTYPE html>
-<html<?php print backdrop_attributes($html_attributes); ?>>
-  <head>
-    <?php print backdrop_get_html_head(); ?>
-    <title><?php print $head_title; ?></title>
-    <?php print backdrop_get_css(); ?>
-    <?php print backdrop_get_js(); ?>
-  </head>
-  <body class="<?php print implode(' ', $classes); ?>"<?php print backdrop_attributes($body_attributes); ?>>
-    <div id="page" class="site">
-      <a class="skip-link screen-reader-text" href="#content">Skip to content</a>
-      <div class="site-content-contain">
-        <div id="content" class="site-content">
-          <?php print $page; ?>
-        </div><!-- #content -->
-      </div><!-- .site-content-contain -->
-    </div><!-- #page -->
-    <?php print $page_bottom; ?>
-    <?php print backdrop_get_js('footer'); ?>
-  </body>
-</html>
+
+// Load WordPress compatibility layer if not already loaded
+$theme_path = BACKDROP_ROOT . '/themes/wp/template.php';
+if (!function_exists('get_sidebar') && file_exists($theme_path)) {
+  require_once $theme_path;
+}
+
+// Set up WordPress query globals
+if (function_exists('_wp_content_setup_query')) {
+  _wp_content_setup_query();
+}
+
+// Fire wp_enqueue_scripts so theme can register its CSS/JS
+if (!isset($GLOBALS['wp2bd_scripts_enqueued'])) {
+  do_action('wp_enqueue_scripts');
+  $GLOBALS['wp2bd_scripts_enqueued'] = TRUE;
+}
+
+// Capture WordPress theme output
+ob_start();
+
+// Determine which template to use (index.php, single.php, etc.)
+$template = _wp_content_get_template();
+
+if ($template && file_exists($template)) {
+  try {
+    include $template;
+  } catch (Exception $e) {
+    echo '<!-- WordPress template error: ' . htmlspecialchars($e->getMessage()) . ' -->';
+    watchdog('wp_content', 'Template error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+  } catch (Error $e) {
+    echo '<!-- WordPress template error: ' . htmlspecialchars($e->getMessage()) . ' -->';
+    watchdog('wp_content', 'Template error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+  }
+} else {
+  echo '<!-- WordPress template not found -->';
+}
+
+$output = ob_get_clean();
+
+// Inject Backdrop's assets into WordPress's HTML structure
+
+// 1. Inject Backdrop's head content before </head>
+$backdrop_head = backdrop_get_html_head() . "\n" . backdrop_get_css() . "\n" . backdrop_get_js();
+$output = preg_replace('/<\/head>/i', $backdrop_head . "\n</head>", $output, 1);
+
+// 2. Add Backdrop's body classes to the <body> tag
+$backdrop_body_classes = implode(' ', $classes);
+if (preg_match('/<body([^>]*)class="([^"]*)"/', $output)) {
+  $output = preg_replace('/<body([^>]*)class="([^"]*)"/', '<body$1class="$2 ' . $backdrop_body_classes . '"', $output, 1);
+} elseif (preg_match('/<body/', $output)) {
+  $output = preg_replace('/<body/', '<body class="' . $backdrop_body_classes . '"', $output, 1);
+}
+
+// 3. Inject footer JS before </body>
+$backdrop_footer = backdrop_get_js('footer');
+if (!empty($page_bottom)) {
+  $backdrop_footer .= $page_bottom;
+}
+$output = preg_replace('/<\/body>/i', $backdrop_footer . "\n</body>", $output, 1);
+
+// Output the complete page
+print $output;

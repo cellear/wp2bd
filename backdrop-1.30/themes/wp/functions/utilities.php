@@ -1916,3 +1916,184 @@ if (!function_exists('get_avatar')) {
     return '<img alt="' . esc_attr($alt) . '" src="' . esc_url($url) . '" class="avatar avatar-' . $size . '" height="' . $size . '" width="' . $size . '" />';
   }
 }
+
+
+if (!function_exists("get_queried_object_id")) {
+  /**
+   * Retrieve the ID of the currently queried object.
+   *
+   * @return int Queried object ID, or 0 if not available.
+   */
+  function get_queried_object_id() {
+    global $wp_query, $post;
+    
+    // Try wp_query first
+    if (isset($wp_query) && is_object($wp_query) && method_exists($wp_query, "get_queried_object_id")) {
+      return $wp_query->get_queried_object_id();
+    }
+    
+    // Fall back to current post
+    if (isset($post) && is_object($post) && isset($post->ID)) {
+      return $post->ID;
+    }
+    
+    return 0;
+  }
+}
+
+if (!function_exists("get_queried_object")) {
+  /**
+   * Retrieve the currently queried object.
+   *
+   * @return object|null Queried object, or null if not available.
+   */
+  function get_queried_object() {
+    global $wp_query, $post;
+    
+    // Try wp_query first
+    if (isset($wp_query) && is_object($wp_query) && method_exists($wp_query, "get_queried_object")) {
+      return $wp_query->get_queried_object();
+    }
+    
+    // Fall back to current post
+    if (isset($post) && is_object($post)) {
+      return $post;
+    }
+    
+    return null;
+  }
+}
+
+
+if (!function_exists('get_adjacent_post')) {
+  /**
+   * Retrieve the adjacent post (previous or next).
+   *
+   * @param bool   $in_same_term   Optional. Whether post should be in same taxonomy term. Default false.
+   * @param string $excluded_terms Optional. Comma-separated list of excluded term IDs. Default empty.
+   * @param bool   $previous       Optional. Whether to retrieve previous post. Default true.
+   * @param string $taxonomy       Optional. Taxonomy, if $in_same_term is true. Default 'category'.
+   * @return WP_Post|null|string Post object if successful. Null if no adjacent post.
+   */
+  function get_adjacent_post($in_same_term = false, $excluded_terms = '', $previous = true, $taxonomy = 'category') {
+    global $post;
+    
+    if (!$post || !isset($post->ID)) {
+      return null;
+    }
+    
+    // Get current post's created date for comparison
+    $current_date = isset($post->post_date) ? strtotime($post->post_date) : time();
+    
+    // Query for adjacent post using Backdrop's database
+    try {
+      $query = db_select('node', 'n')
+        ->fields('n', array('nid'))
+        ->condition('n.status', 1)
+        ->condition('n.type', 'post');
+      
+      if ($previous) {
+        $query->condition('n.created', $current_date, '<')
+              ->orderBy('n.created', 'DESC');
+      } else {
+        $query->condition('n.created', $current_date, '>')
+              ->orderBy('n.created', 'ASC');
+      }
+      
+      $query->range(0, 1);
+      $result = $query->execute()->fetchField();
+      
+      if ($result) {
+        $node = node_load($result);
+        if ($node) {
+          return WP_Post::from_node($node);
+        }
+      }
+    } catch (Exception $e) {
+      // Database query failed
+      watchdog('wp_content', 'get_adjacent_post error: @error', array('@error' => $e->getMessage()), WATCHDOG_WARNING);
+    }
+    
+    return null;
+  }
+}
+
+if (!function_exists('get_previous_post')) {
+  /**
+   * Retrieve the previous post.
+   */
+  function get_previous_post($in_same_term = false, $excluded_terms = '', $taxonomy = 'category') {
+    return get_adjacent_post($in_same_term, $excluded_terms, true, $taxonomy);
+  }
+}
+
+if (!function_exists('get_next_post')) {
+  /**
+   * Retrieve the next post.
+   */
+  function get_next_post($in_same_term = false, $excluded_terms = '', $taxonomy = 'category') {
+    return get_adjacent_post($in_same_term, $excluded_terms, false, $taxonomy);
+  }
+}
+
+if (!function_exists('previous_post_link')) {
+  /**
+   * Display the previous post link.
+   */
+  function previous_post_link($format = '&laquo; %link', $link = '%title', $in_same_term = false, $excluded_terms = '', $taxonomy = 'category') {
+    echo get_previous_post_link($format, $link, $in_same_term, $excluded_terms, $taxonomy);
+  }
+}
+
+if (!function_exists('next_post_link')) {
+  /**
+   * Display the next post link.
+   */
+  function next_post_link($format = '%link &raquo;', $link = '%title', $in_same_term = false, $excluded_terms = '', $taxonomy = 'category') {
+    echo get_next_post_link($format, $link, $in_same_term, $excluded_terms, $taxonomy);
+  }
+}
+
+if (!function_exists('get_previous_post_link')) {
+  /**
+   * Get the previous post link.
+   */
+  function get_previous_post_link($format = '&laquo; %link', $link = '%title', $in_same_term = false, $excluded_terms = '', $taxonomy = 'category') {
+    return get_adjacent_post_link($format, $link, $in_same_term, $excluded_terms, true, $taxonomy);
+  }
+}
+
+if (!function_exists('get_next_post_link')) {
+  /**
+   * Get the next post link.
+   */
+  function get_next_post_link($format = '%link &raquo;', $link = '%title', $in_same_term = false, $excluded_terms = '', $taxonomy = 'category') {
+    return get_adjacent_post_link($format, $link, $in_same_term, $excluded_terms, false, $taxonomy);
+  }
+}
+
+if (!function_exists('get_adjacent_post_link')) {
+  /**
+   * Get adjacent post link.
+   */
+  function get_adjacent_post_link($format, $link, $in_same_term = false, $excluded_terms = '', $previous = true, $taxonomy = 'category') {
+    $post = $previous ? get_previous_post($in_same_term, $excluded_terms, $taxonomy) : get_next_post($in_same_term, $excluded_terms, $taxonomy);
+    
+    if (!$post) {
+      return '';
+    }
+    
+    $title = isset($post->post_title) ? $post->post_title : '';
+    if (empty($title)) {
+      $title = $previous ? __('Previous Post') : __('Next Post');
+    }
+    
+    $url = get_permalink($post);
+    $link_text = str_replace('%title', $title, $link);
+    $link_html = '<a href="' . esc_url($url) . '" rel="' . ($previous ? 'prev' : 'next') . '">' . $link_text . '</a>';
+    
+    $output = str_replace('%link', $link_html, $format);
+    
+    return $output;
+  }
+}

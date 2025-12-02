@@ -97,6 +97,41 @@ function the_title($before = '', $after = '', $echo = true)
 }
 
 /**
+ * Display or retrieve the current post title with optional markup.
+ *
+ * Sanitizes the current title for use as a title attribute (escapes HTML).
+ *
+ * @param string|array $args Optional. Arguments array or before string.
+ * @return void|string Void if 'echo' argument is true, the title attribute if 'echo' is false.
+ */
+function the_title_attribute($args = '') {
+  $defaults = array(
+    'before' => '',
+    'after' => '',
+    'echo' => true,
+    'post' => null,
+  );
+  
+  $parsed_args = wp_parse_args($args, $defaults);
+  
+  $title = get_the_title($parsed_args['post']);
+  
+  if (strlen($title) == 0) {
+    return;
+  }
+  
+  // Escape for use in HTML attribute
+  $title = esc_attr($title);
+  $title = $parsed_args['before'] . $title . $parsed_args['after'];
+  
+  if ($parsed_args['echo']) {
+    echo $title;
+  } else {
+    return $title;
+  }
+}
+
+/**
  * Retrieves the full permalink for the current post or post ID.
  *
  * WordPress Behavior:
