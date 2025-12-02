@@ -1,0 +1,177 @@
+/*
+Theme Name: Outlined
+Theme URI: https://example.com/outlined
+Description: A minimal WordPress theme with visual outlines showing theme structure, with full support for images and media
+Author: Your Name
+Version: 1.0
+License: GPL v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: outlined
+*/
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.6;
+}
+
+/* Header */
+.site-header {
+    border: 3px solid #e74c3c;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.site-header::before {
+    content: "HEADER (header.php)";
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: white;
+    padding: 0 10px;
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Main container */
+.site-content {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Content loop area */
+.content-area {
+    flex: 1;
+    border: 3px solid #3498db;
+    padding: 20px;
+    position: relative;
+}
+
+.content-area::before {
+    content: "CONTENT LOOP AREA (index.php)";
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: white;
+    padding: 0 10px;
+    color: #3498db;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Individual posts */
+.post {
+    border: 2px dashed #9b59b6;
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.post::before {
+    content: "POST (the_post())";
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: white;
+    padding: 0 10px;
+    color: #9b59b6;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.post-title {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    border: 3px solid #f39c12;
+    padding: 20px;
+    position: relative;
+}
+
+.sidebar::before {
+    content: "SIDEBAR (sidebar.php)";
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: white;
+    padding: 0 10px;
+    color: #f39c12;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Footer */
+.site-footer {
+    border: 3px solid #16a085;
+    padding: 20px;
+    position: relative;
+}
+
+.site-footer::before {
+    content: "FOOTER (footer.php)";
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background: white;
+    padding: 0 10px;
+    color: #16a085;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Make it look a bit nicer */
+a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Featured Image */
+.post-thumbnail {
+    margin-bottom: 15px;
+}
+
+.post-thumbnail img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Images in content */
+.post-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* WordPress alignment classes */
+.alignleft {
+    float: left;
+    margin-right: 20px;
+    margin-bottom: 10px;
+}
+
+.alignright {
+    float: right;
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.aligncenter {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
