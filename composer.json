@@ -32,7 +32,8 @@
         "installer-paths": {
             "ext-backdrop/": ["backdrop/backdrop"],
             "ext-wordpress/": ["johnpbloch/wordpress-core"]
-        }
+        },
+        "wordpress-install-dir": "ext-wordpress"
     },
     "config": {
         "allow-plugins": {
