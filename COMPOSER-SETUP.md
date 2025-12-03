@@ -21,8 +21,8 @@ This project now uses Composer to manage WordPress and Backdrop CMS dependencies
    ```
 
 This will download:
-- WordPress 4.9 → `wordpress-4.9/`
-- Backdrop CMS 1.30 → `backdrop-1.30/`
+- WordPress 4.9 → `ext-wordpress/`
+- Backdrop CMS 1.30 → `ext-backdrop/`
 
 ## Directory Structure
 
@@ -30,8 +30,8 @@ After running `composer install`, you'll have:
 
 ```
 wp2bd/
-├── backdrop-1.30/          # Backdrop CMS (managed by Composer)
-├── wordpress-4.9/          # WordPress (managed by Composer)
+├── ext-backdrop/           # Backdrop CMS 1.30 (external dependency)
+├── ext-wordpress/          # WordPress 4.9 (external dependency)
 ├── implementation/         # Your custom implementation files
 ├── composer.json           # Dependency definitions
 └── vendor/                 # Composer packages
@@ -52,6 +52,7 @@ wp2bd/
 
 ## Notes
 
-- The `backdrop-1.30/` and `wordpress-4.9/` directories are now in `.gitignore`
+- The `ext-backdrop/` and `ext-wordpress/` directories are now in `.gitignore`
+- The `ext-` prefix indicates these are external dependencies managed by Composer
 - Always run `composer install` after cloning or pulling changes
 - To update versions, modify `composer.json` and run `composer update`

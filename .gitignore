@@ -3,6 +3,6 @@
 
 # Composer
 /vendor/
-/backdrop-1.30/
-/wordpress-4.9/
+/ext-backdrop/
+/ext-wordpress/
 composer.lock

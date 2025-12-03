@@ -28,8 +28,8 @@
     },
     "extra": {
         "installer-paths": {
-            "backdrop-1.30/": ["backdrop/backdrop"],
-            "wordpress-4.9/": ["johnpbloch/wordpress-core"]
+            "ext-backdrop/": ["backdrop/backdrop"],
+            "ext-wordpress/": ["johnpbloch/wordpress-core"]
         }
     },
     "config": {
