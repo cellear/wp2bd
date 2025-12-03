@@ -13,7 +13,7 @@
             "package": {
                 "name": "backdrop/backdrop",
                 "version": "1.30.0",
-                "type": "backdrop-core",
+                "type": "backdrop-project",
                 "dist": {
                     "url": "https://github.com/backdrop/backdrop/archive/refs/tags/1.30.0.zip",
                     "type": "zip"
