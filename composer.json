@@ -1,0 +1,41 @@
+{
+    "name": "cellear/wp2bd",
+    "description": "WordPress Theme Compatibility Layer for Backdrop CMS",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://wpackagist.org"
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "backdrop/backdrop",
+                "version": "1.30.0",
+                "type": "backdrop-core",
+                "dist": {
+                    "url": "https://github.com/backdrop/backdrop/releases/download/1.30.0/backdrop-1.30.0.zip",
+                    "type": "zip"
+                }
+            }
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "backdrop/backdrop": "1.30.0",
+        "johnpbloch/wordpress-core": "4.9"
+    },
+    "extra": {
+        "installer-paths": {
+            "backdrop-1.30/": ["backdrop/backdrop"],
+            "wordpress-4.9/": ["johnpbloch/wordpress-core"]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "johnpbloch/wordpress-core-installer": true
+        }
+    }
+}
