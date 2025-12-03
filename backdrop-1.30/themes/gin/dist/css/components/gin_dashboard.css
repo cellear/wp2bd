@@ -1,8 +1,0 @@
-.layout.dashboard {
-  padding-block-end: var(--gin-spacing-xl);
-}
-
-.layout.dashboard .block {
-  padding-block-end: var(--gin-spacing-m);
-}
-
