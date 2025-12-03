@@ -23,6 +23,8 @@
     ],
     "require": {
         "php": ">=7.4",
+        "composer/installers": "^2.0",
+        "johnpbloch/wordpress-core-installer": "^2.0",
         "backdrop/backdrop": "1.30.0",
         "johnpbloch/wordpress-core": "4.9"
     },
