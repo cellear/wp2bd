@@ -21,6 +21,10 @@
   - Detect active theme, load `functions.php` with try/catch logging.
   - Fire `after_setup_theme` and `wp_enqueue_scripts` actions.
   - Log registered hooks summary from `$wp_filter`.
+- Added Stage 7 in `page-debug.tpl.php` for WP4BD-010 (template selection):
+  - Read conditionals from `$wp_query` (is_home, is_single, etc.).
+  - Build simple hierarchy (home/single/page/archive/search/404 → index.php).
+  - Choose first existing template under active theme, log template + path, log missing if none.
 
 ## Current Stage 4 output
 - Paths resolve to WordPress core (`/var/www/html/wordpress-4.9/wp-includes` exists).

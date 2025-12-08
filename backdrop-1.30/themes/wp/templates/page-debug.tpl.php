@@ -587,6 +587,93 @@ if (isset($GLOBALS['wp_filter']) && is_array($GLOBALS['wp_filter'])) {
 wp4bd_debug_stage_end('Stage 6: Theme functions.php & Hooks');
 
 // ============================================================================
+// STAGE 7: TEMPLATE HIERARCHY SELECTION
+// ============================================================================
+wp4bd_debug_stage_start('Stage 7: Template Hierarchy');
+
+$stage7 = 'Stage 7: Template Hierarchy';
+
+// Determine active theme and template dir
+$active_theme = defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : null;
+if (!$active_theme && function_exists('config')) {
+  try {
+    $cfg_theme = config('wp_content.settings')->get('active_theme');
+    if (!empty($cfg_theme)) {
+      $active_theme = $cfg_theme;
+    }
+  } catch (Exception $e) {
+    wp4bd_debug_log($stage7, 'Theme Config Error', $e->getMessage());
+  }
+}
+if (empty($active_theme)) {
+  $active_theme = 'twentysixteen'; // fallback
+}
+
+$theme_dir = defined('WP2BD_ACTIVE_THEME_DIR')
+  ? WP2BD_ACTIVE_THEME_DIR
+  : (BACKDROP_ROOT . '/themes/wp/wp-content/themes/' . $active_theme);
+
+// Read query conditionals
+$conditionals = array(
+  'is_home'   => isset($wp_query->is_home) ? (bool) $wp_query->is_home : false,
+  'is_single' => isset($wp_query->is_single) ? (bool) $wp_query->is_single : false,
+  'is_page'   => isset($wp_query->is_page) ? (bool) $wp_query->is_page : false,
+  'is_archive'=> isset($wp_query->is_archive) ? (bool) $wp_query->is_archive : false,
+  'is_404'    => isset($wp_query->is_404) ? (bool) $wp_query->is_404 : false,
+  'is_search' => isset($wp_query->is_search) ? (bool) $wp_query->is_search : false,
+);
+wp4bd_debug_log($stage7, 'Conditionals', $conditionals);
+
+// Build a minimal hierarchy (simplified)
+$candidates = array();
+if ($conditionals['is_home']) {
+  $candidates[] = 'home.php';
+}
+if ($conditionals['is_single']) {
+  $candidates[] = 'single.php';
+}
+if ($conditionals['is_page']) {
+  $candidates[] = 'page.php';
+}
+if ($conditionals['is_archive']) {
+  $candidates[] = 'archive.php';
+}
+if ($conditionals['is_search']) {
+  $candidates[] = 'search.php';
+}
+if ($conditionals['is_404']) {
+  $candidates[] = '404.php';
+}
+// Fallbacks
+$candidates[] = 'index.php';
+
+// Find first existing template
+$chosen = null;
+$chosen_path = null;
+$missing = array();
+foreach ($candidates as $tpl) {
+  $full = $theme_dir . '/' . $tpl;
+  if (file_exists($full)) {
+    $chosen = $tpl;
+    $chosen_path = $full;
+    break;
+  } else {
+    $missing[] = $tpl;
+  }
+}
+
+wp4bd_debug_log($stage7, 'Template Candidates', $candidates);
+
+if ($chosen) {
+  wp4bd_debug_log($stage7, 'Using Template', $chosen);
+  wp4bd_debug_log($stage7, 'Template Path', $chosen_path);
+} else {
+  wp4bd_debug_log($stage7, 'Template Missing', $missing);
+}
+
+wp4bd_debug_stage_end('Stage 7: Template Hierarchy');
+
+// ============================================================================
 // RENDER DEBUG OUTPUT
 // ============================================================================
 
