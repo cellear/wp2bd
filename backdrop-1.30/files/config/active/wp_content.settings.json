@@ -1,7 +1,8 @@
 {
     "_config_name": "wp_content.settings",
-    "active_theme": "twentyseventeen",
+    "active_theme": "outlined",
     "available_themes": [
+        "outlined",
         "twentyeleven",
         "twentyfifteen",
         "twentyfourteen",

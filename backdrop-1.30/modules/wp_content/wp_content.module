@@ -69,24 +69,25 @@ function wp_content_init() {
     $GLOBALS['pagenow'] = 'index.php';
   }
 
-  // Load WordPress compatibility classes
-  require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
-  require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
-
-  // Load WordPress compatibility functions
-  require_once WP2BD_THEME_DIR . '/functions/hooks.php';
-  require_once WP2BD_THEME_DIR . '/functions/escaping.php';
-  require_once WP2BD_THEME_DIR . '/functions/i18n.php';
-  require_once WP2BD_THEME_DIR . '/functions/loop.php';
-  require_once WP2BD_THEME_DIR . '/functions/enqueue.php';
-  require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
-  require_once WP2BD_THEME_DIR . '/functions/content-display.php';
-  require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
-  require_once WP2BD_THEME_DIR . '/functions/utilities.php';
-  require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
-  require_once WP2BD_THEME_DIR . '/functions/widgets.php';
+  // Load WordPress compatibility classes and functions
+  // NOTE: As of Dec 2024, these are now loaded in themes/wp/template.php instead
+  // to avoid duplicate loading and conflicts with WordPress core
+  // Only the essentials (classes, hooks, content-display) are loaded in template.php
+  // The rest are provided by WordPress 4.9 core files loaded in page.tpl.php Stage 4
+  // require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
+  // require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
+  // require_once WP2BD_THEME_DIR . '/functions/hooks.php';
+  // require_once WP2BD_THEME_DIR . '/functions/escaping.php';
+  // require_once WP2BD_THEME_DIR . '/functions/i18n.php';
+  // require_once WP2BD_THEME_DIR . '/functions/loop.php';
+  // require_once WP2BD_THEME_DIR . '/functions/enqueue.php';
+  // require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
+  // require_once WP2BD_THEME_DIR . '/functions/content-display.php';
+  // require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
+  // require_once WP2BD_THEME_DIR . '/functions/utilities.php';
+  // require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
+  // require_once WP2BD_THEME_DIR . '/functions/widgets.php';
   // Note: stubs.php and auto-stubs.php archived to _archive/ as of Dec 2024
-  // Functions should be properly implemented in the files above
 
   // Define WordPress helper functions if not already defined
   if (!function_exists('get_template_directory')) {
