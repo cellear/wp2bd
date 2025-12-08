@@ -24,6 +24,12 @@ if (!defined('ARRAY_N')) {
     define('ARRAY_N', 'ARRAY_N');
 }
 
+// If core loop functions are already present (e.g., when WordPress query.php is loaded),
+// skip loading these compatibility implementations to avoid redeclaration.
+if (function_exists('wp_reset_postdata')) {
+    return;
+}
+
 /**
  * Determines whether current WordPress query has posts to loop over.
  *

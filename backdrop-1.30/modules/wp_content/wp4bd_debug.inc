@@ -116,8 +116,8 @@ function wp4bd_debug_render() {
   $level = $wp4bd_debug['level'];
   $total_time = microtime(true) - $wp4bd_debug['start_time'];
 
-  $output = '<div class="wp4bd-debug" style="font-family: monospace; background: #1a1a1a; color: #e0e0e0; padding: 20px; margin: 20px 0; border: 2px solid #444;">';
-  $output .= '<h2 style="margin-top: 0; color: #fff;">🔍 WP4BD Debug Output (Level ' . $level . ')</h2>';
+  $output = '<div class="wp4bd-debug" style="font-family: monospace; background: #f7f7f7; color: #222; padding: 20px; margin: 20px 0; border: 2px solid #ddd;">';
+  $output .= '<h2 style="margin-top: 0; color: #222;">🔍 WP4BD Debug Output (Level ' . $level . ')</h2>';
 
   // Level 1+: Flow Tracking
   if ($level >= 1) {
@@ -165,11 +165,11 @@ function wp4bd_debug_render() {
  *   HTML output
  */
 function _wp4bd_debug_render_stage($name, $stage, $level) {
-  $output = '<div style="margin-bottom: 15px; padding: 10px; background: #2a2a2a; border-left: 4px solid #4a9eff;">';
-  $output .= '<strong style="color: #fff;">' . htmlspecialchars($name) . '</strong><br>';
+  $output = '<div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;">';
+  $output .= '<strong style="color: #111;">' . htmlspecialchars($name) . '</strong><br>';
 
   if (empty($stage['data'])) {
-    $output .= '<em style="color: #999;">No data logged</em>';
+    $output .= '<em style="color: #666;">No data logged</em>';
   } else {
     foreach ($stage['data'] as $key => $value) {
       $output .= _wp4bd_debug_render_value($key, $value, $level, 1);

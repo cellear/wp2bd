@@ -306,6 +306,63 @@ $total_size = 0;
 foreach ($wp_core_files as $file) {
   $filepath = ABSPATH . WPINC . '/' . $file;
 
+  // Skip files that would redeclare symbols we already provide.
+  if ($file === 'plugin.php' && function_exists('add_filter')) {
+    $loaded_files[$file] = 'skipped (hooks already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'add_filter already defined');
+    continue;
+  }
+  if ($file === 'post.php' && function_exists('get_post')) {
+    $loaded_files[$file] = 'skipped (get_post already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'get_post already defined');
+    continue;
+  }
+  if ($file === 'query.php' && (class_exists('WP_Query') || function_exists('have_posts'))) {
+    $loaded_files[$file] = 'skipped (query functions already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'WP_Query/have_posts already defined');
+    continue;
+  }
+  if ($file === 'general-template.php' && function_exists('wp_head')) {
+    $loaded_files[$file] = 'skipped (wp_head/wp_footer already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'general-template hooks already defined');
+    continue;
+  }
+  if ($file === 'post-template.php' && function_exists('the_content')) {
+    $loaded_files[$file] = 'skipped (template tags already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'post-template tags already defined');
+    continue;
+  }
+  if ($file === 'link-template.php' && function_exists('the_permalink')) {
+    $loaded_files[$file] = 'skipped (link-template already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'the_permalink already defined');
+    continue;
+  }
+  if ($file === 'formatting.php' && function_exists('sanitize_html_class')) {
+    $loaded_files[$file] = 'skipped (formatting already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'formatting helpers already defined');
+    continue;
+  }
+  if ($file === 'l10n.php' && function_exists('__')) {
+    $loaded_files[$file] = 'skipped (l10n already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", '__ already defined');
+    continue;
+  }
+  if ($file === 'load.php') {
+    $loaded_files[$file] = 'skipped (load.php conflicts with Backdrop bootstrap)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'timer_start already defined');
+    continue;
+  }
+  if ($file === 'functions.wp-styles.php' && function_exists('wp_print_styles')) {
+    $loaded_files[$file] = 'skipped (wp-styles already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'wp_print_styles already defined');
+    continue;
+  }
+  if ($file === 'functions.wp-scripts.php' && function_exists('wp_print_scripts')) {
+    $loaded_files[$file] = 'skipped (wp-scripts already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'wp_print_scripts already defined');
+    continue;
+  }
+
   if (file_exists($filepath)) {
     try {
       require_once $filepath;
@@ -460,17 +517,17 @@ print wp4bd_debug_render();
 ?>
 
 <!-- Help Text -->
-<div style="margin: 20px; padding: 20px; background: #1a3a4a; color: #e0e0e0; border-left: 4px solid #4a9eff;">
-  <h3 style="color: #fff;">🎛️ Debug Level Controls</h3>
-  <p>Add <code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">?wp4bd_debug=N</code> to URL to change debug level:</p>
+<div style="margin: 20px; padding: 20px; background: #eef5ff; color: #0f2a45; border-left: 4px solid #4a9eff;">
+  <h3 style="color: #0f2a45;">🎛️ Debug Level Controls</h3>
+  <p>Add <code style="background: #dce9fb; color: #0f2a45; padding: 2px 6px;">?wp4bd_debug=N</code> to URL to change debug level:</p>
   <ul>
-    <li><a href="?wp4bd_debug=1" style="color: #6cf;">Level 1</a> - Flow Tracking (timing only)</li>
-    <li><a href="?wp4bd_debug=2" style="color: #6cf;">Level 2</a> - Data Counts (default)</li>
-    <li><a href="?wp4bd_debug=3" style="color: #6cf;">Level 3</a> - Data Samples (titles, IDs)</li>
-    <li><a href="?wp4bd_debug=4" style="color: #6cf;">Level 4</a> - Full Data Dump</li>
+    <li><a href="?wp4bd_debug=1" style="color: #0056b3;">Level 1</a> - Flow Tracking (timing only)</li>
+    <li><a href="?wp4bd_debug=2" style="color: #0056b3;">Level 2</a> - Data Counts (default)</li>
+    <li><a href="?wp4bd_debug=3" style="color: #0056b3;">Level 3</a> - Data Samples (titles, IDs)</li>
+    <li><a href="?wp4bd_debug=4" style="color: #0056b3;">Level 4</a> - Full Data Dump</li>
   </ul>
 
-  <h3 style="color: #fff;">✅ Current Status</h3>
+  <h3 style="color: #0f2a45;">✅ Current Status</h3>
   <ul>
     <li>✅ <strong>WP4BD-001:</strong> Debug helper functions created</li>
     <li>✅ <strong>WP4BD-002:</strong> Debug template created</li>
@@ -481,7 +538,7 @@ print wp4bd_debug_render();
     <li>✅ <strong>WP4BD-007:</strong> Stage 5 - Test The Loop (you are here!)</li>
   </ul>
 
-  <h3 style="color: #fff;">🎉 What You're Seeing</h3>
+  <h3 style="color: #0f2a45;">🎉 What You're Seeing</h3>
   <p><strong>All 5 stages are complete!</strong> The WordPress Loop is working with real Backdrop data:</p>
   <ul>
     <li>Stage 1: Query Backdrop nodes ✓</li>
@@ -491,16 +548,16 @@ print wp4bd_debug_render();
     <li>Stage 5: Test The Loop ✓</li>
   </ul>
 
-  <h3 style="color: #fff;">📋 What's Working</h3>
+  <h3 style="color: #0f2a45;">📋 What's Working</h3>
   <ol>
-    <li><code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">have_posts()</code> correctly checks for posts</li>
-    <li><code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">the_post()</code> advances through the loop</li>
-    <li>Template tags (<code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">the_title()</code>, <code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">get_permalink()</code>) work</li>
-    <li>Global <code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">$post</code> variable is set correctly</li>
-    <li><code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">wp_reset_postdata()</code> resets the loop</li>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">have_posts()</code> correctly checks for posts</li>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">the_post()</code> advances through the loop</li>
+    <li>Template tags (<code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">the_title()</code>, <code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">get_permalink()</code>) work</li>
+    <li>Global <code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">$post</code> variable is set correctly</li>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">wp_reset_postdata()</code> resets the loop</li>
   </ol>
 
-  <h3 style="color: #fff;">🔧 Implementation Progress</h3>
+  <h3 style="color: #0f2a45;">🔧 Implementation Progress</h3>
   <p><strong>Epic 1: Debug Infrastructure</strong> - ✅ Complete! (2/2 tickets done)</p>
   <p><strong>Epic 2: Data Loading</strong> - ✅ Complete! (3/3 tickets done)</p>
   <p><strong>Epic 3: WordPress Integration</strong> - ✅ Complete! (2/2 tickets done)</p>
@@ -510,8 +567,8 @@ print wp4bd_debug_render();
 <?php
 // Show some environment info for debugging
 ?>
-<div style="margin: 20px; padding: 20px; background: #2a2a2a; color: #e0e0e0; border-left: 4px solid #666;">
-  <h3 style="color: #fff;">🔍 Environment Info</h3>
+<div style="margin: 20px; padding: 20px; background: #f7f7f7; color: #222; border-left: 4px solid #ccc;">
+  <h3 style="color: #222;">🔍 Environment Info</h3>
   <ul>
     <li><strong>Backdrop Root:</strong> <?php print BACKDROP_ROOT; ?></li>
     <li><strong>Current Path:</strong> <?php print current_path(); ?></li>

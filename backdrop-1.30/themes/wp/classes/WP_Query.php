@@ -623,41 +623,43 @@ if (!function_exists('db_like')) {
     }
 }
 
-/**
- * Get post object
- *
- * @param int|WP_Post|null $post Post ID or object
- * @param string $output Optional. OBJECT, ARRAY_A, or ARRAY_N. Default OBJECT.
- * @return WP_Post|array|null
- */
-function get_post($post = null, $output = OBJECT) {
-    if ($post instanceof WP_Post) {
-        // Handle output format if needed
-        if ($output === OBJECT) {
-            return $post;
-        }
-        // For now, only support OBJECT output
-        return $post;
-    }
-
-    if (is_numeric($post) && function_exists('node_load')) {
-        $node = node_load($post);
-        if ($node) {
-            $wp_post = WP_Post::from_node($node);
+if (!function_exists('get_post')) {
+    /**
+     * Get post object
+     *
+     * @param int|WP_Post|null $post Post ID or object
+     * @param string $output Optional. OBJECT, ARRAY_A, or ARRAY_N. Default OBJECT.
+     * @return WP_Post|array|null
+     */
+    function get_post($post = null, $output = OBJECT) {
+        if ($post instanceof WP_Post) {
             // Handle output format if needed
             if ($output === OBJECT) {
-                return $wp_post;
+                return $post;
             }
             // For now, only support OBJECT output
-            return $wp_post;
+            return $post;
         }
-    }
 
-    // Return global post if no argument
-    if ($post === null) {
-        global $post;
-        return $post;
-    }
+        if (is_numeric($post) && function_exists('node_load')) {
+            $node = node_load($post);
+            if ($node) {
+                $wp_post = WP_Post::from_node($node);
+                // Handle output format if needed
+                if ($output === OBJECT) {
+                    return $wp_post;
+                }
+                // For now, only support OBJECT output
+                return $wp_post;
+            }
+        }
 
-    return null;
+        // Return global post if no argument
+        if ($post === null) {
+            global $post;
+            return $post;
+        }
+
+        return null;
+    }
 }
