@@ -13,6 +13,14 @@
   - Skip `query.php`, `post.php`, `post-template.php`, `general-template.php`, `link-template.php`, `formatting.php`, `plugin.php`, `l10n.php`, `load.php`, `functions.wp-styles.php`, `functions.wp-scripts.php` when symbols already defined.
   - Only `kses.php` currently loads from WP core; others are skipped to prevent redeclare of our implementations.
 - Added guards for WP loop/core files to avoid redeclare (`WP_Query`/`get_post`, `hooks`, enqueue functions).
+- Added mock `wpdb` override (`themes/wp/wp-content/db.php`) for WP4BD-008:
+  - Provides stub `wpdb` with table-name properties, prefix/charset/collate, insert_id.
+  - All query APIs return empty/null/false and log attempts via `watchdog`.
+  - Helpers `prepare`, `flush`, `get_blog_prefix` included to satisfy core callers.
+- Added Stage 6 in `page-debug.tpl.php` for WP4BD-009:
+  - Detect active theme, load `functions.php` with try/catch logging.
+  - Fire `after_setup_theme` and `wp_enqueue_scripts` actions.
+  - Log registered hooks summary from `$wp_filter`.
 
 ## Current Stage 4 output
 - Paths resolve to WordPress core (`/var/www/html/wordpress-4.9/wp-includes` exists).

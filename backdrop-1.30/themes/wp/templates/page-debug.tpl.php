@@ -509,6 +509,84 @@ if (count($loop_iterations) > 0) {
 wp4bd_debug_stage_end('Stage 5: Test The Loop');
 
 // ============================================================================
+// STAGE 6: LOAD THEME functions.php & FIRE HOOKS
+// ============================================================================
+wp4bd_debug_stage_start('Stage 6: Theme functions.php & Hooks');
+
+// Determine active theme and paths
+$theme_stage = 'Stage 6: Theme functions.php & Hooks';
+$active_theme = defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : null;
+
+if (!$active_theme && function_exists('config')) {
+  try {
+    $cfg_theme = config('wp_content.settings')->get('active_theme');
+    if (!empty($cfg_theme)) {
+      $active_theme = $cfg_theme;
+    }
+  } catch (Exception $e) {
+    wp4bd_debug_log($theme_stage, 'Theme Config Error', $e->getMessage());
+  }
+}
+
+if (empty($active_theme)) {
+  $active_theme = 'twentysixteen'; // fallback
+}
+
+// Derive theme directories
+$theme_dir = defined('WP2BD_ACTIVE_THEME_DIR') ? WP2BD_ACTIVE_THEME_DIR : (BACKDROP_ROOT . '/themes/wp/wp-content/themes/' . $active_theme);
+$functions_php = $theme_dir . '/functions.php';
+
+wp4bd_debug_log($theme_stage, 'Active Theme', $active_theme);
+wp4bd_debug_log($theme_stage, 'Theme Dir', $theme_dir);
+wp4bd_debug_log($theme_stage, 'functions.php Path', $functions_php);
+
+// Load theme functions.php safely
+$functions_loaded = false;
+if (file_exists($functions_php)) {
+  try {
+    require_once $functions_php;
+    $functions_loaded = true;
+    wp4bd_debug_log($theme_stage, 'functions.php', 'Loaded');
+  } catch (Throwable $e) {
+    wp4bd_debug_log($theme_stage, 'functions.php Error', $e->getMessage());
+  }
+} else {
+  wp4bd_debug_log($theme_stage, 'functions.php', 'Missing');
+}
+
+// Fire hooks expected after theme setup
+if ($functions_loaded) {
+  try {
+    do_action('after_setup_theme');
+    wp4bd_debug_log($theme_stage, 'after_setup_theme', 'Fired');
+  } catch (Throwable $e) {
+    wp4bd_debug_log($theme_stage, 'after_setup_theme Error', $e->getMessage());
+  }
+
+  try {
+    do_action('wp_enqueue_scripts');
+    wp4bd_debug_log($theme_stage, 'wp_enqueue_scripts', 'Fired');
+  } catch (Throwable $e) {
+    wp4bd_debug_log($theme_stage, 'wp_enqueue_scripts Error', $e->getMessage());
+  }
+}
+
+// Log registered hooks
+if (isset($GLOBALS['wp_filter']) && is_array($GLOBALS['wp_filter'])) {
+  $hook_summary = [];
+  foreach ($GLOBALS['wp_filter'] as $hook_name => $priorities) {
+    $count = 0;
+    foreach ($priorities as $callbacks) {
+      $count += count($callbacks);
+    }
+    $hook_summary[$hook_name] = $count;
+  }
+  wp4bd_debug_log($theme_stage, 'Registered Hooks', $hook_summary);
+}
+
+wp4bd_debug_stage_end('Stage 6: Theme functions.php & Hooks');
+
+// ============================================================================
 // RENDER DEBUG OUTPUT
 // ============================================================================
 
@@ -535,7 +613,8 @@ print wp4bd_debug_render();
     <li>✅ <strong>WP4BD-004:</strong> Stage 2 - Transform to WP_Post</li>
     <li>✅ <strong>WP4BD-005:</strong> Stage 3 - Populate WP_Query</li>
     <li>✅ <strong>WP4BD-006:</strong> Stage 4 - Load WordPress Core</li>
-    <li>✅ <strong>WP4BD-007:</strong> Stage 5 - Test The Loop (you are here!)</li>
+    <li>✅ <strong>WP4BD-007:</strong> Stage 5 - Test The Loop</li>
+    <li>✅ <strong>WP4BD-009:</strong> Stage 6 - Theme functions.php & Hooks (you are here!)</li>
   </ul>
 
   <h3 style="color: #0f2a45;">🎉 What You're Seeing</h3>
