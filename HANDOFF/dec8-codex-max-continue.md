@@ -20,5 +20,19 @@
 
 ## Notes / Next steps
 - To actually load more WP core files (instead of skipping), we’d need to disable or conditionalize our overlapping implementations (hooks, loop, content-display, enqueue, i18n, formatting). Today we favored “no fatal errors” over “full core load.”
-- No commits yet on this branch for today’s changes.
+
+## Pending: Core functions to comment out (for headless WP)
+We currently skip these at runtime to avoid redeclare. For full headless loading, plan to comment them out in WP core and rely on our bridge versions:
+- `wp-includes/plugin.php`: add_filter, has_filter, apply_filters, remove_filter, add_action, do_action, has_action, remove_action, current_filter, current_action, doing_filter, doing_action, did_action, _wp_filter_build_unique_id, WP_Hook loading.
+- `wp-includes/general-template.php`: wp_head, wp_footer, language_attributes.
+- `wp-includes/post.php`: get_post (we provide in our WP_Query bridge).
+- `wp-includes/query.php`: loop helpers (have_posts, the_post, wp_reset_postdata, etc.).
+- `wp-includes/link-template.php`: the_permalink/get_permalink helpers.
+- `wp-includes/formatting.php`: sanitize_html_class and related helpers already in our stack.
+- `wp-includes/l10n.php`: __, _e, etc. (we already load our i18n).
+- `wp-includes/functions.wp-styles.php`: wp_print_styles, etc. (we provide enqueue/print hooks).
+- `wp-includes/functions.wp-scripts.php`: wp_print_scripts, etc.
+- `wp-includes/load.php`: timer_start conflict; safest to skip/comment out.
+
+Once commented in core, we can remove Stage 4 skip guards so WP files actually load without fatal redeclares.
 

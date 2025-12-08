@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip if our bridge already provides link/template helpers.
+if (function_exists('the_permalink')) {
+	return;
+}
 /**
  * WordPress Link Template Functions
  *

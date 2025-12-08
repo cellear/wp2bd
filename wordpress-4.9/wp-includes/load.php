@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip WordPress bootstrap if Backdrop bootstrap is already active.
+if (function_exists('timer_start')) {
+	return;
+}
 /**
  * These functions are needed to load WordPress.
  *

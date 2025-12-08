@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip if our bridge already provides script enqueue/print helpers.
+if (function_exists('wp_print_scripts')) {
+	return;
+}
 /**
  * Dependencies API: Scripts functions
  *
