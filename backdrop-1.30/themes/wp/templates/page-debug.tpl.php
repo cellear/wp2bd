@@ -848,6 +848,12 @@ wp4bd_debug_log($stage9, 'Final HTML Length', !empty($captured_html) ? strlen($c
 wp4bd_debug_stage_end('Stage 9: Inject Backdrop Assets');
 
 // ============================================================================
+// CHECK OUTPUT DISPLAY MODE
+// ============================================================================
+
+$show_output = isset($_GET['wp4bd_show_output']) && $_GET['wp4bd_show_output'] == '1';
+
+// ============================================================================
 // RENDER DEBUG OUTPUT
 // ============================================================================
 
@@ -857,13 +863,26 @@ print wp4bd_debug_render();
 
 <!-- Help Text -->
 <div style="margin: 20px; padding: 20px; background: #eef5ff; color: #0f2a45; border-left: 4px solid #4a9eff;">
-  <h3 style="color: #0f2a45;">🎛️ Debug Level Controls</h3>
+  <h3 style="color: #0f2a45;">🎛️ Debug Controls</h3>
+
+  <h4 style="color: #0f2a45; margin-top: 0;">Output Display</h4>
+  <p>
+    <?php if ($show_output): ?>
+      <strong style="color: #28a745;">✓ Rendered Output: ON</strong> |
+      <a href="?wp4bd_debug=<?php echo wp4bd_debug_get_level(); ?>" style="color: #0056b3;">Hide Output (Debug Only)</a>
+    <?php else: ?>
+      <strong>Rendered Output: OFF</strong> |
+      <a href="?wp4bd_debug=<?php echo wp4bd_debug_get_level(); ?>&wp4bd_show_output=1" style="color: #0056b3; font-weight: bold;">🎉 Show Rendered Output!</a>
+    <?php endif; ?>
+  </p>
+
+  <h4 style="color: #0f2a45;">Debug Level</h4>
   <p>Add <code style="background: #dce9fb; color: #0f2a45; padding: 2px 6px;">?wp4bd_debug=N</code> to URL to change debug level:</p>
   <ul>
-    <li><a href="?wp4bd_debug=1" style="color: #0056b3;">Level 1</a> - Flow Tracking (timing only)</li>
-    <li><a href="?wp4bd_debug=2" style="color: #0056b3;">Level 2</a> - Data Counts (default)</li>
-    <li><a href="?wp4bd_debug=3" style="color: #0056b3;">Level 3</a> - Data Samples (titles, IDs)</li>
-    <li><a href="?wp4bd_debug=4" style="color: #0056b3;">Level 4</a> - Full Data Dump</li>
+    <li><a href="?wp4bd_debug=1<?php echo $show_output ? '&wp4bd_show_output=1' : ''; ?>" style="color: #0056b3;">Level 1</a> - Flow Tracking (timing only)</li>
+    <li><a href="?wp4bd_debug=2<?php echo $show_output ? '&wp4bd_show_output=1' : ''; ?>" style="color: #0056b3;">Level 2</a> - Data Counts (default)</li>
+    <li><a href="?wp4bd_debug=3<?php echo $show_output ? '&wp4bd_show_output=1' : ''; ?>" style="color: #0056b3;">Level 3</a> - Data Samples (titles, IDs)</li>
+    <li><a href="?wp4bd_debug=4<?php echo $show_output ? '&wp4bd_show_output=1' : ''; ?>" style="color: #0056b3;">Level 4</a> - Full Data Dump</li>
   </ul>
 
   <h3 style="color: #0f2a45;">✅ Current Status</h3>
@@ -878,7 +897,8 @@ print wp4bd_debug_render();
     <li>✅ <strong>WP4BD-009:</strong> Stage 6 - Theme functions.php & Hooks</li>
     <li>✅ <strong>WP4BD-010:</strong> Stage 7 - Template Hierarchy</li>
     <li>✅ <strong>WP4BD-011:</strong> Stage 8 - Capture Template Output</li>
-    <li>✅ <strong>WP4BD-012:</strong> Stage 9 - Inject Backdrop Assets (you are here!)</li>
+    <li>✅ <strong>WP4BD-012:</strong> Stage 9 - Inject Backdrop Assets</li>
+    <li>✅ <strong>WP4BD-013:</strong> Display Output Toggle (you are here!)</li>
   </ul>
 
   <h3 style="color: #0f2a45;">🎉 What You're Seeing</h3>
@@ -924,3 +944,37 @@ print wp4bd_debug_render();
     <li><strong>PHP Version:</strong> <?php print PHP_VERSION; ?></li>
   </ul>
 </div>
+
+<?php if ($show_output && !empty($captured_html)): ?>
+<!-- Rendered Output -->
+<div style="margin: 20px; padding: 20px; background: #f0fff0; color: #0f2a45; border-left: 4px solid #28a745;">
+  <h3 style="color: #0f2a45;">🎉 Rendered WordPress Theme Output</h3>
+  <p>
+    <strong>This is the actual WordPress theme rendering with Backdrop data!</strong>
+    <br>
+    <a href="?wp4bd_debug=<?php echo wp4bd_debug_get_level(); ?>" style="color: #0056b3;">← Back to Debug Only</a>
+  </p>
+
+  <div style="margin-top: 20px; padding: 10px; background: #fff; border: 2px solid #28a745;">
+    <h4 style="margin-top: 0; color: #0f2a45;">Rendered HTML (in iframe for isolation):</h4>
+    <iframe
+      srcdoc="<?php echo htmlspecialchars($captured_html, ENT_QUOTES, 'UTF-8'); ?>"
+      style="width: 100%; min-height: 800px; border: 1px solid #ccc; background: white;"
+      sandbox="allow-same-origin allow-scripts"
+      title="Rendered WordPress Theme Output"
+    ></iframe>
+  </div>
+
+  <details style="margin-top: 20px;">
+    <summary style="cursor: pointer; color: #0056b3; font-weight: bold;">📄 Show Raw HTML Source</summary>
+    <pre style="margin-top: 10px; padding: 10px; background: #1a1a1a; color: #e0e0e0; overflow-x: auto; max-height: 400px; overflow-y: auto;"><?php echo htmlspecialchars($captured_html, ENT_QUOTES, 'UTF-8'); ?></pre>
+  </details>
+</div>
+<?php elseif ($show_output && empty($captured_html)): ?>
+<!-- No Output Warning -->
+<div style="margin: 20px; padding: 20px; background: #fff3cd; color: #856404; border-left: 4px solid #ffc107;">
+  <h3 style="color: #856404;">⚠️ No Output Captured</h3>
+  <p>Output display is enabled but no HTML was captured from the WordPress theme.</p>
+  <p>This might indicate an error during template rendering. Check the debug output above for details.</p>
+</div>
+<?php endif; ?>
