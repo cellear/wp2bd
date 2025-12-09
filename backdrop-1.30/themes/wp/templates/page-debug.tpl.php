@@ -50,6 +50,24 @@ require_once BACKDROP_ROOT . '/modules/wp_content/wp4bd_debug.inc';
 // Initialize debugging
 wp4bd_debug_init();
 
+// Allow forcing this debug template via a simple query param (?debug or ?debug=4)
+// without needing a symlink. If not present, bail so Backdrop falls back
+// to the normal page.tpl.php rendering.
+$debug_param = isset($_GET['debug']) ? $_GET['debug'] : null;
+if ($debug_param === null) {
+  // Not in debug mode; render nothing and let normal template flow run
+  return;
+}
+
+// If a numeric level is provided (?debug=3/4), set it; otherwise default to current.
+if (is_numeric($debug_param)) {
+  $level = (int) $debug_param;
+  // Clamp to 1-4
+  if ($level < 1) { $level = 1; }
+  if ($level > 4) { $level = 4; }
+  wp4bd_debug_set_level($level);
+}
+
 // ============================================================================
 // STAGE 1: BACKDROP QUERY
 // ============================================================================
