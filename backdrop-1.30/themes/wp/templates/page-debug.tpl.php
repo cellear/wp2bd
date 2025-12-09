@@ -7,6 +7,43 @@
  * Start with placeholder stages, then implement real data loading incrementally.
  */
 
+// ============================================================================
+// CHECK IF THIS IS AN ADMIN PAGE
+// ============================================================================
+// If this is an admin page, render the normal Backdrop page instead
+$current_path = current_path();
+$is_admin = path_is_admin($current_path);
+
+if ($is_admin) {
+  // This is an admin page - render normal Backdrop template with all page elements
+  ?>
+  <div id="page" class="<?php print implode(' ', $classes); ?>">
+    <?php if ($messages): ?>
+      <div id="messages"><div class="section clearfix">
+        <?php print $messages; ?>
+      </div></div>
+    <?php endif; ?>
+    <div id="main-wrapper">
+      <div id="main" class="clearfix">
+        <?php if ($title): ?>
+          <h1 class="title" id="page-title"><?php print $title; ?></h1>
+        <?php endif; ?>
+        <?php if ($tabs): ?>
+          <div class="tabs"><?php print render($tabs); ?></div>
+        <?php endif; ?>
+        <?php print render($title_prefix); ?>
+        <?php print render($title_suffix); ?>
+        <?php if ($action_links): ?>
+          <ul class="action-links"><?php print render($action_links); ?></ul>
+        <?php endif; ?>
+        <?php print render($page['content']); ?>
+      </div>
+    </div>
+  </div>
+  <?php
+  return;
+}
+
 // Load debug helper functions
 require_once BACKDROP_ROOT . '/modules/wp_content/wp4bd_debug.inc';
 
@@ -939,7 +976,8 @@ print wp4bd_debug_render();
   <ul>
     <li><strong>Backdrop Root:</strong> <?php print BACKDROP_ROOT; ?></li>
     <li><strong>Current Path:</strong> <?php print current_path(); ?></li>
-    <li><strong>Theme:</strong> <?php print $GLOBALS['theme_key']; ?></li>
+    <li><strong>Backdrop Theme:</strong> <?php print $GLOBALS['theme_key']; ?></li>
+    <li><strong>WordPress Theme:</strong> <?php print defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : 'Not set'; ?></li>
     <li><strong>Debug Level:</strong> <?php print wp4bd_debug_get_level(); ?></li>
     <li><strong>PHP Version:</strong> <?php print PHP_VERSION; ?></li>
   </ul>
