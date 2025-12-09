@@ -534,6 +534,15 @@ if (empty($active_theme)) {
 
 // Derive theme directories
 $theme_dir = defined('WP2BD_ACTIVE_THEME_DIR') ? WP2BD_ACTIVE_THEME_DIR : (BACKDROP_ROOT . '/themes/wp/wp-content/themes/' . $active_theme);
+
+// Define the constant so get_header(), get_footer(), etc. can find templates
+if (!defined('WP2BD_ACTIVE_THEME_DIR')) {
+  define('WP2BD_ACTIVE_THEME_DIR', $theme_dir);
+}
+if (!defined('WP2BD_ACTIVE_THEME')) {
+  define('WP2BD_ACTIVE_THEME', $active_theme);
+}
+
 $functions_php = $theme_dir . '/functions.php';
 
 wp4bd_debug_log($theme_stage, 'Active Theme', $active_theme);
@@ -760,6 +769,85 @@ if (isset($wp_query)) {
 }
 
 // ============================================================================
+// STAGE 9: INJECT BACKDROP ASSETS
+// ============================================================================
+wp4bd_debug_stage_start('Stage 9: Inject Backdrop Assets');
+
+$stage9 = 'Stage 9: Inject Backdrop Assets';
+
+// Track injection points
+$injection_count = 0;
+$injected_assets = [];
+
+// Get Backdrop's CSS
+$backdrop_css = backdrop_get_css();
+if (!empty($backdrop_css)) {
+  // Inject Backdrop CSS into WordPress HTML (before </head>)
+  if (!empty($captured_html)) {
+    $head_tag = '</head>';
+    if (strpos($captured_html, $head_tag) !== false) {
+      $captured_html = str_replace($head_tag, $backdrop_css . "\n" . $head_tag, $captured_html);
+      $injection_count++;
+      $injected_assets[] = 'CSS before </head>';
+      wp4bd_debug_log($stage9, 'Backdrop CSS', 'Injected before </head>');
+      wp4bd_debug_log($stage9, 'CSS Length', strlen($backdrop_css) . ' bytes');
+    }
+  }
+}
+
+// Get Backdrop's JS (footer)
+$backdrop_js_footer = backdrop_get_js('footer');
+if (!empty($backdrop_js_footer)) {
+  // Inject Backdrop footer JS before </body>
+  if (!empty($captured_html)) {
+    $body_tag = '</body>';
+    if (strpos($captured_html, $body_tag) !== false) {
+      $captured_html = str_replace($body_tag, $backdrop_js_footer . "\n" . $body_tag, $captured_html);
+      $injection_count++;
+      $injected_assets[] = 'Footer JS before </body>';
+      wp4bd_debug_log($stage9, 'Backdrop Footer JS', 'Injected before </body>');
+      wp4bd_debug_log($stage9, 'Footer JS Length', strlen($backdrop_js_footer) . ' bytes');
+    }
+  }
+}
+
+// Add Backdrop body classes if <body> tag exists
+if (!empty($captured_html) && preg_match('/<body([^>]*)>/i', $captured_html, $matches)) {
+  $body_tag = $matches[0];
+  $existing_attrs = $matches[1];
+
+  // Get Backdrop body classes
+  $backdrop_classes = [];
+  if (function_exists('backdrop_get_css_class')) {
+    $backdrop_classes = backdrop_get_css_class();
+  }
+
+  if (!empty($backdrop_classes)) {
+    // Add or append to class attribute
+    if (preg_match('/class=["\']([^"\']*)["\']/', $existing_attrs, $class_match)) {
+      // Append to existing class
+      $new_classes = $class_match[1] . ' ' . implode(' ', $backdrop_classes);
+      $new_body_tag = str_replace($class_match[0], 'class="' . $new_classes . '"', $body_tag);
+    } else {
+      // Add new class attribute
+      $new_body_tag = str_replace('>', ' class="' . implode(' ', $backdrop_classes) . '">', $body_tag);
+    }
+
+    $captured_html = str_replace($body_tag, $new_body_tag, $captured_html);
+    $injection_count++;
+    $injected_assets[] = 'Body classes: ' . implode(' ', $backdrop_classes);
+    wp4bd_debug_log($stage9, 'Backdrop Body Classes', $backdrop_classes);
+  }
+}
+
+// Summary
+wp4bd_debug_log($stage9, 'Total Injection Points', $injection_count);
+wp4bd_debug_log($stage9, 'Injected Assets', $injected_assets);
+wp4bd_debug_log($stage9, 'Final HTML Length', !empty($captured_html) ? strlen($captured_html) . ' bytes' : '0 bytes');
+
+wp4bd_debug_stage_end('Stage 9: Inject Backdrop Assets');
+
+// ============================================================================
 // RENDER DEBUG OUTPUT
 // ============================================================================
 
@@ -787,17 +875,24 @@ print wp4bd_debug_render();
     <li>✅ <strong>WP4BD-005:</strong> Stage 3 - Populate WP_Query</li>
     <li>✅ <strong>WP4BD-006:</strong> Stage 4 - Load WordPress Core</li>
     <li>✅ <strong>WP4BD-007:</strong> Stage 5 - Test The Loop</li>
-    <li>✅ <strong>WP4BD-009:</strong> Stage 6 - Theme functions.php & Hooks (you are here!)</li>
+    <li>✅ <strong>WP4BD-009:</strong> Stage 6 - Theme functions.php & Hooks</li>
+    <li>✅ <strong>WP4BD-010:</strong> Stage 7 - Template Hierarchy</li>
+    <li>✅ <strong>WP4BD-011:</strong> Stage 8 - Capture Template Output</li>
+    <li>✅ <strong>WP4BD-012:</strong> Stage 9 - Inject Backdrop Assets (you are here!)</li>
   </ul>
 
   <h3 style="color: #0f2a45;">🎉 What You're Seeing</h3>
-  <p><strong>All 5 stages are complete!</strong> The WordPress Loop is working with real Backdrop data:</p>
+  <p><strong>All 9 stages are complete!</strong> WordPress themes render with Backdrop data and assets:</p>
   <ul>
     <li>Stage 1: Query Backdrop nodes ✓</li>
     <li>Stage 2: Transform to WP_Post objects ✓</li>
     <li>Stage 3: Populate WP_Query ✓</li>
     <li>Stage 4: Load WordPress core ✓</li>
     <li>Stage 5: Test The Loop ✓</li>
+    <li>Stage 6: Load theme functions.php ✓</li>
+    <li>Stage 7: Detect template hierarchy ✓</li>
+    <li>Stage 8: Capture template output ✓</li>
+    <li>Stage 9: Inject Backdrop assets ✓</li>
   </ul>
 
   <h3 style="color: #0f2a45;">📋 What's Working</h3>
