@@ -674,6 +674,92 @@ if ($chosen) {
 wp4bd_debug_stage_end('Stage 7: Template Hierarchy');
 
 // ============================================================================
+// STAGE 8: CAPTURE TEMPLATE OUTPUT (BUFFER ONLY)
+// ============================================================================
+wp4bd_debug_stage_start('Stage 8: Capture Template Output');
+
+$stage8 = 'Stage 8: Capture Template Output';
+
+$captured_html = '';
+$captured_len = 0;
+
+if (!empty($chosen_path) && file_exists($chosen_path)) {
+  try {
+    // Rewind loop to start before including template.
+    if (isset($wp_query) && method_exists($wp_query, 'rewind_posts')) {
+      $wp_query->rewind_posts();
+      $GLOBALS['post'] = null;
+      wp4bd_debug_log($stage8, 'Loop Rewound', 'Reset current_post to start');
+    }
+
+    // Ensure globals point to our query before include
+    $GLOBALS['wp_query'] = $wp_query;
+    $GLOBALS['wp_the_query'] = $wp_query;
+
+    // Reset debug counters so template calls are counted from zero
+    if (isset($wp_query)) {
+      $wp_query->debug_have_posts_calls = 0;
+      $wp_query->debug_the_post_calls = 0;
+    }
+
+    // Log loop state before include
+    if (isset($wp_query)) {
+      $pre_state = [
+        'post_count' => $wp_query->post_count,
+        'current_post' => $wp_query->current_post,
+        'posts_array_count' => is_array($wp_query->posts) ? count($wp_query->posts) : 0,
+      ];
+      if (!empty($wp_query->posts)) {
+        $pre_state['first_post'] = [
+          'ID' => $wp_query->posts[0]->ID ?? null,
+          'post_title' => $wp_query->posts[0]->post_title ?? null,
+        ];
+      }
+      wp4bd_debug_log($stage8, 'Pre-Include Loop State', $pre_state);
+    }
+
+    ob_start();
+    include $chosen_path;
+    $captured_html = ob_get_clean();
+    $captured_len = strlen($captured_html);
+    wp4bd_debug_log($stage8, 'Template Included', $chosen_path);
+    wp4bd_debug_log($stage8, 'Captured HTML Length', $captured_len . ' characters');
+    // At debug level 4, also show the captured HTML (escaped) for inspection.
+    if (wp4bd_debug_get_level() >= 4 && $captured_html !== '') {
+      wp4bd_debug_log($stage8, 'Captured HTML', $captured_html);
+    }
+  } catch (Throwable $e) {
+    // Ensure buffer is cleaned if include threw
+    if (ob_get_level() > 0) {
+      ob_end_clean();
+    }
+    wp4bd_debug_log($stage8, 'Template Include Error', $e->getMessage());
+  }
+} else {
+  wp4bd_debug_log($stage8, 'Template Include Skipped', 'No template selected or file missing');
+}
+
+// Do NOT print the captured HTML yet.
+
+wp4bd_debug_stage_end('Stage 8: Capture Template Output');
+
+// Log loop state after include to see if template consumed posts
+if (isset($wp_query)) {
+  $post_include_state = [
+    'post_count' => $wp_query->post_count,
+    'current_post' => $wp_query->current_post,
+    'posts_array_count' => is_array($wp_query->posts) ? count($wp_query->posts) : 0,
+  ];
+  if (property_exists($wp_query, 'debug_have_posts_calls')) {
+    $post_include_state['have_posts_calls'] = $wp_query->debug_have_posts_calls;
+  }
+  if (property_exists($wp_query, 'debug_the_post_calls')) {
+    $post_include_state['the_post_calls'] = $wp_query->debug_the_post_calls;
+  }
+  wp4bd_debug_log($stage8, 'Post-Include Loop State', $post_include_state);
+}
+
+// ============================================================================
 // RENDER DEBUG OUTPUT
 // ============================================================================
 

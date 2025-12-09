@@ -25,6 +25,11 @@
   - Read conditionals from `$wp_query` (is_home, is_single, etc.).
   - Build simple hierarchy (home/single/page/archive/search/404 → index.php).
   - Choose first existing template under active theme, log template + path, log missing if none.
+- Added Stage 8 in `page-debug.tpl.php` for WP4BD-011:
+  - Buffer template output via `ob_start/ob_get_clean`, log captured length; show captured HTML only at debug level 4.
+  - Reassert `$wp_query`/`$wp_the_query` globals before include to ensure the theme uses our populated query (debug counters reset).
+  - Log loop state pre/post include and debug counters; handles template errors safely.
+- Added loop debug counters/logging (debug level 4) in `WP_Query` and loop wrappers to trace `have_posts()` / `the_post()` usage.
 
 ## Current Stage 4 output
 - Paths resolve to WordPress core (`/var/www/html/wordpress-4.9/wp-includes` exists).

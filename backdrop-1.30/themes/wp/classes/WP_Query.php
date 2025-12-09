@@ -117,6 +117,13 @@ class WP_Query {
     public $error = '';
 
     /**
+     * Debug counters for loop calls
+     * @var int
+     */
+    public $debug_have_posts_calls = 0;
+    public $debug_the_post_calls = 0;
+
+    /**
      * Constructor - Execute query based on arguments
      *
      * @param array|string $args Query arguments
@@ -420,9 +427,18 @@ class WP_Query {
      * @return bool
      */
     public function have_posts() {
+        $this->debug_have_posts_calls++;
         $has_posts = ($this->current_post + 1 < $this->post_count);
         
         if ($has_posts) {
+            if (function_exists('wp4bd_debug_get_level') && wp4bd_debug_get_level() >= 4) {
+                wp4bd_debug_log('Loop Debug', 'WP_Query::have_posts', [
+                    'current_post' => $this->current_post,
+                    'post_count' => $this->post_count,
+                    'post_ids' => array_map(function($p){ return $p->ID ?? null; }, (array) $this->posts),
+                    'call_count' => $this->debug_have_posts_calls,
+                ]);
+            }
             return true;
         } elseif ($this->current_post + 1 == $this->post_count && $this->post_count > 0) {
             // End of loop - rewind for potential second loop
@@ -462,6 +478,16 @@ class WP_Query {
             if ($this->current_post == 0) {
                 do_action('loop_start', $this);
             }
+
+            if (function_exists('wp4bd_debug_get_level') && wp4bd_debug_get_level() >= 4) {
+                wp4bd_debug_log('Loop Debug', 'WP_Query::the_post', [
+                    'current_post' => $this->current_post,
+                    'post_id' => $this->post->ID ?? null,
+                    'post_title' => $this->post->post_title ?? null,
+                    'call_count' => $this->debug_the_post_calls + 1,
+                ]);
+            }
+            $this->debug_the_post_calls++;
         }
     }
 
