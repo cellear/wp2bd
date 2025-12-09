@@ -72,6 +72,8 @@ require_once WP2BD_THEME_DIR . '/functions/widgets.php';
 // Note: stubs.php has been archived to _archive/ as of Dec 2024
 // Functions should be properly implemented in the appropriate file above
 
+// Debug template suggestion removed; debug view should be activated manually.
+
 // Override get_template_directory() to return WordPress theme directory
 if (!function_exists('get_template_directory')) {
   function get_template_directory()
