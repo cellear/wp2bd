@@ -1916,3 +1916,17 @@ if (!function_exists('get_avatar')) {
     return '<img alt="' . esc_attr($alt) . '" src="' . esc_url($url) . '" class="avatar avatar-' . $size . '" height="' . $size . '" width="' . $size . '" />';
   }
 }
+
+/**
+ * Determine if an attachment is an image.
+ *
+ * @param int $post_id Attachment ID.
+ * @return bool True if image, false otherwise.
+ */
+if (!function_exists('wp_attachment_is_image')) {
+  function wp_attachment_is_image($post_id = 0) {
+    // For WP4BD, we'll return false for now as we don't have attachment support
+    // This prevents errors in theme scripts that check for featured images
+    return false;
+  }
+}
