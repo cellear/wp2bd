@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip if our bridge already provides WP_Query/loop helpers.
+if (class_exists('WP_Query')) {
+	return;
+}
 /**
  * WordPress Query API
  *

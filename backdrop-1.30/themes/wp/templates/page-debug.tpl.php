@@ -306,6 +306,63 @@ $total_size = 0;
 foreach ($wp_core_files as $file) {
   $filepath = ABSPATH . WPINC . '/' . $file;
 
+  // Skip files that would redeclare symbols we already provide.
+  if ($file === 'plugin.php' && function_exists('add_filter')) {
+    $loaded_files[$file] = 'skipped (hooks already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'add_filter already defined');
+    continue;
+  }
+  if ($file === 'post.php' && function_exists('get_post')) {
+    $loaded_files[$file] = 'skipped (get_post already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'get_post already defined');
+    continue;
+  }
+  if ($file === 'query.php' && (class_exists('WP_Query') || function_exists('have_posts'))) {
+    $loaded_files[$file] = 'skipped (query functions already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'WP_Query/have_posts already defined');
+    continue;
+  }
+  if ($file === 'general-template.php' && function_exists('wp_head')) {
+    $loaded_files[$file] = 'skipped (wp_head/wp_footer already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'general-template hooks already defined');
+    continue;
+  }
+  if ($file === 'post-template.php' && function_exists('the_content')) {
+    $loaded_files[$file] = 'skipped (template tags already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'post-template tags already defined');
+    continue;
+  }
+  if ($file === 'link-template.php' && function_exists('the_permalink')) {
+    $loaded_files[$file] = 'skipped (link-template already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'the_permalink already defined');
+    continue;
+  }
+  if ($file === 'formatting.php' && function_exists('sanitize_html_class')) {
+    $loaded_files[$file] = 'skipped (formatting already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'formatting helpers already defined');
+    continue;
+  }
+  if ($file === 'l10n.php' && function_exists('__')) {
+    $loaded_files[$file] = 'skipped (l10n already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", '__ already defined');
+    continue;
+  }
+  if ($file === 'load.php') {
+    $loaded_files[$file] = 'skipped (load.php conflicts with Backdrop bootstrap)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'timer_start already defined');
+    continue;
+  }
+  if ($file === 'functions.wp-styles.php' && function_exists('wp_print_styles')) {
+    $loaded_files[$file] = 'skipped (wp-styles already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'wp_print_styles already defined');
+    continue;
+  }
+  if ($file === 'functions.wp-scripts.php' && function_exists('wp_print_scripts')) {
+    $loaded_files[$file] = 'skipped (wp-scripts already loaded)';
+    wp4bd_debug_log('Stage 4: Load WordPress Core Files', "Skipped: $file", 'wp_print_scripts already defined');
+    continue;
+  }
+
   if (file_exists($filepath)) {
     try {
       require_once $filepath;
@@ -452,6 +509,257 @@ if (count($loop_iterations) > 0) {
 wp4bd_debug_stage_end('Stage 5: Test The Loop');
 
 // ============================================================================
+// STAGE 6: LOAD THEME functions.php & FIRE HOOKS
+// ============================================================================
+wp4bd_debug_stage_start('Stage 6: Theme functions.php & Hooks');
+
+// Determine active theme and paths
+$theme_stage = 'Stage 6: Theme functions.php & Hooks';
+$active_theme = defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : null;
+
+if (!$active_theme && function_exists('config')) {
+  try {
+    $cfg_theme = config('wp_content.settings')->get('active_theme');
+    if (!empty($cfg_theme)) {
+      $active_theme = $cfg_theme;
+    }
+  } catch (Exception $e) {
+    wp4bd_debug_log($theme_stage, 'Theme Config Error', $e->getMessage());
+  }
+}
+
+if (empty($active_theme)) {
+  $active_theme = 'twentysixteen'; // fallback
+}
+
+// Derive theme directories
+$theme_dir = defined('WP2BD_ACTIVE_THEME_DIR') ? WP2BD_ACTIVE_THEME_DIR : (BACKDROP_ROOT . '/themes/wp/wp-content/themes/' . $active_theme);
+$functions_php = $theme_dir . '/functions.php';
+
+wp4bd_debug_log($theme_stage, 'Active Theme', $active_theme);
+wp4bd_debug_log($theme_stage, 'Theme Dir', $theme_dir);
+wp4bd_debug_log($theme_stage, 'functions.php Path', $functions_php);
+
+// Load theme functions.php safely
+$functions_loaded = false;
+if (file_exists($functions_php)) {
+  try {
+    require_once $functions_php;
+    $functions_loaded = true;
+    wp4bd_debug_log($theme_stage, 'functions.php', 'Loaded');
+  } catch (Throwable $e) {
+    wp4bd_debug_log($theme_stage, 'functions.php Error', $e->getMessage());
+  }
+} else {
+  wp4bd_debug_log($theme_stage, 'functions.php', 'Missing');
+}
+
+// Fire hooks expected after theme setup
+if ($functions_loaded) {
+  try {
+    do_action('after_setup_theme');
+    wp4bd_debug_log($theme_stage, 'after_setup_theme', 'Fired');
+  } catch (Throwable $e) {
+    wp4bd_debug_log($theme_stage, 'after_setup_theme Error', $e->getMessage());
+  }
+
+  try {
+    do_action('wp_enqueue_scripts');
+    wp4bd_debug_log($theme_stage, 'wp_enqueue_scripts', 'Fired');
+  } catch (Throwable $e) {
+    wp4bd_debug_log($theme_stage, 'wp_enqueue_scripts Error', $e->getMessage());
+  }
+}
+
+// Log registered hooks
+if (isset($GLOBALS['wp_filter']) && is_array($GLOBALS['wp_filter'])) {
+  $hook_summary = [];
+  foreach ($GLOBALS['wp_filter'] as $hook_name => $priorities) {
+    $count = 0;
+    foreach ($priorities as $callbacks) {
+      $count += count($callbacks);
+    }
+    $hook_summary[$hook_name] = $count;
+  }
+  wp4bd_debug_log($theme_stage, 'Registered Hooks', $hook_summary);
+}
+
+wp4bd_debug_stage_end('Stage 6: Theme functions.php & Hooks');
+
+// ============================================================================
+// STAGE 7: TEMPLATE HIERARCHY SELECTION
+// ============================================================================
+wp4bd_debug_stage_start('Stage 7: Template Hierarchy');
+
+$stage7 = 'Stage 7: Template Hierarchy';
+
+// Determine active theme and template dir
+$active_theme = defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : null;
+if (!$active_theme && function_exists('config')) {
+  try {
+    $cfg_theme = config('wp_content.settings')->get('active_theme');
+    if (!empty($cfg_theme)) {
+      $active_theme = $cfg_theme;
+    }
+  } catch (Exception $e) {
+    wp4bd_debug_log($stage7, 'Theme Config Error', $e->getMessage());
+  }
+}
+if (empty($active_theme)) {
+  $active_theme = 'twentysixteen'; // fallback
+}
+
+$theme_dir = defined('WP2BD_ACTIVE_THEME_DIR')
+  ? WP2BD_ACTIVE_THEME_DIR
+  : (BACKDROP_ROOT . '/themes/wp/wp-content/themes/' . $active_theme);
+
+// Read query conditionals
+$conditionals = array(
+  'is_home'   => isset($wp_query->is_home) ? (bool) $wp_query->is_home : false,
+  'is_single' => isset($wp_query->is_single) ? (bool) $wp_query->is_single : false,
+  'is_page'   => isset($wp_query->is_page) ? (bool) $wp_query->is_page : false,
+  'is_archive'=> isset($wp_query->is_archive) ? (bool) $wp_query->is_archive : false,
+  'is_404'    => isset($wp_query->is_404) ? (bool) $wp_query->is_404 : false,
+  'is_search' => isset($wp_query->is_search) ? (bool) $wp_query->is_search : false,
+);
+wp4bd_debug_log($stage7, 'Conditionals', $conditionals);
+
+// Build a minimal hierarchy (simplified)
+$candidates = array();
+if ($conditionals['is_home']) {
+  $candidates[] = 'home.php';
+}
+if ($conditionals['is_single']) {
+  $candidates[] = 'single.php';
+}
+if ($conditionals['is_page']) {
+  $candidates[] = 'page.php';
+}
+if ($conditionals['is_archive']) {
+  $candidates[] = 'archive.php';
+}
+if ($conditionals['is_search']) {
+  $candidates[] = 'search.php';
+}
+if ($conditionals['is_404']) {
+  $candidates[] = '404.php';
+}
+// Fallbacks
+$candidates[] = 'index.php';
+
+// Find first existing template
+$chosen = null;
+$chosen_path = null;
+$missing = array();
+foreach ($candidates as $tpl) {
+  $full = $theme_dir . '/' . $tpl;
+  if (file_exists($full)) {
+    $chosen = $tpl;
+    $chosen_path = $full;
+    break;
+  } else {
+    $missing[] = $tpl;
+  }
+}
+
+wp4bd_debug_log($stage7, 'Template Candidates', $candidates);
+
+if ($chosen) {
+  wp4bd_debug_log($stage7, 'Using Template', $chosen);
+  wp4bd_debug_log($stage7, 'Template Path', $chosen_path);
+} else {
+  wp4bd_debug_log($stage7, 'Template Missing', $missing);
+}
+
+wp4bd_debug_stage_end('Stage 7: Template Hierarchy');
+
+// ============================================================================
+// STAGE 8: CAPTURE TEMPLATE OUTPUT (BUFFER ONLY)
+// ============================================================================
+wp4bd_debug_stage_start('Stage 8: Capture Template Output');
+
+$stage8 = 'Stage 8: Capture Template Output';
+
+$captured_html = '';
+$captured_len = 0;
+
+if (!empty($chosen_path) && file_exists($chosen_path)) {
+  try {
+    // Rewind loop to start before including template.
+    if (isset($wp_query) && method_exists($wp_query, 'rewind_posts')) {
+      $wp_query->rewind_posts();
+      $GLOBALS['post'] = null;
+      wp4bd_debug_log($stage8, 'Loop Rewound', 'Reset current_post to start');
+    }
+
+    // Ensure globals point to our query before include
+    $GLOBALS['wp_query'] = $wp_query;
+    $GLOBALS['wp_the_query'] = $wp_query;
+
+    // Reset debug counters so template calls are counted from zero
+    if (isset($wp_query)) {
+      $wp_query->debug_have_posts_calls = 0;
+      $wp_query->debug_the_post_calls = 0;
+    }
+
+    // Log loop state before include
+    if (isset($wp_query)) {
+      $pre_state = [
+        'post_count' => $wp_query->post_count,
+        'current_post' => $wp_query->current_post,
+        'posts_array_count' => is_array($wp_query->posts) ? count($wp_query->posts) : 0,
+      ];
+      if (!empty($wp_query->posts)) {
+        $pre_state['first_post'] = [
+          'ID' => $wp_query->posts[0]->ID ?? null,
+          'post_title' => $wp_query->posts[0]->post_title ?? null,
+        ];
+      }
+      wp4bd_debug_log($stage8, 'Pre-Include Loop State', $pre_state);
+    }
+
+    ob_start();
+    include $chosen_path;
+    $captured_html = ob_get_clean();
+    $captured_len = strlen($captured_html);
+    wp4bd_debug_log($stage8, 'Template Included', $chosen_path);
+    wp4bd_debug_log($stage8, 'Captured HTML Length', $captured_len . ' characters');
+    // At debug level 4, also show the captured HTML (escaped) for inspection.
+    if (wp4bd_debug_get_level() >= 4 && $captured_html !== '') {
+      wp4bd_debug_log($stage8, 'Captured HTML', $captured_html);
+    }
+  } catch (Throwable $e) {
+    // Ensure buffer is cleaned if include threw
+    if (ob_get_level() > 0) {
+      ob_end_clean();
+    }
+    wp4bd_debug_log($stage8, 'Template Include Error', $e->getMessage());
+  }
+} else {
+  wp4bd_debug_log($stage8, 'Template Include Skipped', 'No template selected or file missing');
+}
+
+// Do NOT print the captured HTML yet.
+
+wp4bd_debug_stage_end('Stage 8: Capture Template Output');
+
+// Log loop state after include to see if template consumed posts
+if (isset($wp_query)) {
+  $post_include_state = [
+    'post_count' => $wp_query->post_count,
+    'current_post' => $wp_query->current_post,
+    'posts_array_count' => is_array($wp_query->posts) ? count($wp_query->posts) : 0,
+  ];
+  if (property_exists($wp_query, 'debug_have_posts_calls')) {
+    $post_include_state['have_posts_calls'] = $wp_query->debug_have_posts_calls;
+  }
+  if (property_exists($wp_query, 'debug_the_post_calls')) {
+    $post_include_state['the_post_calls'] = $wp_query->debug_the_post_calls;
+  }
+  wp4bd_debug_log($stage8, 'Post-Include Loop State', $post_include_state);
+}
+
+// ============================================================================
 // RENDER DEBUG OUTPUT
 // ============================================================================
 
@@ -460,17 +768,17 @@ print wp4bd_debug_render();
 ?>
 
 <!-- Help Text -->
-<div style="margin: 20px; padding: 20px; background: #1a3a4a; color: #e0e0e0; border-left: 4px solid #4a9eff;">
-  <h3 style="color: #fff;">🎛️ Debug Level Controls</h3>
-  <p>Add <code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">?wp4bd_debug=N</code> to URL to change debug level:</p>
+<div style="margin: 20px; padding: 20px; background: #eef5ff; color: #0f2a45; border-left: 4px solid #4a9eff;">
+  <h3 style="color: #0f2a45;">🎛️ Debug Level Controls</h3>
+  <p>Add <code style="background: #dce9fb; color: #0f2a45; padding: 2px 6px;">?wp4bd_debug=N</code> to URL to change debug level:</p>
   <ul>
-    <li><a href="?wp4bd_debug=1" style="color: #6cf;">Level 1</a> - Flow Tracking (timing only)</li>
-    <li><a href="?wp4bd_debug=2" style="color: #6cf;">Level 2</a> - Data Counts (default)</li>
-    <li><a href="?wp4bd_debug=3" style="color: #6cf;">Level 3</a> - Data Samples (titles, IDs)</li>
-    <li><a href="?wp4bd_debug=4" style="color: #6cf;">Level 4</a> - Full Data Dump</li>
+    <li><a href="?wp4bd_debug=1" style="color: #0056b3;">Level 1</a> - Flow Tracking (timing only)</li>
+    <li><a href="?wp4bd_debug=2" style="color: #0056b3;">Level 2</a> - Data Counts (default)</li>
+    <li><a href="?wp4bd_debug=3" style="color: #0056b3;">Level 3</a> - Data Samples (titles, IDs)</li>
+    <li><a href="?wp4bd_debug=4" style="color: #0056b3;">Level 4</a> - Full Data Dump</li>
   </ul>
 
-  <h3 style="color: #fff;">✅ Current Status</h3>
+  <h3 style="color: #0f2a45;">✅ Current Status</h3>
   <ul>
     <li>✅ <strong>WP4BD-001:</strong> Debug helper functions created</li>
     <li>✅ <strong>WP4BD-002:</strong> Debug template created</li>
@@ -478,10 +786,11 @@ print wp4bd_debug_render();
     <li>✅ <strong>WP4BD-004:</strong> Stage 2 - Transform to WP_Post</li>
     <li>✅ <strong>WP4BD-005:</strong> Stage 3 - Populate WP_Query</li>
     <li>✅ <strong>WP4BD-006:</strong> Stage 4 - Load WordPress Core</li>
-    <li>✅ <strong>WP4BD-007:</strong> Stage 5 - Test The Loop (you are here!)</li>
+    <li>✅ <strong>WP4BD-007:</strong> Stage 5 - Test The Loop</li>
+    <li>✅ <strong>WP4BD-009:</strong> Stage 6 - Theme functions.php & Hooks (you are here!)</li>
   </ul>
 
-  <h3 style="color: #fff;">🎉 What You're Seeing</h3>
+  <h3 style="color: #0f2a45;">🎉 What You're Seeing</h3>
   <p><strong>All 5 stages are complete!</strong> The WordPress Loop is working with real Backdrop data:</p>
   <ul>
     <li>Stage 1: Query Backdrop nodes ✓</li>
@@ -491,16 +800,16 @@ print wp4bd_debug_render();
     <li>Stage 5: Test The Loop ✓</li>
   </ul>
 
-  <h3 style="color: #fff;">📋 What's Working</h3>
+  <h3 style="color: #0f2a45;">📋 What's Working</h3>
   <ol>
-    <li><code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">have_posts()</code> correctly checks for posts</li>
-    <li><code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">the_post()</code> advances through the loop</li>
-    <li>Template tags (<code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">the_title()</code>, <code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">get_permalink()</code>) work</li>
-    <li>Global <code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">$post</code> variable is set correctly</li>
-    <li><code style="background: #0a1a2a; color: #6cf; padding: 2px 6px;">wp_reset_postdata()</code> resets the loop</li>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">have_posts()</code> correctly checks for posts</li>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">the_post()</code> advances through the loop</li>
+    <li>Template tags (<code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">the_title()</code>, <code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">get_permalink()</code>) work</li>
+    <li>Global <code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">$post</code> variable is set correctly</li>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">wp_reset_postdata()</code> resets the loop</li>
   </ol>
 
-  <h3 style="color: #fff;">🔧 Implementation Progress</h3>
+  <h3 style="color: #0f2a45;">🔧 Implementation Progress</h3>
   <p><strong>Epic 1: Debug Infrastructure</strong> - ✅ Complete! (2/2 tickets done)</p>
   <p><strong>Epic 2: Data Loading</strong> - ✅ Complete! (3/3 tickets done)</p>
   <p><strong>Epic 3: WordPress Integration</strong> - ✅ Complete! (2/2 tickets done)</p>
@@ -510,8 +819,8 @@ print wp4bd_debug_render();
 <?php
 // Show some environment info for debugging
 ?>
-<div style="margin: 20px; padding: 20px; background: #2a2a2a; color: #e0e0e0; border-left: 4px solid #666;">
-  <h3 style="color: #fff;">🔍 Environment Info</h3>
+<div style="margin: 20px; padding: 20px; background: #f7f7f7; color: #222; border-left: 4px solid #ccc;">
+  <h3 style="color: #222;">🔍 Environment Info</h3>
   <ul>
     <li><strong>Backdrop Root:</strong> <?php print BACKDROP_ROOT; ?></li>
     <li><strong>Current Path:</strong> <?php print current_path(); ?></li>

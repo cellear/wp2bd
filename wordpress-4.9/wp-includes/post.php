@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip if our bridge already provides post helpers.
+if (function_exists('get_post')) {
+	return;
+}
 /**
  * Core Post API
  *

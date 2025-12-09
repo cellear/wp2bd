@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip if our bridge already defines template hooks.
+if (function_exists('wp_head')) {
+	return;
+}
 /**
  * General template tags that can go anywhere in a template.
  *

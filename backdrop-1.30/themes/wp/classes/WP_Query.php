@@ -117,6 +117,13 @@ class WP_Query {
     public $error = '';
 
     /**
+     * Debug counters for loop calls
+     * @var int
+     */
+    public $debug_have_posts_calls = 0;
+    public $debug_the_post_calls = 0;
+
+    /**
      * Constructor - Execute query based on arguments
      *
      * @param array|string $args Query arguments
@@ -420,9 +427,18 @@ class WP_Query {
      * @return bool
      */
     public function have_posts() {
+        $this->debug_have_posts_calls++;
         $has_posts = ($this->current_post + 1 < $this->post_count);
         
         if ($has_posts) {
+            if (function_exists('wp4bd_debug_get_level') && wp4bd_debug_get_level() >= 4) {
+                wp4bd_debug_log('Loop Debug', 'WP_Query::have_posts', [
+                    'current_post' => $this->current_post,
+                    'post_count' => $this->post_count,
+                    'post_ids' => array_map(function($p){ return $p->ID ?? null; }, (array) $this->posts),
+                    'call_count' => $this->debug_have_posts_calls,
+                ]);
+            }
             return true;
         } elseif ($this->current_post + 1 == $this->post_count && $this->post_count > 0) {
             // End of loop - rewind for potential second loop
@@ -462,6 +478,16 @@ class WP_Query {
             if ($this->current_post == 0) {
                 do_action('loop_start', $this);
             }
+
+            if (function_exists('wp4bd_debug_get_level') && wp4bd_debug_get_level() >= 4) {
+                wp4bd_debug_log('Loop Debug', 'WP_Query::the_post', [
+                    'current_post' => $this->current_post,
+                    'post_id' => $this->post->ID ?? null,
+                    'post_title' => $this->post->post_title ?? null,
+                    'call_count' => $this->debug_the_post_calls + 1,
+                ]);
+            }
+            $this->debug_the_post_calls++;
         }
     }
 
@@ -623,41 +649,43 @@ if (!function_exists('db_like')) {
     }
 }
 
-/**
- * Get post object
- *
- * @param int|WP_Post|null $post Post ID or object
- * @param string $output Optional. OBJECT, ARRAY_A, or ARRAY_N. Default OBJECT.
- * @return WP_Post|array|null
- */
-function get_post($post = null, $output = OBJECT) {
-    if ($post instanceof WP_Post) {
-        // Handle output format if needed
-        if ($output === OBJECT) {
-            return $post;
-        }
-        // For now, only support OBJECT output
-        return $post;
-    }
-
-    if (is_numeric($post) && function_exists('node_load')) {
-        $node = node_load($post);
-        if ($node) {
-            $wp_post = WP_Post::from_node($node);
+if (!function_exists('get_post')) {
+    /**
+     * Get post object
+     *
+     * @param int|WP_Post|null $post Post ID or object
+     * @param string $output Optional. OBJECT, ARRAY_A, or ARRAY_N. Default OBJECT.
+     * @return WP_Post|array|null
+     */
+    function get_post($post = null, $output = OBJECT) {
+        if ($post instanceof WP_Post) {
             // Handle output format if needed
             if ($output === OBJECT) {
-                return $wp_post;
+                return $post;
             }
             // For now, only support OBJECT output
-            return $wp_post;
+            return $post;
         }
-    }
 
-    // Return global post if no argument
-    if ($post === null) {
-        global $post;
-        return $post;
-    }
+        if (is_numeric($post) && function_exists('node_load')) {
+            $node = node_load($post);
+            if ($node) {
+                $wp_post = WP_Post::from_node($node);
+                // Handle output format if needed
+                if ($output === OBJECT) {
+                    return $wp_post;
+                }
+                // For now, only support OBJECT output
+                return $wp_post;
+            }
+        }
 
-    return null;
+        // Return global post if no argument
+        if ($post === null) {
+            global $post;
+            return $post;
+        }
+
+        return null;
+    }
 }
