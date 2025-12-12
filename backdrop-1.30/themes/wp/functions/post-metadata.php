@@ -148,6 +148,52 @@ function get_post_format( $post = null ) {
 }
 
 /**
+ * Check if a post has the specified post format.
+ *
+ * @param string $format The format to check for.
+ * @param int|WP_Post|object|null $post Optional. Post ID or post object. Default is global $post.
+ * @return bool True if the post has the specified format.
+ */
+function has_post_format($format = '', $post = null) {
+  $post_format = get_post_format($post);
+  
+  // If no format specified, check if the post has any non-standard format
+  if (empty($format)) {
+    return $post_format && $post_format !== 'standard';
+  }
+  
+  return $post_format === $format;
+}
+
+/**
+ * Returns a pretty, localized version of a post format slug.
+ *
+ * @param string $slug A post format slug.
+ * @return string The translated post format name.
+ */
+function get_post_format_string($slug) {
+  $strings = array(
+    'standard' => _x('Standard', 'Post format'),
+    'aside'    => _x('Aside', 'Post format'),
+    'chat'     => _x('Chat', 'Post format'),
+    'gallery'  => _x('Gallery', 'Post format'),
+    'link'     => _x('Link', 'Post format'),
+    'image'    => _x('Image', 'Post format'),
+    'quote'    => _x('Quote', 'Post format'),
+    'status'   => _x('Status', 'Post format'),
+    'video'    => _x('Video', 'Post format'),
+    'audio'    => _x('Audio', 'Post format'),
+  );
+  
+  if (!$slug) {
+    return $strings['standard'];
+  }
+  
+  $slug = strtolower($slug);
+  return isset($strings[$slug]) ? $strings[$slug] : '';
+}
+
+/**
  * Retrieve the date on which the post was written.
  *
  * WordPress Behavior:

@@ -2,6 +2,7 @@
     "_config_name": "wp_content.settings",
     "active_theme": "twentyseventeen",
     "available_themes": [
+        "outlined",
         "twentyeleven",
         "twentyfifteen",
         "twentyfourteen",

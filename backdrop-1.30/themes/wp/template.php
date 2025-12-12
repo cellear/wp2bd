@@ -30,6 +30,18 @@ if (!defined('WP2BD_THEME_DIR')) {
   define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
 }
 
+// Define WordPress root paths so we can load core files early.
+$project_root = dirname(BACKDROP_ROOT);
+if (!defined('ABSPATH')) {
+  define('ABSPATH', $project_root . '/wordpress-4.9/');
+}
+if (!defined('WPINC')) {
+  define('WPINC', 'wp-includes');
+}
+if (!defined('WP_CONTENT_DIR')) {
+  define('WP_CONTENT_DIR', ABSPATH . 'wp-content');
+}
+
 // Initialize WordPress globals
 global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version, $pagenow;
 $wp_filter = array();
@@ -48,13 +60,19 @@ require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
 // Load WordPress compatibility functions
 require_once WP2BD_THEME_DIR . '/functions/hooks.php';
 require_once WP2BD_THEME_DIR . '/functions/escaping.php';
+require_once WP2BD_THEME_DIR . '/functions/i18n.php';
 require_once WP2BD_THEME_DIR . '/functions/loop.php';
+require_once WP2BD_THEME_DIR . '/functions/enqueue.php';
 require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
 require_once WP2BD_THEME_DIR . '/functions/content-display.php';
 require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
 require_once WP2BD_THEME_DIR . '/functions/utilities.php';
 require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
-require_once WP2BD_THEME_DIR . '/functions/stubs.php';
+require_once WP2BD_THEME_DIR . '/functions/widgets.php';
+// Note: stubs.php has been archived to _archive/ as of Dec 2024
+// Functions should be properly implemented in the appropriate file above
+
+// Debug template suggestion removed; debug view should be activated manually.
 
 // Override get_template_directory() to return WordPress theme directory
 if (!function_exists('get_template_directory')) {

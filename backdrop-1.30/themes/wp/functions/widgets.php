@@ -22,6 +22,9 @@
 function dynamic_sidebar($sidebar_id = 1) {
   global $wp_registered_sidebars, $wp_registered_widgets;
 
+  // Normalize sidebar ID for comparison
+  $sidebar_key = is_int($sidebar_id) ? 'sidebar-' . $sidebar_id : $sidebar_id;
+
   // Get sidebar configuration (widget wrappers)
   $sidebar_config = _wp2bd_get_sidebar_config($sidebar_id);
 
@@ -64,9 +67,17 @@ function dynamic_sidebar($sidebar_id = 1) {
  *   True if sidebar has widgets.
  */
 function is_active_sidebar($sidebar_id) {
-  // For now, return true for sidebar-1 (main sidebar)
-  // Could be enhanced to check if Backdrop has content for this sidebar
-  return ($sidebar_id === 'sidebar-1' || $sidebar_id === 1);
+  // Only return true for PRIMARY sidebar and footer/main sidebars
+  // Secondary sidebars (sidebar-2, sidebar-3, tertiary) cause overlap issues
+  // in themes like Twenty Thirteen because they use absolute positioning
+  // and expect these sidebars to be empty unless explicitly configured
+  $active_sidebars = array(
+    'sidebar-1',      // Primary sidebar (most themes)
+    'primary',        // Alternative name for primary
+    1,                // Numeric form
+    'main',           // Footer sidebar (Twenty Thirteen)
+  );
+  return in_array($sidebar_id, $active_sidebars, false);
 }
 
 /**

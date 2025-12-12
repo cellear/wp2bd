@@ -24,6 +24,12 @@ if (!defined('ARRAY_N')) {
     define('ARRAY_N', 'ARRAY_N');
 }
 
+// If core loop functions are already present (e.g., when WordPress query.php is loaded),
+// skip loading these compatibility implementations to avoid redeclaration.
+if (function_exists('wp_reset_postdata')) {
+    return;
+}
+
 /**
  * Determines whether current WordPress query has posts to loop over.
  *
@@ -45,7 +51,18 @@ function have_posts() {
         return false;
     }
 
-    return $wp_query->have_posts();
+    $result = $wp_query->have_posts();
+
+    // Debug logging if wp4bd debug level is high
+    if (function_exists('wp4bd_debug_get_level') && wp4bd_debug_get_level() >= 4) {
+        wp4bd_debug_log('Loop Debug', 'have_posts() wrapper', [
+            'result' => $result,
+            'current_post' => isset($wp_query->current_post) ? $wp_query->current_post : null,
+            'post_count' => isset($wp_query->post_count) ? $wp_query->post_count : null,
+        ]);
+    }
+
+    return $result;
 }
 
 /**
@@ -74,6 +91,13 @@ function the_post() {
     }
 
     $wp_query->the_post();
+
+    if (function_exists('wp4bd_debug_get_level') && wp4bd_debug_get_level() >= 4) {
+        wp4bd_debug_log('Loop Debug', 'the_post() wrapper', [
+            'current_post' => $wp_query->current_post,
+            'global_post_id' => isset($GLOBALS['post']->ID) ? $GLOBALS['post']->ID : null,
+        ]);
+    }
 }
 
 /**
