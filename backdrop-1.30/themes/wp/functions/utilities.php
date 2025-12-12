@@ -1930,3 +1930,28 @@ if (!function_exists('wp_attachment_is_image')) {
     return false;
   }
 }
+
+// -----------------------------------------------------------------------------
+// Query helpers (WordPress global wrappers)
+// -----------------------------------------------------------------------------
+
+if (!function_exists('get_queried_object')) {
+  function get_queried_object() {
+    global $wp_query;
+    if (isset($wp_query) && method_exists($wp_query, 'get_queried_object')) {
+      return $wp_query->get_queried_object();
+    }
+    return null;
+  }
+}
+
+if (!function_exists('get_queried_object_id')) {
+  function get_queried_object_id() {
+    global $wp_query;
+    if (isset($wp_query) && property_exists($wp_query, 'queried_object_id')) {
+      return $wp_query->queried_object_id;
+    }
+    $obj = get_queried_object();
+    return ($obj && isset($obj->ID)) ? $obj->ID : 0;
+  }
+}

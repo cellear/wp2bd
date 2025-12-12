@@ -47,8 +47,10 @@ if ($is_admin) {
 // Load debug helper functions
 require_once BACKDROP_ROOT . '/modules/wp_content/wp4bd_debug.inc';
 
-// Initialize debugging
-wp4bd_debug_init();
+// Initialize debugging (safe if already loaded)
+if (function_exists('wp4bd_debug_init')) {
+  wp4bd_debug_init();
+}
 
 // ============================================================================
 // STAGE 1: BACKDROP QUERY
