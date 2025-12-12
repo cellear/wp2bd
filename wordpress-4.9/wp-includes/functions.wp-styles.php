@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip if our bridge already provides style enqueue/print helpers.
+if (function_exists('wp_print_styles')) {
+	return;
+}
 /**
  * Dependencies API: Styles functions
  *

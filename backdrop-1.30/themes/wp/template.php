@@ -30,6 +30,18 @@ if (!defined('WP2BD_THEME_DIR')) {
   define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
 }
 
+// Define WordPress root paths so we can load core files early.
+$project_root = dirname(BACKDROP_ROOT);
+if (!defined('ABSPATH')) {
+  define('ABSPATH', $project_root . '/wordpress-4.9/');
+}
+if (!defined('WPINC')) {
+  define('WPINC', 'wp-includes');
+}
+if (!defined('WP_CONTENT_DIR')) {
+  define('WP_CONTENT_DIR', ABSPATH . 'wp-content');
+}
+
 // Initialize WordPress globals
 global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version, $pagenow;
 $wp_filter = array();
@@ -56,6 +68,7 @@ require_once WP2BD_THEME_DIR . '/functions/content-display.php';
 require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
 require_once WP2BD_THEME_DIR . '/functions/utilities.php';
 require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
+require_once WP2BD_THEME_DIR . '/functions/widgets.php';
 // Note: stubs.php has been archived to _archive/ as of Dec 2024
 // Functions should be properly implemented in the appropriate file above
 

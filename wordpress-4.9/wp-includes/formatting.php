@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip if our bridge already provides formatting helpers.
+if (function_exists('sanitize_html_class')) {
+	return;
+}
 /**
  * Main WordPress Formatting API.
  *

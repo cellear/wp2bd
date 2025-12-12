@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip loading WordPress hook system if our bridge is already active.
+if (function_exists('add_filter')) {
+  return;
+}
 /**
  * The plugin API is located in this file, which allows for creating actions
  * and filters and hooking functions, and methods. The functions or methods will

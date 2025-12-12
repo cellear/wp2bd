@@ -1,4 +1,8 @@
 <?php
+// WP4BD: Skip if our bridge already provides i18n helpers.
+if (function_exists('__')) {
+	return;
+}
 /**
  * Core Translation API
  *

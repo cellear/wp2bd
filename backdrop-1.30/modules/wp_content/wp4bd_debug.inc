@@ -116,8 +116,8 @@ function wp4bd_debug_render() {
   $level = $wp4bd_debug['level'];
   $total_time = microtime(true) - $wp4bd_debug['start_time'];
 
-  $output = '<div class="wp4bd-debug" style="font-family: monospace; background: #f5f5f5; padding: 20px; margin: 20px 0; border: 2px solid #333;">';
-  $output .= '<h2 style="margin-top: 0;">🔍 WP4BD Debug Output (Level ' . $level . ')</h2>';
+  $output = '<div class="wp4bd-debug" style="font-family: monospace; background: #f7f7f7; color: #222; padding: 20px; margin: 20px 0; border: 2px solid #ddd;">';
+  $output .= '<h2 style="margin-top: 0; color: #222;">🔍 WP4BD Debug Output (Level ' . $level . ')</h2>';
 
   // Level 1+: Flow Tracking
   if ($level >= 1) {
@@ -165,8 +165,8 @@ function wp4bd_debug_render() {
  *   HTML output
  */
 function _wp4bd_debug_render_stage($name, $stage, $level) {
-  $output = '<div style="margin-bottom: 15px; padding: 10px; background: white; border-left: 4px solid #0073aa;">';
-  $output .= '<strong>' . htmlspecialchars($name) . '</strong><br>';
+  $output = '<div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;">';
+  $output .= '<strong style="color: #111;">' . htmlspecialchars($name) . '</strong><br>';
 
   if (empty($stage['data'])) {
     $output .= '<em style="color: #666;">No data logged</em>';
@@ -219,12 +219,23 @@ function _wp4bd_debug_render_value($key, $value, $level, $depth = 0) {
         $props
       );
     } elseif (is_string($value)) {
-      $output .= sprintf(
-        '%s└─ %s: %d characters<br>',
-        $indent,
-        htmlspecialchars($key),
-        strlen($value)
-      );
+      // For short strings (< 200 chars), show the actual value
+      // For long strings, show character count
+      if (strlen($value) < 200) {
+        $output .= sprintf(
+          '%s└─ %s: %s<br>',
+          $indent,
+          htmlspecialchars($key),
+          htmlspecialchars($value)
+        );
+      } else {
+        $output .= sprintf(
+          '%s└─ %s: %d characters<br>',
+          $indent,
+          htmlspecialchars($key),
+          strlen($value)
+        );
+      }
     } else {
       $output .= sprintf(
         '%s└─ %s: %s<br>',
@@ -303,7 +314,7 @@ function _wp4bd_debug_render_value($key, $value, $level, $depth = 0) {
   // Level 4: Show everything
   elseif ($level == 4) {
     $output .= sprintf(
-      '%s└─ %s:<br><pre style="margin: 5px 0; padding: 5px; background: #fafafa; overflow-x: auto;">%s</pre>',
+      '%s└─ %s:<br><pre style="margin: 5px 0; padding: 5px; background: #1a1a1a; color: #e0e0e0; overflow-x: auto;">%s</pre>',
       $indent,
       htmlspecialchars($key),
       htmlspecialchars(print_r($value, true))

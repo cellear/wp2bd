@@ -10,10 +10,6 @@
  * @since 1.0.0
  */
 
-if (!defined('ABSPATH')) {
-    define('ABSPATH', dirname(__FILE__) . '/');
-}
-
 /**
  * Escape HTML entities for safe display in HTML context
  *

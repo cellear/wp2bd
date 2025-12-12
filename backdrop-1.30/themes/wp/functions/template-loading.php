@@ -104,7 +104,7 @@ function get_header($name = null) {
 
         if (file_exists($template_file)) {
             // Load the template
-            require_once $template_file;
+            require $template_file;
             return true;
         }
     }
@@ -166,7 +166,7 @@ function get_footer($name = null) {
 
         if (file_exists($template_file)) {
             // Load the template
-            require_once $template_file;
+            require $template_file;
             return true;
         }
     }
