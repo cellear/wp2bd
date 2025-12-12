@@ -396,28 +396,32 @@ function wp_content_convert_backdrop_attributes($content) {
 function wp_content_block_info() {
   $blocks = array();
 
-  // WordPress Header block - renders header.php
+  // WordPress Page block - runs the entire theme template (RECOMMENDED)
+  // This is how WordPress actually works - one template controls everything
+  $blocks['wordpress_page'] = array(
+    'info' => t('WordPress Page'),
+    'description' => t('Runs the theme template file (index.php, single.php, etc.) exactly as WordPress does.'),
+  );
+
+  // Legacy individual blocks (kept for backward compatibility)
   $blocks['wordpress_header'] = array(
-    'info' => t('WordPress Header'),
-    'description' => t('Renders WordPress theme header (logo, navigation, etc).'),
+    'info' => t('WordPress Header (Legacy)'),
+    'description' => t('Renders WordPress theme header only. Use WordPress Page block instead.'),
   );
 
-  // WordPress Content block - main content area only
   $blocks['wordpress_content'] = array(
-    'info' => t('WordPress Content'),
-    'description' => t('Renders main WordPress content without header/footer/sidebar.'),
+    'info' => t('WordPress Content (Legacy)'),
+    'description' => t('Renders main content only. Use WordPress Page block instead.'),
   );
 
-  // WordPress Sidebar block - renders sidebar.php
   $blocks['wordpress_sidebar'] = array(
-    'info' => t('WordPress Sidebar'),
-    'description' => t('Renders WordPress theme sidebar with widgets.'),
+    'info' => t('WordPress Sidebar (Legacy)'),
+    'description' => t('Renders sidebar only. Use WordPress Page block instead.'),
   );
 
-  // WordPress Footer block - renders footer.php
   $blocks['wordpress_footer'] = array(
-    'info' => t('WordPress Footer'),
-    'description' => t('Renders WordPress theme footer.'),
+    'info' => t('WordPress Footer (Legacy)'),
+    'description' => t('Renders footer only. Use WordPress Page block instead.'),
   );
 
   return $blocks;
@@ -436,26 +440,32 @@ function wp_content_block_view($delta = '', $settings = array(), $contexts = arr
   // }
 
   switch ($delta) {
+    case 'wordpress_page':
+      // Run the entire WordPress template - this is how WordPress actually works!
+      $block['subject'] = NULL;
+      $block['content'] = _wp_content_render_full_page();
+      break;
+
     case 'wordpress_header':
-      // Render WordPress header (header.php)
+      // Legacy: Render WordPress header (header.php)
       $block['subject'] = NULL;
       $block['content'] = _wp_content_render_header();
       break;
 
     case 'wordpress_content':
-      // Main content area only (no header/footer/sidebar)
+      // Legacy: Main content area only (no header/footer/sidebar)
       $block['subject'] = NULL;
       $block['content'] = _wp_content_render_main_content();
       break;
 
     case 'wordpress_sidebar':
-      // Render WordPress sidebar (sidebar.php)
+      // Legacy: Render WordPress sidebar (sidebar.php)
       $block['subject'] = NULL;
       $block['content'] = _wp_content_render_sidebar();
       break;
 
     case 'wordpress_footer':
-      // Render WordPress footer (footer.php)
+      // Legacy: Render WordPress footer (footer.php)
       $block['subject'] = NULL;
       $block['content'] = _wp_content_render_footer();
       break;
@@ -740,6 +750,144 @@ function _wp_content_render_footer() {
     '#type' => 'markup',
     '#markup' => $output,
   );
+}
+
+/**
+ * Render complete WordPress page by running the theme's template file.
+ * 
+ * This is how WordPress actually works:
+ * 1. Determine which template to use (index.php, single.php, page.php, etc.)
+ * 2. Include that template
+ * 3. The template calls get_header(), outputs content, get_sidebar(), get_footer()
+ * 
+ * This approach ensures themes work exactly as designed.
+ */
+function _wp_content_render_full_page() {
+  // Ensure WordPress compatibility functions are loaded
+  // template.php loads all required function files (template-loading.php, etc.)
+  $theme_path = BACKDROP_ROOT . '/themes/wp/template.php';
+  if (!function_exists('get_sidebar') && file_exists($theme_path)) {
+    require_once $theme_path;
+  }
+
+  // Set up WordPress query
+  _wp_content_setup_query();
+
+  // Fire wp_enqueue_scripts action so theme can enqueue CSS/JS
+  if (!isset($GLOBALS['wp2bd_scripts_enqueued'])) {
+    do_action('wp_enqueue_scripts');
+    $GLOBALS['wp2bd_scripts_enqueued'] = TRUE;
+  }
+
+  ob_start();
+
+  // Determine which template to use based on WordPress template hierarchy
+  $template = _wp_content_get_template();
+  
+  if ($template && file_exists($template)) {
+    try {
+      include $template;
+    } catch (Exception $e) {
+      echo '<!-- WordPress template EXCEPTION: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Template @template failed: @error', array(
+        '@template' => basename($template),
+        '@error' => $e->getMessage(),
+      ), WATCHDOG_ERROR);
+    } catch (Error $e) {
+      echo '<!-- WordPress template FATAL ERROR: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Template @template FATAL: @error', array(
+        '@template' => basename($template),
+        '@error' => $e->getMessage(),
+      ), WATCHDOG_ERROR);
+    }
+  } else {
+    echo '<!-- WordPress template not found -->';
+    watchdog('wp_content', 'No suitable WordPress template found', array(), WATCHDOG_ERROR);
+  }
+
+  $output = ob_get_clean();
+
+  // Instead of stripping WordPress's HTML structure, we INJECT Backdrop's assets
+  // into WordPress's output. This lets WordPress themes control their full structure.
+
+  // 1. Inject Backdrop's head content before </head>
+  $backdrop_head = backdrop_get_html_head() . "\n" . backdrop_get_css() . "\n" . backdrop_get_js();
+  $output = preg_replace('/<\/head>/i', $backdrop_head . "\n</head>", $output, 1);
+
+  // 2. Add Backdrop's body classes to the <body> tag
+  // Get body classes that Backdrop wants to add
+  $backdrop_body_classes = array('backdrop-wp-theme');
+  if (function_exists('path_is_admin') && path_is_admin(current_path())) {
+    $backdrop_body_classes[] = 'admin';
+  }
+  $class_string = implode(' ', $backdrop_body_classes);
+  
+  // If <body> has existing class attribute, append to it
+  if (preg_match('/<body([^>]*)class="([^"]*)"/', $output)) {
+    $output = preg_replace('/<body([^>]*)class="([^"]*)"/', '<body$1class="$2 ' . $class_string . '"', $output, 1);
+  } else {
+    // If no class attribute, add one
+    $output = preg_replace('/<body/', '<body class="' . $class_string . '"', $output, 1);
+  }
+
+  // 3. Inject footer JS and page_bottom before </body>
+  $backdrop_footer = backdrop_get_js('footer');
+  $output = preg_replace('/<\/body>/i', $backdrop_footer . "\n</body>", $output, 1);
+
+  return array(
+    '#type' => 'markup',
+    '#markup' => $output,
+  );
+}
+
+/**
+ * Get the appropriate WordPress template file to use.
+ * 
+ * Implements a simplified version of WordPress template hierarchy.
+ * @see https://developer.wordpress.org/themes/basics/template-hierarchy/
+ */
+function _wp_content_get_template() {
+  $theme_dir = get_template_directory();
+  
+  // Check current page context
+  if (is_single()) {
+    // Single post - check single.php, then index.php
+    $templates = array('single.php', 'singular.php', 'index.php');
+  }
+  elseif (is_page()) {
+    // Page - check page.php, then singular.php, then index.php
+    $templates = array('page.php', 'singular.php', 'index.php');
+  }
+  elseif (is_home() || is_front_page()) {
+    // Home/front page - check home.php, front-page.php, then index.php
+    $templates = array('front-page.php', 'home.php', 'index.php');
+  }
+  elseif (is_archive()) {
+    // Archive - check archive.php, then index.php
+    $templates = array('archive.php', 'index.php');
+  }
+  elseif (is_search()) {
+    // Search - check search.php, then index.php
+    $templates = array('search.php', 'index.php');
+  }
+  elseif (is_404()) {
+    // 404 - check 404.php, then index.php
+    $templates = array('404.php', 'index.php');
+  }
+  else {
+    // Fallback to index.php
+    $templates = array('index.php');
+  }
+  
+  // Find the first template that exists
+  foreach ($templates as $template) {
+    $path = $theme_dir . '/' . $template;
+    if (file_exists($path)) {
+      return $path;
+    }
+  }
+  
+  return NULL;
 }
 
 /**
