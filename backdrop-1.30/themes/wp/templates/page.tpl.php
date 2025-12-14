@@ -17,15 +17,6 @@ require_once BACKDROP_ROOT . '/modules/wp_content/wp4bd_debug.inc';
 // Initialize debugging
 wp4bd_debug_init();
 
-// Output a visible header immediately to confirm template is loading
-?>
-<div style="margin: 20px; padding: 20px; background: #d4edda; border-left: 4px solid #28a745;">
-  <h1 style="margin-top: 0; color: #155724;">✅ WP4BD V2 Epic 1: Debug Infrastructure</h1>
-  <p><strong>Template loaded successfully!</strong> This template demonstrates the debug infrastructure works.</p>
-  <p><strong>Epic 1 Status:</strong> Debug helper functions ✅ | Debug template ✅</p>
-</div>
-<?php
-
 // ============================================================================
 // STAGE 1: DEMONSTRATE DEBUG INFRASTRUCTURE (Placeholder)
 // ============================================================================
@@ -42,17 +33,7 @@ wp4bd_debug_stage_end('Epic 1: Debug Infrastructure Test');
 // RENDER DEBUG OUTPUT
 // ============================================================================
 
-$debug_output = wp4bd_debug_render();
-if (!empty($debug_output)) {
-  print $debug_output;
-} else {
-  // Fallback if debug render returns empty
-  print '<div style="margin: 20px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107;">';
-  print '<h3>⚠️ Debug Output Empty</h3>';
-  print '<p>Debug render returned empty. Check that wp4bd_debug_init() was called.</p>';
-  print '<p>Debug level: ' . wp4bd_debug_get_level() . '</p>';
-  print '</div>';
-}
+print wp4bd_debug_render();
 
 ?>
 
