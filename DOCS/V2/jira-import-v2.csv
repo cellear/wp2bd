@@ -1,0 +1,550 @@
+Summary,Issue Type,Project,Priority,Labels,Original estimate,Description,Parent
+Epic 1: Debug Infrastructure,Epic,KAN,High,wordpress-as-engine,v2,,Build debug-first infrastructure to track data flow through all stages of WordPress rendering,,
+Epic 2: WordPress Core Setup,Epic,KAN,High,wordpress-as-engine,v2,,Copy WordPress 4.9 core and create bootstrap entry point,,
+Epic 3: Database Interception,Epic,KAN,High,wordpress-as-engine,v2,,Prevent WordPress from accessing database directly via wpdb bridge,,
+Epic 4: WordPress Globals,Epic,KAN,High,wordpress-as-engine,v2,,Initialize WordPress global variables from Backdrop data,,
+Epic 5: External I/O Interception,Epic,KAN,Medium,wordpress-as-engine,v2,,Intercept WordPress external I/O functions (HTTP, files, cron),,
+Epic 6: Bootstrap Integration,Epic,KAN,High,wordpress-as-engine,v2,,Integrate WordPress bootstrap into Backdrop module system,,
+Epic 7: Data Structure Bridges,Epic,KAN,High,wordpress-as-engine,v2,,Create bridges for user, taxonomy, and options data structures,,
+Epic 8: Testing & Validation,Epic,KAN,Medium,wordpress-as-engine,v2,,Test WordPress theme rendering and validate all components,,
+WP4BD-V2-001: Create Debug Helper Functions,Story,KAN,High,"debug-infrastructure,epic-1,v2",1h,"Create simple debugging functions (no classes) to track data flow through the system.
+
+**Acceptance Criteria:**
+- File created: modules/wp_content/wp4bd_debug.inc
+- Function: wp4bd_debug_init() - Initialize tracking
+- Function: wp4bd_debug_stage_start($name) - Mark stage start
+- Function: wp4bd_debug_stage_end($name) - Mark stage end
+- Function: wp4bd_debug_log($stage, $key, $value) - Log data
+- Function: wp4bd_debug_render() - Output HTML debug report
+- Debug level controlled by ?wp4bd_debug=N URL parameter (1-4)
+
+**Expected State After:**
+Helper functions available to include in templates. Can track timing and data at each stage. No visual output yet (just infrastructure).
+
+**Files Modified:**
+- modules/wp_content/wp4bd_debug.inc (new)
+
+**Test:**
+Functions can be included and called without errors",Epic 1: Debug Infrastructure
+WP4BD-V2-002: Create Debug Template,Story,KAN,High,"debug-infrastructure,epic-1,v2",30m,"Create a page template that shows debug output instead of rendered content.
+
+**Acceptance Criteria:**
+- File created: themes/wp/templates/page-debug.tpl.php
+- Includes wp4bd_debug.inc
+- Shows placeholder stages (no real data yet)
+- Renders debug output with timing
+- Help text explains debug levels
+
+**Expected State After:**
+Can visit site and see debug output. Shows ""Stage 1: TODO"" placeholders. Confirms debug infrastructure works.
+
+**Files Modified:**
+- themes/wp/templates/page-debug.tpl.php (new)
+
+**Dependencies:**
+WP4BD-V2-001
+
+**Test:**
+Visit http://yoursite.com/?wp4bd_debug=2 and see debug output",Epic 1: Debug Infrastructure
+WP4BD-V2-010: Copy WordPress to wp49brain/,Story,KAN,High,"wordpress-core-setup,epic-2,v2",1h,"Copy WordPress 4.9 core files to backdrop-1.30/wp49brain/ directory.
+
+**Acceptance Criteria:**
+- Source: wordpress-4.9/ directory (already exists)
+- Destination: backdrop-1.30/wp49brain/
+- Copy entire WordPress directory structure
+- Keep WordPress core pristine (no modifications)
+- Verify all files copied successfully
+
+**Expected State After:**
+WordPress 4.9 core files available at backdrop-1.30/wp49brain/. Can reference wp-includes/, wp-content/, etc.
+
+**Files Modified:**
+- backdrop-1.30/wp49brain/ (new directory, copied files)
+
+**Dependencies:**
+None
+
+**Test:**
+Verify wp49brain/wp-includes/class-wp-post.php exists",Epic 2: WordPress Core Setup
+WP4BD-V2-011: Create WordPress Bootstrap Entry Point,Story,KAN,High,"wordpress-core-setup,epic-2,v2",2h,"Create bootstrap file to initialize WordPress with Backdrop-specific configuration.
+
+**Acceptance Criteria:**
+- File created: modules/wp_content/includes/wp-bootstrap.php
+- Function: wp4bd_bootstrap_wordpress()
+- Set WordPress constants (ABSPATH, WPINC, WP_CONTENT_DIR)
+- Redirect WordPress paths to wp49brain
+- Prevent WordPress from connecting to its own database
+- Load WordPress after Backdrop bootstrap phase FULL
+- Handle errors gracefully
+
+**Expected State After:**
+Can call wp4bd_bootstrap_wordpress() to initialize WordPress. Constants set correctly. No database connection attempted.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-bootstrap.php (new)
+
+**Dependencies:**
+WP4BD-V2-010
+
+**Test:**
+Call wp4bd_bootstrap_wordpress() - verify ABSPATH constant is set correctly",Epic 2: WordPress Core Setup
+WP4BD-V2-012: Create wp-config Bridge,Story,KAN,Medium,"wordpress-core-setup,epic-2,v2",1h,"Create WordPress configuration file that prevents database connection.
+
+**Acceptance Criteria:**
+- File created: wp49brain/wp-config-bd.php
+- Set fake DB credentials (WordPress will try to connect but we'll intercept)
+- Define required WordPress constants
+- Document that db.php drop-in will handle actual interception
+- Handle missing constants gracefully
+
+**Expected State After:**
+WordPress can load wp-config-bd.php. Database credentials set but connection will be intercepted by db.php.
+
+**Files Modified:**
+- wp49brain/wp-config-bd.php (new)
+
+**Dependencies:**
+WP4BD-V2-010
+
+**Test:**
+WordPress can include wp-config-bd.php without errors",Epic 2: WordPress Core Setup
+WP4BD-V2-020: Replace wpdb Class via Drop-in,Story,KAN,High,"database-isolation,epic-3,v2",2h,"Create db.php drop-in to replace WordPress wpdb class and prevent database access.
+
+**Acceptance Criteria:**
+- File created: wp49brain/wp-content/db.php
+- Extend wpdb class and override key methods:
+  - query() - Main query execution (return false or log)
+  - get_results() - SELECT queries (return empty array)
+  - get_var() - Single value queries (return null)
+  - get_row() - Single row queries (return null)
+  - prepare() - Query preparation (return empty string)
+  - insert() - INSERT queries (disabled, return false)
+  - update() - UPDATE queries (disabled, return false)
+  - delete() - DELETE queries (disabled, return false)
+- Set required properties ($prefix, table names)
+- Log query attempts in debug mode
+
+**Expected State After:**
+WordPress can't query database. No SQL errors. WordPress uses pre-populated data only.
+
+**Files Modified:**
+- wp49brain/wp-content/db.php (new)
+
+**Dependencies:**
+WP4BD-V2-011
+
+**Test:**
+WordPress theme runs without database connection. No SQL errors in logs.",Epic 3: Database Interception
+WP4BD-V2-021: SQL Query Analysis and Mapping,Story,KAN,High,"database-isolation,epic-3,v2",3h,"Create wpdb bridge class to analyze WordPress SQL patterns and map to Backdrop.
+
+**Acceptance Criteria:**
+- File created: modules/wp_content/includes/wpdb-bridge.php
+- Class: WP4BD_wpdb_Bridge extends wpdb
+- Method: _parse_wp_query($sql) - Analyze WordPress SQL
+- Method: _convert_to_backdrop_query($parsed) - Map to Backdrop query builder
+- Method: _execute_backdrop_query($query) - Execute via Backdrop DB API
+- Handle common patterns:
+  - SELECT * FROM wp_posts WHERE ... → Backdrop node queries
+  - SELECT * FROM wp_users WHERE ... → Backdrop user queries
+  - SELECT * FROM wp_terms WHERE ... → Backdrop taxonomy queries
+  - SELECT * FROM wp_options WHERE ... → Backdrop config/variables
+  - SELECT * FROM wp_postmeta WHERE ... → Backdrop field API
+
+**Expected State After:**
+Can analyze WordPress SQL queries and map them to Backdrop equivalents. Bridge class ready for integration.
+
+**Files Modified:**
+- modules/wp_content/includes/wpdb-bridge.php (new)
+
+**Dependencies:**
+WP4BD-V2-020
+
+**Test:**
+Parse sample WordPress SQL queries and verify Backdrop query equivalents",Epic 3: Database Interception
+WP4BD-V2-022: Query Result Transformation,Story,KAN,High,"database-isolation,epic-3,v2",2h,"Transform Backdrop query results to WordPress object format.
+
+**Acceptance Criteria:**
+- File: modules/wp_content/includes/wpdb-bridge.php (update)
+- Method: _backdrop_node_to_wp_post($node) - Convert nodes to WP_Post (reuse existing)
+- Method: _backdrop_user_to_wp_user($account) - Convert user objects
+- Method: _backdrop_term_to_wp_term($term) - Convert taxonomy terms
+- Method: _backdrop_config_to_wp_option($config) - Convert settings
+- Handle missing data gracefully
+- Preserve WordPress object structure
+
+**Expected State After:**
+Backdrop data can be transformed to WordPress object format. All conversion methods work correctly.
+
+**Files Modified:**
+- modules/wp_content/includes/wpdb-bridge.php (update)
+
+**Dependencies:**
+WP4BD-V2-021
+
+**Test:**
+Convert sample Backdrop nodes/users/terms to WordPress objects and verify structure",Epic 3: Database Interception
+WP4BD-V2-030: Identify Critical WordPress Globals,Story,KAN,Medium,"wordpress-globals,epic-4,v2",1h,"Document all critical WordPress global variables that need initialization.
+
+**Acceptance Criteria:**
+- Document key globals from wp-settings.php:
+  - $wpdb - Database object (replaced by bridge)
+  - $wp_query - Main query object
+  - $wp_the_query - Original query object
+  - $wp_rewrite - Rewrite rules object
+  - $wp - Main WordPress object
+  - $post - Current post object
+  - $posts - Array of post objects
+  - $wp_post_types - Registered post types
+  - $wp_taxonomies - Registered taxonomies
+  - $wp_theme - Current theme object
+  - $wp_filter - Action/filter hooks
+  - $wp_actions - Action callbacks
+  - $wp_current_filter - Current filter stack
+- Create reference document or inline comments
+
+**Expected State After:**
+Clear list of WordPress globals that need initialization. Documentation available for implementation.
+
+**Files Modified:**
+- Documentation (or inline comments in wp-globals-init.php)
+
+**Dependencies:**
+WP4BD-V2-022
+
+**Test:**
+Verify all critical globals are documented",Epic 4: WordPress Globals
+WP4BD-V2-031: Initialize WordPress Globals from Backdrop,Story,KAN,High,"wordpress-globals,epic-4,v2",2h,"Create function to initialize WordPress globals from Backdrop data.
+
+**Acceptance Criteria:**
+- File created: modules/wp_content/includes/wp-globals-init.php
+- Function: wp4bd_init_wordpress_globals()
+- Populate $wp_post_types from Backdrop node types
+- Populate $wp_taxonomies from Backdrop vocabularies
+- Set $wp_theme to active WordPress theme
+- Initialize hook system (if needed)
+- Set default values for all critical globals
+
+**Expected State After:**
+WordPress globals initialized from Backdrop data. WordPress functions can access global variables correctly.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-globals-init.php (new)
+
+**Dependencies:**
+WP4BD-V2-030
+
+**Test:**
+Call wp4bd_init_wordpress_globals() and verify globals are set correctly",Epic 4: WordPress Globals
+WP4BD-V2-040: Identify External I/O Functions,Story,KAN,Low,"external-io,epic-5,v2",1h,"Document WordPress functions that communicate outside the server.
+
+**Acceptance Criteria:**
+- Document HTTP/Remote functions:
+  - wp_remote_get() / wp_remote_post() - HTTP requests
+  - download_url() - File downloads
+  - wp_update_plugins() / wp_update_themes() - Update checks
+- Document File System functions:
+  - wp_upload_dir() - Upload directory
+  - wp_mkdir_p() - Directory creation
+  - copy_dir() - Directory copying
+- Document Cron/Background functions:
+  - wp_schedule_event() - Cron scheduling
+  - spawn_cron() - Background processes
+- Create reference document
+
+**Expected State After:**
+Complete list of WordPress I/O functions that need interception. Documentation available.
+
+**Files Modified:**
+- Documentation (or inline comments in wp-io-bridge.php)
+
+**Dependencies:**
+WP4BD-V2-031
+
+**Test:**
+Verify all I/O functions are documented",Epic 5: External I/O Interception
+WP4BD-V2-041: Implement I/O Interception Strategy,Story,KAN,Medium,"external-io,epic-5,v2",2h,"Create bridge file to intercept WordPress I/O functions.
+
+**Acceptance Criteria:**
+- File created: modules/wp_content/includes/wp-io-bridge.php
+- HTTP functions: Use Backdrop's backdrop_http_request() or disable
+- File functions: Map to Backdrop file API
+- Cron functions: Disable or hook into Backdrop cron
+- Override functions before WordPress loads them
+- Handle errors gracefully
+
+**Expected State After:**
+WordPress I/O functions intercepted. External requests go through Backdrop or are disabled.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-io-bridge.php (new)
+
+**Dependencies:**
+WP4BD-V2-040
+
+**Test:**
+Verify WordPress I/O functions are intercepted and use Backdrop equivalents",Epic 5: External I/O Interception
+WP4BD-V2-042: File Path Mapping,Story,KAN,Low,"external-io,epic-5,v2",1h,"Map WordPress file paths to Backdrop equivalents.
+
+**Acceptance Criteria:**
+- WordPress uploads: wp49brain/wp-content/uploads/ → backdrop-1.30/files/
+- WordPress themes: wp49brain/wp-content/themes/ → Keep as-is (already works)
+- WordPress plugins: wp49brain/wp-content/plugins/ → Disable or stub
+- Update wp_upload_dir() override to use Backdrop paths
+- Document path mappings
+
+**Expected State After:**
+WordPress file paths mapped to Backdrop equivalents. Uploads work with Backdrop file system.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-io-bridge.php (update)
+
+**Dependencies:**
+WP4BD-V2-041
+
+**Test:**
+Verify wp_upload_dir() returns Backdrop file paths",Epic 5: External I/O Interception
+WP4BD-V2-050: Integration Point in Module,Story,KAN,High,"bootstrap-integration,epic-6,v2",1h,"Modify wp_content module to load WordPress core after Backdrop bootstrap.
+
+**Acceptance Criteria:**
+- File: backdrop-1.30/modules/wp_content/wp_content.module
+- Hook: Modify wp_content_init() to load WordPress core
+- Current: Loads compatibility stubs
+- New: Loads WordPress core after Backdrop bootstrap FULL phase
+- Check if wp theme active before loading WordPress
+- Handle errors gracefully
+
+**Expected State After:**
+WordPress loads automatically when wp theme is active. Bootstrap sequence correct.
+
+**Files Modified:**
+- backdrop-1.30/modules/wp_content/wp_content.module (update)
+
+**Dependencies:**
+WP4BD-V2-011, WP4BD-V2-031
+
+**Test:**
+Activate wp theme - verify WordPress loads without errors",Epic 6: Bootstrap Integration
+WP4BD-V2-051: Bootstrap Sequence Implementation,Story,KAN,High,"bootstrap-integration,epic-6,v2",2h,"Implement correct bootstrap sequence for WordPress loading.
+
+**Acceptance Criteria:**
+- Bootstrap sequence:
+  1. Backdrop bootstrap completes (FULL phase)
+  2. Check if wp theme active
+  3. Define WordPress constants (ABSPATH, etc.)
+  4. Include wp49brain/wp-load.php
+  5. WordPress initializes but wpdb is replaced
+  6. Bridge functions populate WordPress globals from Backdrop
+  7. WordPress theme rendering proceeds normally
+- Verify no conflicts between Backdrop and WordPress
+- Handle initialization errors
+
+**Expected State After:**
+WordPress loads in correct sequence. No conflicts with Backdrop. Ready for theme rendering.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-bootstrap.php (update)
+- modules/wp_content/wp_content.module (update)
+
+**Dependencies:**
+WP4BD-V2-050
+
+**Test:**
+Verify bootstrap sequence executes correctly. Check WordPress globals are initialized.",Epic 6: Bootstrap Integration
+WP4BD-V2-052: Prevent WordPress Database Connection,Story,KAN,High,"bootstrap-integration,epic-6,v2",1h,"Ensure WordPress cannot connect to database during bootstrap.
+
+**Acceptance Criteria:**
+- Use db.php drop-in (already created in WP4BD-V2-020)
+- Verify wpdb bridge is active before WordPress tries to connect
+- Set invalid DB credentials in wp-config-bd.php
+- Catch any connection attempts and log them
+- Ensure WordPress uses pre-populated data only
+
+**Expected State After:**
+WordPress cannot connect to database. All queries intercepted. No SQL errors.
+
+**Files Modified:**
+- wp49brain/wp-config-bd.php (update)
+- wp49brain/wp-content/db.php (verify)
+
+**Dependencies:**
+WP4BD-V2-020, WP4BD-V2-051
+
+**Test:**
+Verify WordPress bootstrap completes without database connection errors",Epic 6: Bootstrap Integration
+WP4BD-V2-060: WordPress Post Object Bridge,Story,KAN,High,"data-bridges,epic-7,v2",1h,"Ensure WordPress post object conversion works with real WP_Post class.
+
+**Acceptance Criteria:**
+- Reuse existing WP_Post::from_node() logic if available
+- Or create new conversion function using real WP_Post class
+- Load WP_Post class from wordpress-4.9/wp-includes/class-wp-post.php
+- Transform Backdrop nodes to WP_Post objects with all 21 properties
+- Handle missing data gracefully
+
+**Expected State After:**
+Backdrop nodes can be converted to real WordPress WP_Post objects. All properties populated.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-post-bridge.php (new or update)
+
+**Dependencies:**
+WP4BD-V2-010, WP4BD-V2-022
+
+**Test:**
+Convert sample Backdrop node to WP_Post object and verify all properties",Epic 7: Data Structure Bridges
+WP4BD-V2-061: WordPress User Bridge,Story,KAN,Medium,"data-bridges,epic-7,v2",2h,"Create bridge to convert Backdrop users to WordPress user objects.
+
+**Acceptance Criteria:**
+- File created: modules/wp_content/includes/wp-user-bridge.php
+- Function: wp4bd_backdrop_user_to_wp_user($account)
+- Map Backdrop user properties to WordPress user object:
+  - user_login → username
+  - user_email → mail
+  - display_name → name
+  - ID → uid
+  - user_registered → created
+- Handle missing properties gracefully
+- Return WordPress user object format
+
+**Expected State After:**
+Backdrop users can be converted to WordPress user objects. Author functions work correctly.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-user-bridge.php (new)
+
+**Dependencies:**
+WP4BD-V2-060
+
+**Test:**
+Convert sample Backdrop user to WordPress user object and verify properties",Epic 7: Data Structure Bridges
+WP4BD-V2-062: WordPress Term/Taxonomy Bridge,Story,KAN,Medium,"data-bridges,epic-7,v2",2h,"Create bridge to convert Backdrop taxonomy terms to WordPress terms.
+
+**Acceptance Criteria:**
+- File created: modules/wp_content/includes/wp-term-bridge.php
+- Function: wp4bd_backdrop_term_to_wp_term($term)
+- Map Backdrop term properties to WordPress term object:
+  - term_id → tid
+  - name → name
+  - slug → machine name
+  - taxonomy → vocabulary machine name
+- Handle missing properties gracefully
+- Return WordPress term object format
+
+**Expected State After:**
+Backdrop taxonomy terms can be converted to WordPress term objects. Category/tag functions work correctly.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-term-bridge.php (new)
+
+**Dependencies:**
+WP4BD-V2-061
+
+**Test:**
+Convert sample Backdrop term to WordPress term object and verify properties",Epic 7: Data Structure Bridges
+WP4BD-V2-063: WordPress Options/Settings Bridge,Story,KAN,Medium,"data-bridges,epic-7,v2",2h,"Create bridge to map Backdrop config to WordPress options.
+
+**Acceptance Criteria:**
+- File created: modules/wp_content/includes/wp-options-bridge.php
+- Function: wp4bd_get_option($option_name)
+- Map Backdrop config to WordPress options:
+  - siteurl → $base_url
+  - home → $base_url
+  - blogname → config('system.core')->get('site_name')
+  - Custom options → Backdrop variables/config
+- Handle missing options gracefully
+- Return WordPress option format
+
+**Expected State After:**
+WordPress can read options from Backdrop config. bloginfo() and similar functions work correctly.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-options-bridge.php (new)
+
+**Dependencies:**
+WP4BD-V2-062
+
+**Test:**
+Verify WordPress can read options from Backdrop config",Epic 7: Data Structure Bridges
+WP4BD-V2-070: Test WordPress Core Loads,Story,KAN,High,"testing-validation,epic-8,v2",1h,"Verify WordPress core loads without fatal errors.
+
+**Acceptance Criteria:**
+- Verify no fatal errors on page load
+- Check WordPress globals are initialized
+- Verify wpdb bridge is active
+- Test with debug template (WP4BD-V2-002)
+- Log any errors or warnings
+
+**Expected State After:**
+WordPress core loads successfully. No fatal errors. All globals initialized correctly.
+
+**Files Modified:**
+- themes/wp/templates/page-debug.tpl.php (add Stage 4 test)
+
+**Dependencies:**
+WP4BD-V2-051, WP4BD-V2-002
+
+**Test:**
+Load page with wp theme active - verify WordPress loads without errors",Epic 8: Testing & Validation
+WP4BD-V2-071: Test Query Interception,Story,KAN,High,"testing-validation,epic-8,v2",1h,"Verify WordPress database queries are intercepted correctly.
+
+**Acceptance Criteria:**
+- Monitor wpdb->query() calls
+- Verify Backdrop queries are executed (if implemented)
+- Verify results are transformed correctly
+- Log intercepted queries in debug mode
+- Verify no direct database access
+
+**Expected State After:**
+All WordPress queries intercepted. No direct database access. Query logging works.
+
+**Files Modified:**
+- modules/wp_content/includes/wp-debug.php (new or update)
+
+**Dependencies:**
+WP4BD-V2-020, WP4BD-V2-070
+
+**Test:**
+Load WordPress theme - verify queries are intercepted and logged",Epic 8: Testing & Validation
+WP4BD-V2-072: Test Theme Rendering,Story,KAN,High,"testing-validation,epic-8,v2",3h,"Test that WordPress themes render correctly with Backdrop data.
+
+**Acceptance Criteria:**
+- Load existing WordPress themes (Twenty Fourteen, Fifteen, Sixteen, Seventeen)
+- Verify they render correctly
+- Check for missing data or functions
+- Test The Loop with real data
+- Verify template hierarchy works
+- Test with debug template first, then production template
+
+**Expected State After:**
+WordPress themes render correctly. The Loop works. Template hierarchy functions correctly.
+
+**Files Modified:**
+- themes/wp/templates/page-debug.tpl.php (add rendering stages)
+- themes/wp/templates/page.tpl.php (create production template)
+
+**Dependencies:**
+WP4BD-V2-071, WP4BD-V2-002
+
+**Test:**
+Load WordPress theme - verify it renders with Backdrop node data",Epic 8: Testing & Validation
+WP4BD-V2-073: Create Production Template,Story,KAN,Medium,"testing-validation,epic-8,v2",2h,"Create production template that shows rendered output with debug available.
+
+**Acceptance Criteria:**
+- Copy debug template to page.tpl.php
+- Debug hidden unless ?wp4bd_debug=N
+- Display rendered output by default
+- Clean up debug code (keep infrastructure)
+- Add error handling
+- Inject Backdrop assets into WordPress HTML
+
+**Expected State After:**
+Site displays WordPress theme output. Debug available when needed. Production-ready code.
+
+**Files Modified:**
+- themes/wp/templates/page.tpl.php (create or update)
+
+**Dependencies:**
+WP4BD-V2-072
+
+**Test:**
+Visit site - see rendered theme, no debug output. Add ?wp4bd_debug=2 to see debug.",Epic 8: Testing & Validation
+
