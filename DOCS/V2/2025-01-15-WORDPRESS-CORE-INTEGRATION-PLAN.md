@@ -1,5 +1,10 @@
 # WordPress Core Integration for Backdrop
 
+> **Related Documents:**
+> - **[ARCHITECTURE-WORDPRESS-AS-ENGINE.md](2025-01-15-ARCHITECTURE-WORDPRESS-AS-ENGINE.md)** - High-level architecture overview and concepts
+> - **[IMPLEMENTATION-DEBUG-FIRST.md](2025-01-15-IMPLEMENTATION-DEBUG-FIRST.md)** - Debug-first development approach
+> - **[README.md](README.md)** - V2 documentation index
+
 ## Overview
 
 Move from stub-based compatibility layer to actual WordPress 4.9 core loaded in "headless" mode. WordPress core will run but database and external I/O will be intercepted and bridged to Backdrop.

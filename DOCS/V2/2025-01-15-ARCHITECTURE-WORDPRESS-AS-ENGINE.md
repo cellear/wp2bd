@@ -4,6 +4,11 @@
 **Date:** December 2025
 **Version:** 1.0
 
+> **Related Documents:**
+> - **[WORDPRESS-CORE-INTEGRATION-PLAN.md](2025-01-15-WORDPRESS-CORE-INTEGRATION-PLAN.md)** - Detailed implementation phases and technical tasks
+> - **[IMPLEMENTATION-DEBUG-FIRST.md](2025-01-15-IMPLEMENTATION-DEBUG-FIRST.md)** - Debug-first development approach
+> - **[README.md](README.md)** - V2 documentation index
+
 ---
 
 ## Executive Summary

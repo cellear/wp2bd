@@ -2,6 +2,11 @@
 
 **Strategy:** Build with visibility into every stage before worrying about output quality.
 
+> **Related Documents:**
+> - **[ARCHITECTURE-WORDPRESS-AS-ENGINE.md](2025-01-15-ARCHITECTURE-WORDPRESS-AS-ENGINE.md)** - High-level architecture overview
+> - **[WORDPRESS-CORE-INTEGRATION-PLAN.md](2025-01-15-WORDPRESS-CORE-INTEGRATION-PLAN.md)** - Detailed implementation phases
+> - **[README.md](README.md)** - V2 documentation index
+
 ---
 
 ## Debug Levels
