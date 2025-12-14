@@ -1,0 +1,233 @@
+Can you explain the relationship between git branches and worktrees?  I just got this message:
+
+[1137] WP4BD/DOCS> git branch                    [12/12 | 10:22:09]
+* main
+  refactor/sunset-stubs-december
++ upbeat-khorana
+[1138] WP4BD/DOCS> git checkout upbeat-khorana                       [12/12 | 11:08:41]
+fatal: 'upbeat-khorana' is already used by worktree at '/Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana'
+[1139] WP4BD/DOCS> 
+
+Why can't I check out this branch?
+
+11:10 PM
+The + symbol next to upbeat-khorana indicates it's checked out in a worktree (a separate working directory). You can't checkout a branch in your main repo when it's already checked out elsewhere—git prevents this to avoid conflicts.
+
+Your worktree is at /Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana. You have two options:
+
+Work in the worktree: cd /Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana
+Remove the worktree (if you don't need it): git worktree remove /Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana
+After removing the worktree, you'll be able to checkout upbeat-khorana normally in your main repo.
+
+Ok, if I see that a worktree is checked out (from seeing the + in a git branch command) how can I tell where the worktree is?
+
+11:12 PM
+Use git worktree list:
+
+bash
+git worktree list
+```
+
+This shows all worktrees with their paths and which branch each has checked out.
+
+Example output:
+```
+/Users/lukemccormick/WP4BD/DOCS        abc123 [main]
+/Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana  def456 [upbeat-khorana]
+What's the history of git worktrees?
+
+11:13 PM
+Git worktrees were introduced in Git 2.5 (July 2015) with the git worktree command.
+
+Before that, developers who needed to work on multiple branches simultaneously had to either:
+
+Clone the repository multiple times (wasteful of disk space)
+Use git-new-workdir (an unsupported contrib script that was fragile and could corrupt repos)
+Constantly stash and switch branches
+Worktrees solved this by letting you have multiple working directories attached to a single repository, sharing the same .git database. This means:
+
+One set of objects/refs to maintain
+Efficient disk usage (shared git history)
+Safe operation (git manages the linking)
+The feature has been refined over subsequent releases with improvements to git worktree add, remove, prune, and better integration with other git commands.
+
+It's particularly useful for:
+
+Reviewing PRs while keeping your main work untouched
+Running long builds/tests on one branch while developing on another
+Comparing different branches side-by-side
+Claude puts my worktrees in a funny (to me) place:
+
+[1140] WP4BD/DOCS> git worktree list                                                                                                                                                         [12/12 | 11:12:48]
+/Users/lukemccormick/Sites/BACKDROP/WP4BD                    73cc38a [main]
+/Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana  c3942fe [upbeat-khorana]
+[1141] WP4BD/DOCS>       
+
+Can I set it up so that Claude creates its worktrees in the "Sites" directory I have set up for this kind of thing?
+
+11:15 PM
+You'd need to configure Claude Code's worktree settings. I don't have current documentation on Claude Code's configuration options, so I should search for this.
+
+Let me check the official docs:
+
+
+Claude Code worktree configuration location settings
+10 results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Yes, you can configure the worktree location in the Claude desktop app settings. According to the documentation, the default is ~/.claude-worktrees, but this is configurable in the desktop app settings.
+
+To change it:
+
+Open the Claude desktop app
+Go to Settings
+Look for the worktree location setting
+You should be able to set it to /Users/lukemccormick/Sites/BACKDROP/ or another location under your Sites directory.
+
+You *are* the Claude desktop app :p
+
+11:16 PM
+Ha! You're right - I'm running in the Claude desktop app right now.
+
+In that case, you need to go to the actual Settings UI:
+
+Click the menu (top left or Claude menu)
+Go to Settings
+Look for the worktree configuration option
+I don't have direct access to modify those settings from within our conversation - you'll need to use the desktop app's settings interface yourself.
+
+Great, I've moved my Claude Worktree directory to "~/Sites/CLAUDE" -- that makes a lot more sense to me.
+
+11:19 PM
+Perfect! That's much more organized - keeping all your web projects under ~/Sites makes total sense. Now your worktrees will be in /Users/lukemccormick/Sites/CLAUDE/ instead of that hidden .claude-worktrees directory.
+
+I've still got two diretories in the old hidden directory:
+
+[1013] Sites/BACKDROP> ls ~/.claude-worktrees                                                                               [12/12 | 5:53:27]
+admiring-clarke    WP4BD
+[1014] Sites/BACKDROP>
+
+[1029] .claude-worktrees/WP4BD> du -sh *                                                                                   [12/12 | 11:22:39]
+129M    upbeat-khorana
+[1030] .claude-worktrees/WP4BD> cd upbeat-khorana                                                                          [12/12 | 11:22:46]
+[1031] WP4BD/upbeat-khorana> pwd                                                                                           [12/12 | 11:22:49]
+/Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana
+[1032] WP4BD/upbeat-khorana> git branch                                                                                    [12/12 | 11:22:56]
++ main
+  refactor/sunset-stubs-december
+* upbeat-khorana
+[1033] WP4BD/upbeat-khorana> pwd                                                                                           [12/12 | 11:23:04]
+/Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana
+[1034] WP4BD/upbeat-khorana> cd ..                                                                                         [12/12 | 11:23:26]
+[1035] .claude-worktrees/WP4BD> ls                                                                                         [12/12 | 11:23:41]
+upbeat-khorana
+[1036] .claude-worktrees/WP4BD> cd ..                                                                                      [12/12 | 11:23:43]
+[1037] ~/.claude-worktrees> ls                                                                                             [12/12 | 11:23:46]
+admiring-clarke    WP4BD
+[1038] ~/.claude-worktrees> du -sh admiring-clarke                                                                         [12/12 | 11:23:48]
+ 12K    admiring-clarke
+[1039] ~/.claude-worktrees>  
+
+Is there some way I can move these to my new non-hidden directories?  Or shut them down?  What are they there for?
+
+Show more
+11:25 PM
+Those are old worktrees that were created before you changed the setting. You have two options:
+
+Option 1: Remove them (if you don't need the work):
+
+bash
+git worktree remove ~/.claude-worktrees/WP4BD/upbeat-khorana
+git worktree remove ~/.claude-worktrees/admiring-clarke
+Option 2: Move them (if you want to keep the work):
+
+Git worktrees can't be easily "moved" - you'd need to:
+
+Commit any changes in the old worktree
+Remove the old worktree
+Create a new one in the new location
+Cherry-pick or merge your commits
+Since upbeat-khorana is 129MB and admiring-clarke is only 12K, check if there's uncommitted work in upbeat-khorana first:
+
+bash
+cd ~/.claude-worktrees/WP4BD/upbeat-khorana
+git status
+If it's clean, just remove both worktrees. If there are changes you need, commit them first, then remove the worktrees.
+
+[1039] ~/.claude-worktrees> cd ~/.claude-worktrees/WP4BD/upbeat-khorana                                                    [12/12 | 11:23:57]
+git status
+On branch upbeat-khorana
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+    modified:   .claude/settings.local.json
+no changes added to commit (use "git add" and/or "git commit -a")
+[1040] WP4BD/upbeat-khorana>
+
+11:26 PM
+The only change is to .claude/settings.local.json, which is a local configuration file you don't need to commit. You can safely discard it and remove the worktree:
+
+bash
+git restore .claude/settings.local.json
+cd ~
+git worktree remove ~/.claude-worktrees/WP4BD/upbeat-khorana
+git worktree remove ~/.claude-worktrees/admiring-clarke
+Then you can delete the empty directories:
+
+bash
+rm -rf ~/.claude-worktrees
+[1040] WP4BD/upbeat-khorana> git restore .claude/settings.local.json                                                       [12/12 | 11:25:42]
+cd ~
+git worktree remove ~/.claude-worktrees/WP4BD/upbeat-khorana
+git worktree remove ~/.claude-worktrees/admiring-clarke
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+[1041] ~>
+
+11:27 PM
+You need to be in a git repository to run git worktree remove. Go to your main WP4BD repository:
+
+bash
+cd ~/Sites/BACKDROP/WP4BD
+git worktree remove ~/.claude-worktrees/WP4BD/upbeat-khorana
+git worktree remove ~/.claude-worktrees/admiring-clarke
+Then clean up the empty directory:
+
+bash
+rm -rf ~/.claude-worktrees
+[1041] ~> cd ~/Sites/BACKDROP/WP4BD                                                                                        [12/12 | 11:26:23]
+git worktree remove ~/.claude-worktrees/WP4BD/upbeat-khorana
+git worktree remove ~/.claude-worktrees/admiring-clarke
+fatal: '/Users/lukemccormick/.claude-worktrees/admiring-clarke' is not a working tree
+[1042] BACKDROP/WP4BD> cd ~/Sites/BACKDROP/WP4BD                                                                           [12/12 | 11:27:06]
+git worktree remove ~/.claude-worktrees/WP4BD/upbeat-khorana
+git worktree remove ~/.claude-worktrees/admiring-clarke
+fatal: '/Users/lukemccormick/.claude-worktrees/WP4BD/upbeat-khorana' is not a working tree
+fatal: '/Users/lukemccormick/.claude-worktrees/admiring-clarke' is not a working tree
+[1043] BACKDROP/WP4BD>
+
+Show more
+11:27 PM
+The worktrees are already gone (you must have removed them successfully the first time). Now just delete the leftover directories:
+
+bash
+rm -rf ~/.claude-worktrees
