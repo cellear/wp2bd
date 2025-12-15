@@ -165,19 +165,23 @@ class wpdb {
    *
    * @param string $query SQL query
    * @param string $output Type of output (OBJECT, ARRAY_A, ARRAY_N)
-   * @return array Empty array (WP4BD-V2-021 will populate with Backdrop data)
+   * @return array Results from Backdrop (V2-021: mapped, V2-022: transformed)
    */
   public function get_results( $query = null, $output = OBJECT ) {
     if ($query) {
       $this->_log_query($query, 'get_results()');
+      $this->last_query = $query;
     }
     
-    // WP4BD-V2-020: Return empty array
-    // WP4BD-V2-021: Map to Backdrop queries
-    // WP4BD-V2-022: Transform Backdrop results to WordPress objects
-    $this->num_rows = 0;
+    // WP4BD-V2-021: Map WordPress SQL to Backdrop queries
+    $results = $this->_map_query_to_backdrop($query);
     
-    return array();
+    // Set num_rows for WordPress compatibility
+    $this->num_rows = is_array($results) ? count($results) : 0;
+    
+    // WP4BD-V2-022: Transform results based on output format (next story)
+    // For now, return raw Backdrop results
+    return $results;
   }
 
   /**
@@ -186,16 +190,33 @@ class wpdb {
    * @param string $query SQL query
    * @param int $x Column offset
    * @param int $y Row offset
-   * @return null Always returns null (WP4BD-V2-021 will return Backdrop data)
+   * @return mixed Single value from query result
    */
   public function get_var( $query = null, $x = 0, $y = 0 ) {
     if ($query) {
       $this->_log_query($query, 'get_var()');
+      $this->last_query = $query;
     }
     
-    // WP4BD-V2-020: Return null
-    // WP4BD-V2-021: Return mapped Backdrop value
-    return null;
+    // WP4BD-V2-021: Map query to Backdrop
+    $results = $this->_map_query_to_backdrop($query);
+    
+    if (empty($results)) {
+      return null;
+    }
+    
+    // Get the first row
+    $row = $results[$y] ?? $results[0] ?? null;
+    if (!$row) {
+      return null;
+    }
+    
+    // Convert to array if it's an object
+    $row_array = is_object($row) ? (array)$row : $row;
+    $values = array_values($row_array);
+    
+    // Return the specified column
+    return $values[$x] ?? null;
   }
 
   /**
@@ -204,19 +225,30 @@ class wpdb {
    * @param string $query SQL query
    * @param string $output Type of output
    * @param int $y Row offset
-   * @return null Always returns null (WP4BD-V2-021 will return Backdrop data)
+   * @return mixed Single row from query result
    */
   public function get_row( $query = null, $output = OBJECT, $y = 0 ) {
     if ($query) {
       $this->_log_query($query, 'get_row()');
+      $this->last_query = $query;
     }
     
-    // WP4BD-V2-020: Return null
-    // WP4BD-V2-021: Return mapped Backdrop row
-    // WP4BD-V2-022: Transform to WordPress object format
-    $this->num_rows = 0;
+    // WP4BD-V2-021: Map query to Backdrop
+    $results = $this->_map_query_to_backdrop($query);
     
-    return null;
+    if (empty($results)) {
+      $this->num_rows = 0;
+      return null;
+    }
+    
+    $this->num_rows = count($results);
+    
+    // Get the specified row
+    $row = $results[$y] ?? $results[0] ?? null;
+    
+    // WP4BD-V2-022: Transform based on output format (next story)
+    // For now, return raw Backdrop data
+    return $row;
   }
 
   /**
@@ -224,18 +256,35 @@ class wpdb {
    *
    * @param string $query SQL query
    * @param int $x Column offset
-   * @return array Empty array (WP4BD-V2-021 will return Backdrop data)
+   * @return array Column values from query result
    */
   public function get_col( $query = null, $x = 0 ) {
     if ($query) {
       $this->_log_query($query, 'get_col()');
+      $this->last_query = $query;
     }
     
-    // WP4BD-V2-020: Return empty array
-    // WP4BD-V2-021: Return mapped Backdrop column
-    $this->num_rows = 0;
+    // WP4BD-V2-021: Map query to Backdrop
+    $results = $this->_map_query_to_backdrop($query);
     
-    return array();
+    if (empty($results)) {
+      $this->num_rows = 0;
+      return array();
+    }
+    
+    $this->num_rows = count($results);
+    
+    // Extract the specified column from all rows
+    $column = array();
+    foreach ($results as $row) {
+      $row_array = is_object($row) ? (array)$row : $row;
+      $values = array_values($row_array);
+      if (isset($values[$x])) {
+        $column[] = $values[$x];
+      }
+    }
+    
+    return $column;
   }
 
   /**
@@ -360,6 +409,203 @@ class wpdb {
     
     // Fallback to PHP's escaping
     return addslashes($data);
+  }
+
+  /**
+   * Map WordPress SQL queries to Backdrop database API
+   *
+   * WP4BD-V2-021: Core query mapping logic
+   *
+   * @param string $query WordPress SQL query
+   * @return array Results from Backdrop (raw - transformation happens in V2-022)
+   */
+  private function _map_query_to_backdrop( $query ) {
+    if (empty($query)) {
+      return array();
+    }
+    
+    // Normalize query for parsing
+    $query = trim($query);
+    $query_lower = strtolower($query);
+    
+    // Detect query type
+    if (strpos($query_lower, 'select') === 0) {
+      return $this->_handle_select_query($query, $query_lower);
+    }
+    
+    // For non-SELECT queries, return empty (read-only mode)
+    return array();
+  }
+
+  /**
+   * Handle SELECT queries - map to Backdrop
+   *
+   * @param string $query Original query
+   * @param string $query_lower Lowercase query for parsing
+   * @return array Results from Backdrop
+   */
+  private function _handle_select_query( $query, $query_lower ) {
+    // Detect which table is being queried
+    if (strpos($query_lower, 'from ' . $this->posts) !== false || 
+        strpos($query_lower, 'from `' . $this->posts . '`') !== false) {
+      return $this->_query_posts($query, $query_lower);
+    }
+    
+    if (strpos($query_lower, 'from ' . $this->users) !== false ||
+        strpos($query_lower, 'from `' . $this->users . '`') !== false) {
+      return $this->_query_users($query, $query_lower);
+    }
+    
+    if (strpos($query_lower, 'from ' . $this->options) !== false ||
+        strpos($query_lower, 'from `' . $this->options . '`') !== false) {
+      return $this->_query_options($query, $query_lower);
+    }
+    
+    // Default: return empty for unhandled tables
+    return array();
+  }
+
+  /**
+   * Query wp_posts table - map to Backdrop nodes
+   *
+   * @param string $query Original query
+   * @param string $query_lower Lowercase query
+   * @return array Array of Backdrop nodes (stdClass objects)
+   */
+  private function _query_posts( $query, $query_lower ) {
+    // Parse common WHERE clauses
+    $conditions = array();
+    
+    // Extract ID if specified
+    if (preg_match('/where.*\bid\s*=\s*(\d+)/i', $query, $matches)) {
+      $conditions['id'] = $matches[1];
+    }
+    
+    // Extract post_type if specified
+    if (preg_match('/post_type\s*=\s*[\'"]([^\'"]+)[\'"]/i', $query, $matches)) {
+      $conditions['type'] = $matches[1];
+    }
+    
+    // Extract post_status if specified
+    if (preg_match('/post_status\s*=\s*[\'"]([^\'"]+)[\'"]/i', $query, $matches)) {
+      $conditions['status'] = ($matches[1] === 'publish') ? 1 : 0;
+    }
+    
+    // Extract LIMIT if specified
+    $limit = null;
+    if (preg_match('/limit\s+(\d+)(?:\s+offset\s+(\d+))?/i', $query, $matches)) {
+      $limit = array(
+        'limit' => (int)$matches[1],
+        'offset' => isset($matches[2]) ? (int)$matches[2] : 0,
+      );
+    }
+    
+    // Query Backdrop nodes
+    return $this->_fetch_backdrop_nodes($conditions, $limit);
+  }
+
+  /**
+   * Fetch nodes from Backdrop
+   *
+   * @param array $conditions Query conditions
+   * @param array|null $limit Limit and offset
+   * @return array Array of node objects
+   */
+  private function _fetch_backdrop_nodes( $conditions, $limit = null ) {
+    // Check if Backdrop functions are available
+    if (!function_exists('node_load_multiple')) {
+      return array();
+    }
+    
+    // If querying by specific ID, use node_load
+    if (isset($conditions['id'])) {
+      $node = node_load($conditions['id']);
+      return $node ? array($node) : array();
+    }
+    
+    // Build entity query
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node');
+    
+    // Add type condition if specified
+    if (isset($conditions['type'])) {
+      $query->entityCondition('bundle', $conditions['type']);
+    }
+    
+    // Add status condition if specified
+    if (isset($conditions['status'])) {
+      $query->propertyCondition('status', $conditions['status']);
+    }
+    
+    // Add limit if specified
+    if ($limit) {
+      $query->range($limit['offset'], $limit['limit']);
+    }
+    
+    // Execute query
+    try {
+      $result = $query->execute();
+      
+      if (isset($result['node'])) {
+        $nids = array_keys($result['node']);
+        $nodes = node_load_multiple($nids);
+        return array_values($nodes);
+      }
+    } catch (Exception $e) {
+      if (function_exists('watchdog')) {
+        watchdog('wp4bd', 'Error fetching nodes: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+      }
+    }
+    
+    return array();
+  }
+
+  /**
+   * Query wp_users table - map to Backdrop users
+   *
+   * @param string $query Original query
+   * @param string $query_lower Lowercase query
+   * @return array Array of Backdrop user objects
+   */
+  private function _query_users( $query, $query_lower ) {
+    // Simple user query - just return empty for now
+    // Full implementation in future iterations
+    if (function_exists('user_load_multiple')) {
+      // Load all users (limited)
+      $users = user_load_multiple(array(), array(), 10);
+      return array_values($users);
+    }
+    
+    return array();
+  }
+
+  /**
+   * Query wp_options table - map to Backdrop config/variables
+   *
+   * @param string $query Original query
+   * @param string $query_lower Lowercase query
+   * @return array Array of option objects
+   */
+  private function _query_options( $query, $query_lower ) {
+    // Extract option_name if specified
+    if (preg_match('/option_name\s*=\s*[\'"]([^\'"]+)[\'"]/i', $query, $matches)) {
+      $option_name = $matches[1];
+      
+      // Try to get from Backdrop config/variables
+      if (function_exists('config_get')) {
+        $value = config_get('system.core', $option_name);
+        if ($value !== null) {
+          return array((object)array(
+            'option_id' => 1,
+            'option_name' => $option_name,
+            'option_value' => $value,
+            'autoload' => 'yes',
+          ));
+        }
+      }
+    }
+    
+    return array();
   }
 
   /**

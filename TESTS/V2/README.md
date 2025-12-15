@@ -29,6 +29,7 @@ ddev exec 'php /var/www/html/TESTS/V2/011-wp-bootstrap.php'
 | `011-wp-bootstrap.php` | WP4BD-V2-011 | Tests WordPress bootstrap entry point |
 | `012-wp-config.php` | WP4BD-V2-012 | Tests wp-config bridge configuration |
 | `020-wpdb-dropin.php` | WP4BD-V2-020 | Tests db.php drop-in database interception |
+| `021-query-mapping.php` | WP4BD-V2-021 | Tests SQL query parsing and Backdrop mapping |
 
 ## Writing New Tests
 
