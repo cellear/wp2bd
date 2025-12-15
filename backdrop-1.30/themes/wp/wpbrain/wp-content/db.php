@@ -165,7 +165,7 @@ class wpdb {
    *
    * @param string $query SQL query
    * @param string $output Type of output (OBJECT, ARRAY_A, ARRAY_N)
-   * @return array Results from Backdrop (V2-021: mapped, V2-022: transformed)
+   * @return array Results from Backdrop (transformed to WordPress format)
    */
   public function get_results( $query = null, $output = OBJECT ) {
     if ($query) {
@@ -179,9 +179,8 @@ class wpdb {
     // Set num_rows for WordPress compatibility
     $this->num_rows = is_array($results) ? count($results) : 0;
     
-    // WP4BD-V2-022: Transform results based on output format (next story)
-    // For now, return raw Backdrop results
-    return $results;
+    // WP4BD-V2-022: Transform results based on output format
+    return $this->_transform_results($results, $output, $query);
   }
 
   /**
@@ -225,7 +224,7 @@ class wpdb {
    * @param string $query SQL query
    * @param string $output Type of output
    * @param int $y Row offset
-   * @return mixed Single row from query result
+   * @return mixed Single row from query result (transformed to WordPress format)
    */
   public function get_row( $query = null, $output = OBJECT, $y = 0 ) {
     if ($query) {
@@ -246,9 +245,9 @@ class wpdb {
     // Get the specified row
     $row = $results[$y] ?? $results[0] ?? null;
     
-    // WP4BD-V2-022: Transform based on output format (next story)
-    // For now, return raw Backdrop data
-    return $row;
+    // WP4BD-V2-022: Transform based on output format
+    $transformed = $this->_transform_results(array($row), $output, $query);
+    return !empty($transformed) ? $transformed[0] : null;
   }
 
   /**
@@ -606,6 +605,183 @@ class wpdb {
     }
     
     return array();
+  }
+
+  /**
+   * Transform Backdrop results to WordPress object format
+   *
+   * WP4BD-V2-022: Core transformation logic
+   *
+   * @param array $results Raw Backdrop objects
+   * @param string $output Output format (OBJECT, ARRAY_A, ARRAY_N)
+   * @param string $query Original query (for context)
+   * @return array Transformed results
+   */
+  private function _transform_results( $results, $output, $query = '' ) {
+    if (empty($results)) {
+      return array();
+    }
+    
+    $transformed = array();
+    $query_lower = strtolower($query);
+    
+    foreach ($results as $result) {
+      if (!is_object($result) && !is_array($result)) {
+        continue;
+      }
+      
+      // Detect what type of object this is based on query context
+      if (strpos($query_lower, 'from ' . $this->posts) !== false ||
+          strpos($query_lower, 'from `' . $this->posts . '`') !== false) {
+        // This is a node/post
+        $transformed_item = $this->_backdrop_node_to_wp_post($result);
+      }
+      elseif (strpos($query_lower, 'from ' . $this->users) !== false ||
+              strpos($query_lower, 'from `' . $this->users . '`') !== false) {
+        // This is a user
+        $transformed_item = $this->_backdrop_user_to_wp_user($result);
+      }
+      elseif (strpos($query_lower, 'from ' . $this->options) !== false ||
+              strpos($query_lower, 'from `' . $this->options . '`') !== false) {
+        // This is an option
+        $transformed_item = $this->_backdrop_config_to_wp_option($result);
+      }
+      else {
+        // Unknown type - return as-is
+        $transformed_item = $result;
+      }
+      
+      // Convert to requested output format
+      if ($transformed_item) {
+        $transformed[] = $this->_format_output($transformed_item, $output);
+      }
+    }
+    
+    return $transformed;
+  }
+
+  /**
+   * Convert Backdrop node to WordPress WP_Post object
+   *
+   * WP4BD-V2-022: Reuse existing WP_Post::from_node() method
+   *
+   * @param object $node Backdrop node object
+   * @return WP_Post|null WordPress post object
+   */
+  private function _backdrop_node_to_wp_post( $node ) {
+    // Check if WP_Post class exists and has from_node method
+    if (class_exists('WP_Post') && method_exists('WP_Post', 'from_node')) {
+      return WP_Post::from_node($node);
+    }
+    
+    // Fallback: create basic WP_Post-like object
+    if (!is_object($node) || !isset($node->nid)) {
+      return null;
+    }
+    
+    $post = new stdClass();
+    $post->ID = (int)$node->nid;
+    $post->post_author = isset($node->uid) ? (int)$node->uid : 0;
+    $post->post_title = isset($node->title) ? $node->title : '';
+    $post->post_type = isset($node->type) ? $node->type : 'post';
+    $post->post_status = (isset($node->status) && $node->status == 1) ? 'publish' : 'draft';
+    $post->post_date = isset($node->created) ? date('Y-m-d H:i:s', $node->created) : '';
+    $post->post_modified = isset($node->changed) ? date('Y-m-d H:i:s', $node->changed) : '';
+    $post->post_content = '';
+    $post->post_excerpt = '';
+    
+    return $post;
+  }
+
+  /**
+   * Convert Backdrop user to WordPress user object
+   *
+   * WP4BD-V2-022
+   *
+   * @param object $account Backdrop user object
+   * @return object|null WordPress user object
+   */
+  private function _backdrop_user_to_wp_user( $account ) {
+    if (!is_object($account) || !isset($account->uid)) {
+      return null;
+    }
+    
+    $user = new stdClass();
+    $user->ID = (int)$account->uid;
+    $user->user_login = isset($account->name) ? $account->name : '';
+    $user->user_email = isset($account->mail) ? $account->mail : '';
+    $user->display_name = isset($account->name) ? $account->name : '';
+    $user->user_registered = isset($account->created) ? date('Y-m-d H:i:s', $account->created) : '';
+    $user->user_status = isset($account->status) ? (int)$account->status : 0;
+    // Simple sanitize_title helper if WordPress function not available
+    $nicename = isset($account->name) ? $account->name : '';
+    if (!function_exists('sanitize_title')) {
+      $nicename = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $nicename));
+      $nicename = trim($nicename, '-');
+    } else {
+      $nicename = sanitize_title($nicename);
+    }
+    $user->user_nicename = $nicename;
+    
+    return $user;
+  }
+
+  /**
+   * Convert Backdrop config/variable to WordPress option object
+   *
+   * WP4BD-V2-022
+   *
+   * @param object|array $config Backdrop config or option data
+   * @return object|null WordPress option object
+   */
+  private function _backdrop_config_to_wp_option( $config ) {
+    // If it's already in WordPress format (from our query_options method), return as-is
+    if (is_object($config) && isset($config->option_name)) {
+      return $config;
+    }
+    
+    // Otherwise, create a basic option object
+    $option = new stdClass();
+    $option->option_id = 1;
+    $option->option_name = '';
+    $option->option_value = '';
+    $option->autoload = 'yes';
+    
+    if (is_object($config)) {
+      // Try to extract name and value from config object
+      $option->option_name = isset($config->name) ? $config->name : '';
+      $option->option_value = isset($config->value) ? $config->value : '';
+    }
+    elseif (is_array($config)) {
+      $option->option_name = isset($config['name']) ? $config['name'] : '';
+      $option->option_value = isset($config['value']) ? $config['value'] : '';
+    }
+    
+    return $option;
+  }
+
+  /**
+   * Format output according to WordPress output type
+   *
+   * @param object $item Transformed item
+   * @param string $output Output format (OBJECT, ARRAY_A, ARRAY_N)
+   * @return mixed Formatted output
+   */
+  private function _format_output( $item, $output ) {
+    if ($output === OBJECT || $output === 'OBJECT') {
+      return $item;
+    }
+    
+    if ($output === ARRAY_A || $output === 'ARRAY_A') {
+      return (array)$item;
+    }
+    
+    if ($output === ARRAY_N || $output === 'ARRAY_N') {
+      return array_values((array)$item);
+    }
+    
+    // Default to object
+    return $item;
   }
 
   /**
