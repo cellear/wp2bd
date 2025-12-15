@@ -1,0 +1,37 @@
+<phpunit colors="true" testdox="true">
+  <php>
+    <var name="bee_test_root" value="/app"/>
+    <var name="bee_test_db_host" value="database"/>
+    <var name="bee_test_backdrop_db_name" value="backdrop"/>
+    <var name="bee_test_backdrop_base_url" value='https://bee.lndo.site'/>
+    <var name="bee_test_multisite_multi_1_db_name" value='multi_one'/>
+    <var name="bee_test_multisite_multi_2_db_name" value='multi_two'/>
+    <var name="bee_test_multisite_install_test_db_name" value='install_test'/>
+    <var name="bee_test_multisite_multi_2_domain" value='multi-2.lndo.site'/>
+  </php>
+  <testsuites>
+    <testsuite name="backdrop">
+      <file>backdrop/BeeCoreTest.php</file>
+      <file>backdrop/CacheCommandsTest.php</file>
+      <file>backdrop/ConfigCommandsTest.php</file>
+      <file>backdrop/CronCommandsTest.php</file>
+      <file>backdrop/DBCommandsTest.php</file>
+      <file>backdrop/DBLogCommandsTest.php</file>
+      <file>backdrop/DownloadCommandsTest.php</file>
+      <file>backdrop/HelpCommandsTest.php</file>
+      <file>backdrop/PHPCommandsTest.php</file>
+      <file>backdrop/ProjectsCommandsTest.php</file>
+      <file>backdrop/RolesCommandsTest.php</file>
+      <file>backdrop/StateCommandsTest.php</file>
+      <!-- There's no Status command test, since that command is used in other tests already. -->
+      <file>backdrop/ThemeCommandsTest.php</file>
+      <file>backdrop/UpdateCommandsTest.php</file>
+      <file>backdrop/UserCommandsTest.php</file>
+    </testsuite>
+    <testsuite name="multisite">
+      <file>multisite/MultisiteTest.php</file>
+      <file>multisite/MultisiteInstallCommandsTest.php</file>
+      <file>multisite/MultisiteDownloadCommandsTest.php</file>
+    </testsuite>
+  </testsuites>
+</phpunit>

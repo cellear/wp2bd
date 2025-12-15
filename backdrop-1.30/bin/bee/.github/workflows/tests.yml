@@ -1,0 +1,40 @@
+on:
+  # Trigger on pull request events. Also trigger on push events for feature branches.
+  push:
+    branches: [ issue-111-update-command ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'images/**'
+  pull_request:
+    branches: [ 1.x-1.x, issue-111-update-command ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'images/**'
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out repo under $GITHUB_WORKSPACE.
+      - uses: actions/checkout@v3
+
+      # Installs Lando. @see https://docs.lando.dev/install/gha.html
+      - name: Lando Setup
+        uses: lando/setup-lando@v3
+        with:
+          lando-version: latest
+      # Run Lando
+      - name: Lando
+        run: |
+          cd $GITHUB_WORKSPACE
+          lando start
+
+      # Runs PHPUnit tests.
+      - name: PHPUnit
+        run: |
+          cd $GITHUB_WORKSPACE
+          lando run-tests
