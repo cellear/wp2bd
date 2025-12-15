@@ -31,6 +31,7 @@ ddev exec 'php /var/www/html/TESTS/V2/011-wp-bootstrap.php'
 | `020-wpdb-dropin.php` | WP4BD-V2-020 | Tests db.php drop-in database interception |
 | `021-query-mapping.php` | WP4BD-V2-021 | Tests SQL query parsing and Backdrop mapping |
 | `022-result-transformation.php` | WP4BD-V2-022 | Tests Backdrop-to-WordPress object transformation |
+| `030-wordpress-globals.php` | WP4BD-V2-030 | Verifies WordPress globals documentation |
 
 ## Writing New Tests
 
