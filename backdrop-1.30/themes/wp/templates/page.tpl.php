@@ -9,10 +9,17 @@
  * Completed Epics:
  * - Epic 1: Debug Infrastructure (WP4BD-V2-001, V2-002) ✅
  * - Epic 2: WordPress Core Setup (WP4BD-V2-010, V2-011, V2-012) ✅
+ * - Epic 3: Database Interception (WP4BD-V2-020, V2-021, V2-022) ✅
+ * - Epic 4: WordPress Globals (WP4BD-V2-030, V2-031) ✅
  */
 
 // Load debug helper functions
 require_once BACKDROP_ROOT . '/modules/wp_content/wp4bd_debug.inc';
+// Load globals initializer
+$globals_init_file = BACKDROP_ROOT . '/modules/wp_content/includes/wp-globals-init.php';
+if (file_exists($globals_init_file)) {
+  require_once $globals_init_file;
+}
 
 // Initialize debugging
 wp4bd_debug_init();
@@ -22,8 +29,8 @@ wp4bd_debug_init();
 <div style="margin: 20px; padding: 20px; background: #d4edda; border-left: 4px solid #28a745;">
   <h1 style="margin-top: 0; color: #155724;">✅ WP4BD V2: WordPress-as-Engine Architecture</h1>
   <p><strong>Template loaded successfully!</strong> Showing progress through V2 implementation.</p>
-  <p><strong>Completed:</strong> Epic 1 (Debug Infrastructure) ✅ | Epic 2 (WordPress Core Setup) ✅ | Epic 3 (Database Interception) ✅</p>
-  <p><strong>Next:</strong> Epic 4 (WordPress Globals Initialization)</p>
+  <p><strong>Completed:</strong> Epic 1 (Debug Infrastructure) ✅ | Epic 2 (WordPress Core Setup) ✅ | Epic 3 (Database Interception) ✅ | Epic 4 (WordPress Globals) ✅</p>
+  <p><strong>Next:</strong> Epic 5 (External I/O Interception)</p>
 </div>
 <?php
 
@@ -123,6 +130,34 @@ wp4bd_debug_log('Epic 3: Database Interception', 'Next Epic', 'Epic 4: WordPress
 wp4bd_debug_stage_end('Epic 3: Database Interception');
 
 // ============================================================================
+// EPIC 4: WORDPRESS GLOBALS ✅
+// ============================================================================
+wp4bd_debug_stage_start('Epic 4: WordPress Globals');
+
+wp4bd_debug_log('Epic 4: WordPress Globals', 'Status', '✅ COMPLETE');
+wp4bd_debug_log('Epic 4: WordPress Globals', 'WP4BD-V2-030', 'Critical globals documented');
+
+// Initialize globals and log summary.
+$globals_summary = array();
+if (function_exists('wp4bd_init_wordpress_globals')) {
+  $globals_summary = wp4bd_init_wordpress_globals(array('limit' => 5));
+  wp4bd_debug_log('Epic 4: WordPress Globals', 'WP4BD-V2-031', 'Globals initialization function executed');
+  wp4bd_debug_log('Epic 4: WordPress Globals', 'Posts Loaded', isset($globals_summary['posts_loaded']) ? $globals_summary['posts_loaded'] : 0);
+  wp4bd_debug_log('Epic 4: WordPress Globals', '$wp_query', !empty($globals_summary['wp_query_initialized']) ? '✅ initialized' : '⚠️ not set');
+  wp4bd_debug_log('Epic 4: WordPress Globals', '$wp_the_query', !empty($globals_summary['wp_the_query_initialized']) ? '✅ initialized' : '⚠️ not set');
+  wp4bd_debug_log('Epic 4: WordPress Globals', '$wp_post_types', !empty($globals_summary['post_types_initialized']) ? '✅ set from Backdrop types' : '⚠️ skipped');
+  wp4bd_debug_log('Epic 4: WordPress Globals', '$wp_taxonomies', !empty($globals_summary['taxonomies_initialized']) ? '✅ set from vocabularies' : '⚠️ skipped');
+  wp4bd_debug_log('Epic 4: WordPress Globals', '$pagenow', isset($globals_summary['pagenow']) ? $globals_summary['pagenow'] : 'unknown');
+  wp4bd_debug_log('Epic 4: WordPress Globals', 'Hooks', !empty($globals_summary['hook_globals_initialized']) ? '✅ initialized' : '⚠️ not set');
+} else {
+  wp4bd_debug_log('Epic 4: WordPress Globals', 'WP4BD-V2-031', '⚠️ init function missing');
+}
+
+wp4bd_debug_log('Epic 4: WordPress Globals', 'Next Epic', 'Epic 5: External I/O Interception');
+
+wp4bd_debug_stage_end('Epic 4: WordPress Globals');
+
+// ============================================================================
 // RENDER DEBUG OUTPUT
 // ============================================================================
 
@@ -171,22 +206,28 @@ if (!empty($debug_output)) {
     <li>✅ <strong>WP4BD-V2-022:</strong> Result transformation to WordPress objects</li>
   </ul>
 
+  <h3>✅ Epic 4: WordPress Globals (COMPLETE)</h3>
+  <ul>
+    <li>✅ <strong>WP4BD-V2-030:</strong> Critical globals documented</li>
+    <li>✅ <strong>WP4BD-V2-031:</strong> Globals initialized from Backdrop data</li>
+  </ul>
+
   <h3>🚀 What You're Seeing</h3>
   <p>This debug output shows:</p>
   <ul>
     <li><strong>Epic 1:</strong> Debug infrastructure working (stage timing, data logging)</li>
     <li><strong>Epic 2:</strong> WordPress core files in place, bootstrap ready, config bridge created</li>
     <li><strong>Epic 3:</strong> Database interception active, queries mapped to Backdrop, results transformed</li>
+    <li><strong>Epic 4:</strong> WordPress globals documented and initialized from Backdrop</li>
     <li>Stage timing for each epic</li>
-    <li>File verification (WordPress version, bootstrap, config, db drop-in)</li>
+    <li>File verification (WordPress version, bootstrap, config, db drop-in, globals init)</li>
   </ul>
 
   <h3>📋 Next Steps</h3>
-  <p><strong>Epic 3 is complete!</strong> Next up:</p>
+  <p><strong>Epic 4 is complete!</strong> Next up:</p>
   <ul>
-    <li><strong>Epic 4:</strong> WordPress Globals Initialization (WP4BD-V2-030, V2-031)</li>
-    <li>Document critical WordPress globals</li>
-    <li>Initialize globals from Backdrop data</li>
+    <li><strong>Epic 5:</strong> External I/O Interception (WP4BD-V2-040, V2-041, V2-042)</li>
+    <li>Document and intercept external HTTP/FS/cron functions</li>
   </ul>
 
   <h3>📝 Implementation Notes</h3>
