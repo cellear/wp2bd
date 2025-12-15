@@ -27,6 +27,7 @@ ddev exec 'php /var/www/html/TESTS/V2/011-wp-bootstrap.php'
 | File | Ticket | Description |
 |------|--------|-------------|
 | `011-wp-bootstrap.php` | WP4BD-V2-011 | Tests WordPress bootstrap entry point |
+| `012-wp-config.php` | WP4BD-V2-012 | Tests wp-config bridge configuration |
 
 ## Writing New Tests
 
