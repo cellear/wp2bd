@@ -16,10 +16,11 @@
 // Load debug helper functions
 require_once BACKDROP_ROOT . '/modules/wp_content/wp4bd_debug.inc';
 // Load globals initializer
-$globals_init_file = BACKDROP_ROOT . '/modules/wp_content/includes/wp-globals-init.php';
-if (file_exists($globals_init_file)) {
-  require_once $globals_init_file;
-}
+// TEMPORARILY DISABLED: This loads WordPress core which conflicts with V1 functions
+// $globals_init_file = BACKDROP_ROOT . '/modules/wp_content/includes/wp-globals-init.php';
+// if (file_exists($globals_init_file)) {
+//   require_once $globals_init_file;
+// }
 
 // Initialize debugging
 wp4bd_debug_init();
