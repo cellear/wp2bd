@@ -32,6 +32,8 @@ ddev exec 'php /var/www/html/TESTS/V2/011-wp-bootstrap.php'
 | `021-query-mapping.php` | WP4BD-V2-021 | Tests SQL query parsing and Backdrop mapping |
 | `022-result-transformation.php` | WP4BD-V2-022 | Tests Backdrop-to-WordPress object transformation |
 | `030-wordpress-globals.php` | WP4BD-V2-030 | Verifies WordPress globals documentation |
+| `031-init-globals.php` | WP4BD-V2-031 | Verifies WordPress globals initialization |
+| `030-wordpress-globals.php` | WP4BD-V2-030 | Verifies WordPress globals documentation |
 
 ## Writing New Tests
 
