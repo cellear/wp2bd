@@ -176,6 +176,68 @@ if (!empty($debug_output)) {
 
 ?>
 
+<!-- Upcoming Milestones Sidebar -->
+<div style="float: right; width: 350px; margin: 20px 20px 20px 0; padding: 15px; background: #fff9e6; border: 2px solid #f0c36d; border-radius: 4px;">
+  <h3 style="margin-top: 0; color: #856404; border-bottom: 2px solid #f0c36d; padding-bottom: 10px;">
+    🚀 Upcoming Milestones
+  </h3>
+
+  <!-- Epic 5: External I/O Interception -->
+  <div style="margin-bottom: 15px;">
+    <h4 style="color: #856404; margin: 10px 0 5px 0; font-size: 14px;">
+      📡 Epic 5: External I/O Interception
+    </h4>
+    <ul style="margin: 5px 0; padding-left: 20px; font-size: 12px; line-height: 1.6;">
+      <li><code>V2-040</code> Identify External I/O Functions</li>
+      <li><code>V2-041</code> Implement I/O Interception Strategy</li>
+      <li><code>V2-042</code> File Path Mapping</li>
+    </ul>
+  </div>
+
+  <!-- Epic 6: Bootstrap Integration -->
+  <div style="margin-bottom: 15px;">
+    <h4 style="color: #856404; margin: 10px 0 5px 0; font-size: 14px;">
+      🔗 Epic 6: Bootstrap Integration
+    </h4>
+    <ul style="margin: 5px 0; padding-left: 20px; font-size: 12px; line-height: 1.6;">
+      <li><code>V2-050</code> Integration Point in Module</li>
+      <li><code>V2-051</code> Bootstrap Sequence Implementation</li>
+      <li><code>V2-052</code> Prevent WordPress Database Connection</li>
+    </ul>
+  </div>
+
+  <!-- Epic 7: Data Structure Bridges -->
+  <div style="margin-bottom: 15px;">
+    <h4 style="color: #856404; margin: 10px 0 5px 0; font-size: 14px;">
+      🌉 Epic 7: Data Structure Bridges
+    </h4>
+    <ul style="margin: 5px 0; padding-left: 20px; font-size: 12px; line-height: 1.6;">
+      <li><code>V2-060</code> WordPress Post Object Bridge</li>
+      <li><code>V2-061</code> WordPress User Bridge</li>
+      <li><code>V2-062</code> WordPress Term/Taxonomy Bridge</li>
+      <li><code>V2-063</code> WordPress Options/Settings Bridge</li>
+    </ul>
+  </div>
+
+  <!-- Epic 8: Testing & Validation -->
+  <div style="margin-bottom: 5px;">
+    <h4 style="color: #856404; margin: 10px 0 5px 0; font-size: 14px;">
+      ✅ Epic 8: Testing & Validation
+    </h4>
+    <ul style="margin: 5px 0; padding-left: 20px; font-size: 12px; line-height: 1.6;">
+      <li><code>V2-070</code> Test WordPress Core Loads</li>
+      <li><code>V2-071</code> Test Query Interception</li>
+      <li><code>V2-072</code> Test Theme Rendering</li>
+      <li><code>V2-073</code> Create Production Template</li>
+    </ul>
+  </div>
+
+  <p style="font-size: 11px; color: #666; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0c36d;">
+    <strong>Total:</strong> 4 Epics, 14 Stories<br>
+    <strong>Source:</strong> DOCS/V2/jira-import-v2.csv
+  </p>
+</div>
+
 <!-- Help Text -->
 <div style="margin: 20px; padding: 20px; background: #e7f3ff; border-left: 4px solid #0073aa;">
   <h3>🎛️ Debug Level Controls</h3>
