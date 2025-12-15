@@ -1,4 +1,4 @@
-name: wp4bd-bd-admiring-clarke
+name: wp4bd
 type: backdrop
 docroot: backdrop-1.30
 php_version: "8.3"
