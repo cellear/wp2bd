@@ -167,11 +167,14 @@ function wp4bd_init_wordpress_globals(array $options = array()) {
 
   // Core WordPress classes.
   $maybe_classes = array(
-    $wp_root . 'wp-includes/class-wp-query.php',
-    $wp_root . 'wp-includes/class-wp-rewrite.php',
-    $wp_root . 'wp-includes/class-wp.php',
+    'WP_Query'   => $wp_root . 'wp-includes/class-wp-query.php',
+    'WP_Rewrite' => $wp_root . 'wp-includes/class-wp-rewrite.php',
+    'WP'         => $wp_root . 'wp-includes/class-wp.php',
   );
-  foreach ($maybe_classes as $class_file) {
+  foreach ($maybe_classes as $class_name => $class_file) {
+    if (class_exists($class_name)) {
+      continue;
+    }
     if (file_exists($class_file)) {
       require_once $class_file;
     }
