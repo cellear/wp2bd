@@ -17,7 +17,7 @@ function wp4bd_debug_init() {
 
   $wp4bd_debug = [
     'start_time' => microtime(true),
-    'level' => 2, // Default to Level 2 (Data Counts)
+    'level' => 0, // Default to Level 0 (Production - no debug)
     'stages' => [],
   ];
 

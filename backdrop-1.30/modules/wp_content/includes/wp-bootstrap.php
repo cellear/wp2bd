@@ -117,6 +117,7 @@ function wp4bd_bootstrap_wordpress() {
     }
 
     // Load essential WordPress core files directly
+    // Skip files that require web server environment in test/CLI environments
     $essential_files = array(
       ABSPATH . WPINC . '/load.php',
       ABSPATH . WPINC . '/default-constants.php',
@@ -127,8 +128,12 @@ function wp4bd_bootstrap_wordpress() {
       ABSPATH . WPINC . '/plugin.php',
       ABSPATH . WPINC . '/theme.php',
       ABSPATH . WPINC . '/template.php',
-      ABSPATH . WPINC . '/template-loader.php',
     );
+
+    // Only load template-loader.php if we have proper server environment (not in CLI tests)
+    if (isset($_SERVER['REQUEST_METHOD']) && isset($_SERVER['REQUEST_URI'])) {
+      $essential_files[] = ABSPATH . WPINC . '/template-loader.php';
+    }
 
     foreach ($essential_files as $file) {
       if (file_exists($file)) {
