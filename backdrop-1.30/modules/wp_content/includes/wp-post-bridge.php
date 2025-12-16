@@ -1,0 +1,245 @@
+<?php
+/**
+ * @file
+ * WordPress Post Object Bridge for WP4BD V2
+ *
+ * Converts Backdrop nodes to real WordPress WP_Post objects.
+ * Uses the actual WordPress WP_Post class loaded from WordPress 4.9 core.
+ *
+ * @see WP4BD-V2-060
+ * @package WP4BD
+ * @subpackage Data-Bridges
+ */
+
+/**
+ * Convert a Backdrop node to a WordPress WP_Post object.
+ *
+ * This function creates a real WordPress WP_Post instance (from WordPress core)
+ * and populates all 21 standard properties from Backdrop node data.
+ *
+ * @param object $node
+ *   A fully loaded Backdrop node object.
+ *
+ * @return WP_Post|null
+ *   A WordPress WP_Post object, or NULL if the node is invalid.
+ */
+function wp4bd_node_to_post($node) {
+  // Validate input
+  if (!is_object($node) || !isset($node->nid)) {
+    return NULL;
+  }
+
+  // Ensure node has required properties (especially 'type' bundle property)
+  // If node doesn't have 'type', try to load it fully
+  if (!isset($node->type) && function_exists('node_load')) {
+    $full_node = node_load($node->nid);
+    if ($full_node && isset($full_node->type)) {
+      $node = $full_node;
+    }
+    else {
+      // Fallback: set a default type
+      $node->type = 'page';
+    }
+  }
+  elseif (!isset($node->type)) {
+    // If we can't load it, set a default
+    $node->type = 'page';
+  }
+
+  // Create a new WordPress WP_Post object
+  // Note: WordPress's WP_Post is a final class, so we just create an instance
+  $post = new WP_Post();
+
+  // ========================================================================
+  // BASIC PROPERTIES
+  // ========================================================================
+
+  // Post ID - maps directly from node ID
+  $post->ID = (int) $node->nid;
+
+  // Author ID - maps from Backdrop user ID
+  $post->post_author = isset($node->uid) ? (int) $node->uid : 0;
+
+  // Post title
+  $post->post_title = isset($node->title) ? $node->title : '';
+
+  // Post type - maps from Backdrop content type
+  $post->post_type = isset($node->type) ? $node->type : 'post';
+
+  // Parent post ID - Backdrop nodes don't have parent relationships by default
+  $post->post_parent = 0;
+
+  // Menu order - used for sorting
+  $post->menu_order = 0;
+
+  // Filter context - indicates content hasn't been filtered yet
+  $post->filter = 'raw';
+
+  // ========================================================================
+  // DATES
+  // ========================================================================
+
+  // Created date
+  if (isset($node->created)) {
+    $post->post_date = date('Y-m-d H:i:s', $node->created);
+    $post->post_date_gmt = gmdate('Y-m-d H:i:s', $node->created);
+  }
+  else {
+    $post->post_date = '0000-00-00 00:00:00';
+    $post->post_date_gmt = '0000-00-00 00:00:00';
+  }
+
+  // Modified date
+  if (isset($node->changed)) {
+    $post->post_modified = date('Y-m-d H:i:s', $node->changed);
+    $post->post_modified_gmt = gmdate('Y-m-d H:i:s', $node->changed);
+  }
+  else {
+    $post->post_modified = '0000-00-00 00:00:00';
+    $post->post_modified_gmt = '0000-00-00 00:00:00';
+  }
+
+  // ========================================================================
+  // STATUS
+  // ========================================================================
+
+  // Post status - published nodes are 'publish', unpublished are 'draft'
+  $post->post_status = (isset($node->status) && $node->status == 1) ? 'publish' : 'draft';
+
+  // ========================================================================
+  // CONTENT
+  // ========================================================================
+
+  // Extract body content
+  // Backdrop stores body in $node->body[LANGUAGE_NONE][0]
+  $post->post_content = '';
+  $post->post_excerpt = '';
+
+  if (isset($node->body) && is_array($node->body)) {
+    // Check for LANGUAGE_NONE constant or use 'und'
+    $lang_key = defined('LANGUAGE_NONE') ? LANGUAGE_NONE : 'und';
+
+    if (isset($node->body[$lang_key][0]['value'])) {
+      $post->post_content = $node->body[$lang_key][0]['value'];
+    }
+
+    // Extract summary/excerpt if available
+    if (isset($node->body[$lang_key][0]['summary'])) {
+      $post->post_excerpt = $node->body[$lang_key][0]['summary'];
+    }
+  }
+
+  // ========================================================================
+  // SLUG/NAME
+  // ========================================================================
+
+  // Post name/slug - try to get from path alias
+  $post->post_name = '';
+  if (isset($node->path) && is_array($node->path) && isset($node->path['alias'])) {
+    $post->post_name = $node->path['alias'];
+  }
+  elseif (function_exists('backdrop_get_path_alias')) {
+    $alias = backdrop_get_path_alias('node/' . $node->nid);
+    if ($alias != 'node/' . $node->nid) {
+      $post->post_name = $alias;
+    }
+  }
+
+  // If no alias, create slug from title
+  if (empty($post->post_name) && !empty($post->post_title)) {
+    $post->post_name = wp4bd_sanitize_title($post->post_title);
+  }
+
+  // ========================================================================
+  // COMMENTS
+  // ========================================================================
+
+  // Comment count
+  $post->comment_count = isset($node->comment_count) ? (int) $node->comment_count : 0;
+
+  // Comment status
+  if (isset($node->comment)) {
+    // Backdrop comment values: 0 = hidden, 1 = closed, 2 = open
+    $post->comment_status = ($node->comment == 2) ? 'open' : 'closed';
+  }
+  else {
+    $post->comment_status = 'closed';
+  }
+
+  // Ping status - Backdrop doesn't have pingbacks
+  $post->ping_status = 'closed';
+
+  // ========================================================================
+  // MISC PROPERTIES
+  // ========================================================================
+
+  // Post password - Backdrop doesn't have password-protected content
+  $post->post_password = '';
+
+  // To ping - Backdrop doesn't have pingback URLs
+  $post->to_ping = '';
+
+  // Pinged - Backdrop doesn't track pinged URLs
+  $post->pinged = '';
+
+  // Post MIME type - only used for attachments
+  $post->post_mime_type = '';
+
+  // GUID - global unique identifier (typically the permalink)
+  // We'll construct this from the base URL and node path
+  global $base_url;
+  if (!empty($post->post_name)) {
+    $post->guid = $base_url . '/' . $post->post_name;
+  }
+  else {
+    $post->guid = $base_url . '/node/' . $post->ID;
+  }
+
+  return $post;
+}
+
+/**
+ * Sanitize a title to create a URL-safe slug.
+ *
+ * This is a simplified version of WordPress's sanitize_title().
+ *
+ * @param string $title
+ *   The title to sanitize.
+ *
+ * @return string
+ *   URL-safe slug.
+ */
+function wp4bd_sanitize_title($title) {
+  // Convert to lowercase
+  $slug = strtolower($title);
+
+  // Replace spaces and special characters with hyphens
+  $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+
+  // Remove leading/trailing hyphens
+  $slug = trim($slug, '-');
+
+  return $slug;
+}
+
+/**
+ * Convert multiple Backdrop nodes to WordPress WP_Post objects.
+ *
+ * @param array $nodes
+ *   Array of Backdrop node objects.
+ *
+ * @return array
+ *   Array of WP_Post objects.
+ */
+function wp4bd_nodes_to_posts(array $nodes) {
+  $posts = array();
+
+  foreach ($nodes as $node) {
+    $post = wp4bd_node_to_post($node);
+    if ($post) {
+      $posts[] = $post;
+    }
+  }
+
+  return $posts;
+}

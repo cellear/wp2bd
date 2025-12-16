@@ -149,6 +149,12 @@ function wp4bd_bootstrap_wordpress() {
       require_once $globals_init_file;
     }
 
+    // Step 6: Load data bridge files from Epic 7
+    $post_bridge_file = dirname(__FILE__) . '/wp-post-bridge.php';
+    if (file_exists($post_bridge_file)) {
+      require_once $post_bridge_file;
+    }
+
     // Success - WordPress core loaded, database intercepted, ready for rendering
     return TRUE;
 
