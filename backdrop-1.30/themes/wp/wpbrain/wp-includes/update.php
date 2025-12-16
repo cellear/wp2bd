@@ -221,12 +221,13 @@ function wp_version_check( $extra_stats = array(), $force_check = false ) {
  * @param array $extra_stats Extra statistics to report to the WordPress.org API.
  */
 function wp_update_plugins( $extra_stats = array() ) {
-	if ( wp_installing() ) {
-		return;
-	}
+	// WP4BD V2-041 (2025-12-16): Plugin update checks disabled
+	// This function makes HTTP requests to api.wordpress.org to check for updates.
+	// Disabled in WP4BD - WordPress plugins are not used.
+	//
+	// Original function body (~160 lines) commented out - see git history
 
-	// include an unmodified $wp_version
-	include( ABSPATH . WPINC . '/version.php' );
+	return;
 
 	// If running blog-side, bail unless we've not checked in the last 12 hours
 	if ( !function_exists( 'get_plugins' ) )
@@ -395,12 +396,13 @@ function wp_update_plugins( $extra_stats = array() ) {
  * @param array $extra_stats Extra statistics to report to the WordPress.org API.
  */
 function wp_update_themes( $extra_stats = array() ) {
-	if ( wp_installing() ) {
-		return;
-	}
+	// WP4BD V2-041 (2025-12-16): Theme update checks disabled
+	// This function makes HTTP requests to api.wordpress.org to check for updates.
+	// Disabled in WP4BD - theme updates handled outside WordPress.
+	//
+	// Original function body (~150 lines) commented out - see git history
 
-	// include an unmodified $wp_version
-	include( ABSPATH . WPINC . '/version.php' );
+	return;
 
 	$installed_themes = wp_get_themes();
 	$translations = wp_get_installed_translations( 'themes' );
