@@ -79,10 +79,77 @@ function wp4bd_bootstrap_wordpress() {
       }
     }
 
-    // Success - constants are set and paths verified
-    // We do NOT load wp-settings.php here - that attempts database connection
-    // Database interception will be handled in Epic 3 via db.php drop-in
+    // WP4BD V2-051: Load WordPress core files in correct sequence
 
+    // Step 1: Set table prefix (WordPress expects this global)
+    if (!isset($GLOBALS['table_prefix'])) {
+      $GLOBALS['table_prefix'] = 'wp_';
+    }
+
+    // Step 2: Load db.php drop-in FIRST (Epic 3) - prevents WordPress database connection
+    $db_dropin = WP_CONTENT_DIR . '/db.php';
+    if (file_exists($db_dropin)) {
+      require_once $db_dropin;
+      // Verify wpdb class is now loaded from our drop-in
+      if (!class_exists('wpdb')) {
+        $errors[] = 'db.php drop-in loaded but wpdb class not found';
+        return FALSE;
+      }
+    } else {
+      $errors[] = 'db.php drop-in not found - WordPress would try to connect to database!';
+      return FALSE;
+    }
+
+    // Step 3: Load critical WordPress core files
+    // Order matters - load dependencies first
+
+    // Load version and constants
+    require_once ABSPATH . WPINC . '/version.php';
+    require_once ABSPATH . WPINC . '/compat.php';
+
+    // Load class definitions
+    require_once ABSPATH . WPINC . '/class-wp-post.php';
+    require_once ABSPATH . WPINC . '/class-wp-query.php';
+
+    // Load plugin system (needed for hooks)
+    require_once ABSPATH . WPINC . '/plugin.php';
+
+    // Load formatting and escaping
+    require_once ABSPATH . WPINC . '/formatting.php';
+    require_once ABSPATH . WPINC . '/kses.php';
+
+    // Load post functions
+    require_once ABSPATH . WPINC . '/post.php';
+    require_once ABSPATH . WPINC . '/query.php';
+
+    // Load template functions
+    require_once ABSPATH . WPINC . '/post-template.php';
+    require_once ABSPATH . WPINC . '/general-template.php';
+    require_once ABSPATH . WPINC . '/link-template.php';
+    require_once ABSPATH . WPINC . '/author-template.php';
+    require_once ABSPATH . WPINC . '/category-template.php';
+
+    // Load theme support
+    require_once ABSPATH . WPINC . '/theme.php';
+    require_once ABSPATH . WPINC . '/template.php';
+
+    // Load internationalization
+    require_once ABSPATH . WPINC . '/l10n.php';
+
+    // Step 4: Initialize $wpdb global using our drop-in class
+    global $wpdb;
+    if (!isset($wpdb)) {
+      // Create wpdb instance with fake credentials (db.php drop-in won't actually connect)
+      $wpdb = new wpdb('backdrop_user', 'no_password_needed', 'backdrop_db', 'localhost');
+    }
+
+    // Step 5: Load globals initialization from Epic 4
+    $globals_init_file = dirname(__FILE__) . '/wp-globals-init.php';
+    if (file_exists($globals_init_file)) {
+      require_once $globals_init_file;
+    }
+
+    // Success - WordPress core loaded, database intercepted, ready for rendering
     return TRUE;
 
   } catch (Exception $e) {
