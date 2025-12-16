@@ -149,8 +149,17 @@ function wp_safe_remote_head( $url, $args = array() ) {
  * @return WP_Error|array The response or WP_Error on failure.
  */
 function wp_remote_request($url, $args = array()) {
-	$http = _wp_http_get_object();
-	return $http->request( $url, $args );
+	// WP4BD V2-041 (2025-12-16): External HTTP requests disabled
+	// WordPress should not make external API calls in WP4BD architecture.
+	// All data comes from Backdrop, no external communication needed.
+	//
+	// Original code: $http = _wp_http_get_object(); return $http->request( $url, $args );
+
+	return new WP_Error(
+		'http_request_disabled',
+		'External HTTP requests are disabled in WP4BD',
+		array('url' => $url)
+	);
 }
 
 /**
@@ -166,8 +175,14 @@ function wp_remote_request($url, $args = array()) {
  * @return WP_Error|array The response or WP_Error on failure.
  */
 function wp_remote_get($url, $args = array()) {
-	$http = _wp_http_get_object();
-	return $http->get( $url, $args );
+	// WP4BD V2-041 (2025-12-16): HTTP GET requests disabled
+	// Original code: $http = _wp_http_get_object(); return $http->get( $url, $args );
+
+	return new WP_Error(
+		'http_request_disabled',
+		'External HTTP GET requests are disabled in WP4BD',
+		array('url' => $url)
+	);
 }
 
 /**
@@ -183,8 +198,14 @@ function wp_remote_get($url, $args = array()) {
  * @return WP_Error|array The response or WP_Error on failure.
  */
 function wp_remote_post($url, $args = array()) {
-	$http = _wp_http_get_object();
-	return $http->post( $url, $args );
+	// WP4BD V2-041 (2025-12-16): HTTP POST requests disabled
+	// Original code: $http = _wp_http_get_object(); return $http->post( $url, $args );
+
+	return new WP_Error(
+		'http_request_disabled',
+		'External HTTP POST requests are disabled in WP4BD',
+		array('url' => $url)
+	);
 }
 
 /**
@@ -200,8 +221,14 @@ function wp_remote_post($url, $args = array()) {
  * @return WP_Error|array The response or WP_Error on failure.
  */
 function wp_remote_head($url, $args = array()) {
-	$http = _wp_http_get_object();
-	return $http->head( $url, $args );
+	// WP4BD V2-041 (2025-12-16): HTTP HEAD requests disabled
+	// Original code: $http = _wp_http_get_object(); return $http->head( $url, $args );
+
+	return new WP_Error(
+		'http_request_disabled',
+		'External HTTP HEAD requests are disabled in WP4BD',
+		array('url' => $url)
+	);
 }
 
 /**
