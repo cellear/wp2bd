@@ -7,94 +7,71 @@
  * when using the WP4BD WordPress-as-Engine compatibility layer.
  */
 
-/**
- * Implements hook_form_system_theme_settings_alter().
- *
- * Adds WordPress theme configuration options to the theme settings form.
- */
-function wp_form_system_theme_settings_alter(&$form, &$form_state, $form_id = NULL) {
-  // Only show these settings for the wp theme
-  if ($form_id !== 'system_theme_settings' || !isset($form_state['build_info']['args'][0]) ||
-      $form_state['build_info']['args'][0] !== 'wp') {
-    return;
-  }
+// Get available WordPress themes by scanning the directory
+$themes_dir = backdrop_get_path('theme', 'wp') . '/wp-content/themes';
+$available_themes = array();
 
-  // Get current theme settings
-  $config = config('theme_wp.settings');
-
-  // Get available WordPress themes by scanning the directory
-  $themes_dir = backdrop_get_path('theme', 'wp') . '/wp-content/themes';
-  $available_themes = array();
-
-  if (is_dir($themes_dir)) {
-    $theme_dirs = scandir($themes_dir);
-    foreach ($theme_dirs as $dir) {
-      if ($dir != '.' && $dir != '..' && is_dir($themes_dir . '/' . $dir)) {
-        // Check if it has a style.css (basic theme validation)
-        if (file_exists($themes_dir . '/' . $dir . '/style.css')) {
-          // Try to read theme name from style.css
-          $style_css = file_get_contents($themes_dir . '/' . $dir . '/style.css', false, null, 0, 500);
-          if (preg_match('/Theme Name:\s*(.+)/i', $style_css, $matches)) {
-            $theme_name = trim($matches[1]);
-          } else {
-            $theme_name = ucwords(str_replace(array('-', '_'), ' ', $dir));
-          }
-          $available_themes[$dir] = $theme_name;
+if (is_dir($themes_dir)) {
+  $theme_dirs = scandir($themes_dir);
+  foreach ($theme_dirs as $dir) {
+    if ($dir != '.' && $dir != '..' && is_dir($themes_dir . '/' . $dir)) {
+      // Check if it has a style.css (basic theme validation)
+      if (file_exists($themes_dir . '/' . $dir . '/style.css')) {
+        // Try to read theme name from style.css
+        $style_css = file_get_contents($themes_dir . '/' . $dir . '/style.css', false, null, 0, 500);
+        if (preg_match('/Theme Name:\s*(.+)/i', $style_css, $matches)) {
+          $theme_name = trim($matches[1]);
+        } else {
+          $theme_name = ucwords(str_replace(array('-', '_'), ' ', $dir));
         }
+        $available_themes[$dir] = $theme_name;
       }
     }
   }
-
-  // Sort themes alphabetically by name
-  asort($available_themes);
-
-  // Add WordPress theme settings section
-  $form['wp4bd'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('WordPress Theme Settings'),
-    '#description' => t('Configure which WordPress theme to use for rendering content with the WP4BD WordPress-as-Engine compatibility layer.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
-
-  $form['wp4bd']['active_theme'] = array(
-    '#type' => 'select',
-    '#title' => t('Active WordPress Theme'),
-    '#description' => t('Select which WordPress theme to use for rendering content. The theme files should be placed in themes/wp/wp-content/themes/.'),
-    '#options' => $available_themes,
-    '#default_value' => $config->get('active_theme') ?: 'twentysixteen',
-    '#required' => TRUE,
-  );
-
-  $form['wp4bd']['theme_directory'] = array(
-    '#type' => 'textfield',
-    '#title' => t('WordPress Themes Directory'),
-    '#description' => t('Path to WordPress themes directory (relative to Backdrop root). Default: themes/wp/wp-content/themes'),
-    '#default_value' => $config->get('theme_directory') ?: 'themes/wp/wp-content/themes',
-    '#required' => TRUE,
-  );
-
-  // Store available themes for validation
-  $form['wp4bd']['available_themes'] = array(
-    '#type' => 'value',
-    '#value' => array_keys($available_themes),
-  );
-
-  // Add custom submit handler
-  $form['#submit'][] = 'wp_theme_settings_submit';
 }
+
+// Sort themes alphabetically by name
+asort($available_themes);
+
+// Add WordPress theme settings section
+$form['wp4bd'] = array(
+  '#type' => 'fieldset',
+  '#title' => t('WordPress Theme Settings'),
+  '#description' => t('Configure which WordPress theme to use for rendering content with the WP4BD WordPress-as-Engine compatibility layer.'),
+  '#collapsible' => TRUE,
+  '#collapsed' => FALSE,
+);
+
+$form['wp4bd']['active_theme'] = array(
+  '#type' => 'select',
+  '#title' => t('Active WordPress Theme'),
+  '#description' => t('Select which WordPress theme to use for rendering content. The theme files should be placed in themes/wp/wp-content/themes/.'),
+  '#options' => $available_themes,
+  '#default_value' => theme_get_setting('wp4bd_active_theme', 'wp') ?: 'twentysixteen',
+  '#required' => TRUE,
+);
+
+$form['wp4bd']['theme_directory'] = array(
+  '#type' => 'textfield',
+  '#title' => t('WordPress Themes Directory'),
+  '#description' => t('Path to WordPress themes directory (relative to Backdrop root). Default: themes/wp/wp-content/themes'),
+  '#default_value' => theme_get_setting('wp4bd_theme_directory', 'wp') ?: 'themes/wp/wp-content/themes',
+  '#required' => TRUE,
+);
+
+// Store available themes for validation
+$form['wp4bd']['available_themes'] = array(
+  '#type' => 'value',
+  '#value' => array_keys($available_themes),
+);
+
+// Add a submit handler to generate CSS when settings are saved
+$form['#submit'][] = 'wp_theme_settings_submit';
 
 /**
  * Submit handler for WordPress theme settings.
  */
 function wp_theme_settings_submit($form, &$form_state) {
-  $config = config('theme_wp.settings');
-
-  $config->set('active_theme', $form_state['values']['active_theme']);
-  $config->set('theme_directory', $form_state['values']['theme_directory']);
-  $config->set('available_themes', $form_state['values']['available_themes']);
-  $config->save();
-
   // Generate active-theme.css file with @import to the selected theme
   $active_theme = $form_state['values']['active_theme'];
   $theme_path = backdrop_get_path('theme', 'wp');
@@ -112,5 +89,4 @@ function wp_theme_settings_submit($form, &$form_state) {
 
   backdrop_set_message(t('WordPress theme configuration has been saved.'));
   backdrop_flush_all_caches();
-  backdrop_set_message(t('Cache cleared.'));
 }

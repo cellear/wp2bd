@@ -25,11 +25,10 @@ function wp_content_init() {
     return;
   }
 
-  // Define the active WordPress theme from config
+  // Define the active WordPress theme from theme settings
   if (!defined('WP2BD_ACTIVE_THEME')) {
-    // First try theme-specific config, then fall back to module config for backward compatibility
-    $theme_config = config('theme_wp.settings');
-    $active_theme = $theme_config->get('active_theme');
+    // First try theme settings, then fall back to module config for backward compatibility
+    $active_theme = theme_get_setting('wp4bd_active_theme', 'wp');
 
     if (empty($active_theme)) {
       // Fall back to module config
@@ -49,9 +48,8 @@ function wp_content_init() {
   if (!defined('WP2BD_THEME_DIR')) {
     define('WP2BD_THEME_DIR', $wp_theme_path);
 
-    // Get theme directory from config (theme-specific first, then module fallback)
-    $theme_config = config('theme_wp.settings');
-    $theme_directory = $theme_config->get('theme_directory');
+    // Get theme directory from theme settings (theme-specific first, then module fallback)
+    $theme_directory = theme_get_setting('wp4bd_theme_directory', 'wp');
 
     if (empty($theme_directory)) {
       // Fall back to module config
