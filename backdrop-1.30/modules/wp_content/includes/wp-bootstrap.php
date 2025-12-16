@@ -31,13 +31,23 @@ function wp4bd_bootstrap_wordpress() {
 
   try {
     // Determine wpbrain path (relative to Backdrop theme)
-    $theme_path = backdrop_get_path('theme', 'wp');
-    if (empty($theme_path)) {
-      $errors[] = 'WordPress theme (wp) not found';
-      return FALSE;
+    $wpbrain_path = '';
+    if (function_exists('backdrop_get_path')) {
+      $theme_path = backdrop_get_path('theme', 'wp');
+      if (!empty($theme_path)) {
+        $wpbrain_path = BACKDROP_ROOT . '/' . $theme_path . '/wpbrain';
+      }
     }
 
-    $wpbrain_path = BACKDROP_ROOT . '/' . $theme_path . '/wpbrain';
+    // Fallback for test environments or when backdrop_get_path isn't available
+    if (empty($wpbrain_path) && defined('BACKDROP_ROOT')) {
+      $wpbrain_path = BACKDROP_ROOT . '/themes/wp/wpbrain';
+    }
+
+    if (empty($wpbrain_path)) {
+      $errors[] = 'Could not determine WordPress core path';
+      return FALSE;
+    }
 
     // Verify wpbrain directory exists
     if (!is_dir($wpbrain_path)) {
@@ -86,27 +96,55 @@ function wp4bd_bootstrap_wordpress() {
       return FALSE;
     }
 
-    // Load WordPress core files (but not wp-settings.php which connects to DB)
-    // We need to load wp-load.php which includes the necessary WordPress core
-    $wp_load_path = ABSPATH . 'wp-load.php';
-    if (file_exists($wp_load_path)) {
-      // Temporarily disable any database connections by setting a flag
-      if (!defined('WP4BD_SKIP_DB_CONNECTION')) {
-        define('WP4BD_SKIP_DB_CONNECTION', TRUE);
-      }
+    // Load WordPress core files directly (bypassing wp-load.php complexity)
+    // We need the essential WordPress classes and functions for theme rendering
 
+    // Load our Backdrop-specific config first
+    $wp_config_bd_path = ABSPATH . 'wp-config-bd.php';
+    if (file_exists($wp_config_bd_path)) {
       try {
-        require_once $wp_load_path;
+        require_once $wp_config_bd_path;
       } catch (Exception $e) {
-        $errors[] = 'Failed to load wp-load.php: ' . $e->getMessage();
+        $errors[] = 'Failed to load wp-config-bd.php: ' . $e->getMessage();
         return FALSE;
       } catch (Error $e) {
-        $errors[] = 'Fatal error loading wp-load.php: ' . $e->getMessage();
+        $errors[] = 'Fatal error loading wp-config-bd.php: ' . $e->getMessage();
         return FALSE;
       }
     } else {
-      $errors[] = "wp-load.php not found: {$wp_load_path}";
+      $errors[] = "wp-config-bd.php not found: {$wp_config_bd_path}";
       return FALSE;
+    }
+
+    // Load essential WordPress core files directly
+    $essential_files = array(
+      ABSPATH . WPINC . '/load.php',
+      ABSPATH . WPINC . '/default-constants.php',
+      ABSPATH . WPINC . '/version.php',
+      ABSPATH . WPINC . '/class-wp-post.php',
+      ABSPATH . WPINC . '/class-wp-query.php',
+      ABSPATH . WPINC . '/functions.php',
+      ABSPATH . WPINC . '/plugin.php',
+      ABSPATH . WPINC . '/theme.php',
+      ABSPATH . WPINC . '/template.php',
+      ABSPATH . WPINC . '/template-loader.php',
+    );
+
+    foreach ($essential_files as $file) {
+      if (file_exists($file)) {
+        try {
+          require_once $file;
+        } catch (Exception $e) {
+          $errors[] = 'Failed to load WordPress core file: ' . basename($file) . ' - ' . $e->getMessage();
+          return FALSE;
+        } catch (Error $e) {
+          $errors[] = 'Fatal error loading WordPress core file: ' . basename($file) . ' - ' . $e->getMessage();
+          return FALSE;
+        }
+      } else {
+        $errors[] = 'WordPress core file not found: ' . $file;
+        return FALSE;
+      }
     }
 
     // Success - WordPress core is loaded and constants are set

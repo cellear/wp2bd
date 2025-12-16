@@ -262,8 +262,11 @@ function wp_content_render_page() {
         continue;
       }
 
-      // Transform to WP_Post using Epic 3's WP_Post::from_node() method
-      $wp_posts[] = WP_Post::from_node($node);
+      // Transform to WP_Post using Epic 7's wp4bd_node_to_wp_post() bridge
+      $wp_post = wp4bd_node_to_wp_post($node);
+      if ($wp_post) {
+        $wp_posts[] = $wp_post;
+      }
     }
   }
 
