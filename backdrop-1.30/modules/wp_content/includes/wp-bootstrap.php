@@ -160,6 +160,11 @@ function wp4bd_bootstrap_wordpress() {
       require_once $user_bridge_file;
     }
 
+    $term_bridge_file = dirname(__FILE__) . '/wp-term-bridge.php';
+    if (file_exists($term_bridge_file)) {
+      require_once $term_bridge_file;
+    }
+
     // Success - WordPress core loaded, database intercepted, ready for rendering
     return TRUE;
 
