@@ -1,0 +1,13 @@
+PHP Deprecated:  drupal_get_query_parameters(): Implicitly marking parameter $query as nullable is deprecated, the explicit nullable type must be used instead in /home/user/wp2bd/backdrop-1.30/core/includes/drupal.inc on line 599
+PHP Deprecated:  Constant E_STRICT is deprecated in /home/user/wp2bd/backdrop-1.30/core/includes/errors.inc on line 28
+PHP Fatal error:  Uncaught Error: Call to undefined function filter_xss_admin() in /home/user/wp2bd/backdrop-1.30/core/includes/errors.inc:71
+Stack trace:
+#0 /home/user/wp2bd/backdrop-1.30/core/includes/bootstrap.inc(3061): _backdrop_error_handler_real()
+#1 /home/user/wp2bd/backdrop-1.30/core/includes/theme.maintenance.inc(26): _backdrop_error_handler()
+#2 /home/user/wp2bd/backdrop-1.30/core/includes/theme.maintenance.inc(26): require_once('...')
+#3 /home/user/wp2bd/backdrop-1.30/core/includes/bootstrap.inc(3515): _backdrop_maintenance_theme()
+#4 /home/user/wp2bd/backdrop-1.30/core/includes/errors.inc(189): backdrop_maintenance_theme()
+#5 /home/user/wp2bd/backdrop-1.30/core/includes/bootstrap.inc(3079): _backdrop_log_error()
+#6 [internal function]: _backdrop_exception_handler()
+#7 {main}
+  thrown in /home/user/wp2bd/backdrop-1.30/core/includes/errors.inc on line 71

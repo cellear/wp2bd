@@ -1,0 +1,17 @@
+Testing WordPress Core Loading (Epic 8 V2-070)...
+======================================================================
+
+SECTION 1: WordPress Bootstrap
+----------------------------------------------------------------------
+1. Loading wp-bootstrap.php...
+   ✅ Bootstrap file loaded
+
+2. Setting up minimal Backdrop environment...
+   ✅ Backdrop environment ready
+
+3. Running wp4bd_bootstrap_wordpress()...
+PHP Fatal error:  Uncaught Error: Undefined constant "WATCHDOG_ERROR" in /home/user/wp2bd/backdrop-1.30/modules/wp_content/includes/wp-bootstrap.php:187
+Stack trace:
+#0 /home/user/wp2bd/TESTS/V2/070-wordpress-core-loads.php(106): wp4bd_bootstrap_wordpress()
+#1 {main}
+  thrown in /home/user/wp2bd/backdrop-1.30/modules/wp_content/includes/wp-bootstrap.php on line 187
