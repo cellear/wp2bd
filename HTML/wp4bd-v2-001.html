@@ -1,0 +1,86 @@
+
+
+<!-- THEME DEBUG -->
+<!-- CALL: theme('page') -->
+<!-- BEGIN OUTPUT from 'themes/wp/templates/page.tpl.php' -->
+<div class="wp4bd-debug" style="font-family: monospace; background: #f7f7f7; color: #222; padding: 20px; margin: 20px 0; border: 2px solid #ddd;"><h2 style="margin-top: 0; color: #222;">🔍 WP4BD Debug Output (Level 2)</h2><div style="margin-bottom: 20px;"><strong>Execution Flow:</strong><br>✓ Stage 1: Backdrop Query (0.000s)<br>✓ Stage 2: Transform Backdrop → WordPress (0.000s)<br>✓ Stage 3: Create &amp; Populate WP_Query (0.005s)<br>✓ Stage 4: Load WordPress Core Files (0.000s)<br>✓ Stage 5: Test The Loop (0.000s)<br>✓ Stage 6: Theme functions.php &amp; Hooks (0.000s)<br>✓ Stage 7: Template Hierarchy (0.000s)<br>✓ Stage 8: Capture Template Output (0.001s)<br>✓ Stage 9: Inject Backdrop Assets (0.001s)<br><strong>Total: 0.008s</strong></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 1: Backdrop Query</strong><br>&nbsp;&nbsp;└─ SQL Query: 376 characters<br>&nbsp;&nbsp;└─ Node IDs Found: 4 items<br>&nbsp;&nbsp;└─ Loaded Nodes: 4 items<br>&nbsp;&nbsp;└─ Total Nodes: 4<br></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 2: Transform Backdrop → WordPress</strong><br>&nbsp;&nbsp;└─ WP_Post Class: Already loaded or file not found at: /var/www/html/wordpress-4.9/wp-includes/class-wp-post.php<br>&nbsp;&nbsp;└─ Total Nodes Input: 4<br>&nbsp;&nbsp;└─ WP_Post Objects Created: 4<br>&nbsp;&nbsp;└─ Transformation Errors: 0<br>&nbsp;&nbsp;└─ Sample Post: WP_Post object (20 properties)<br>&nbsp;&nbsp;└─ Sample: ID: 9<br>&nbsp;&nbsp;└─ Sample: Title: One region<br>&nbsp;&nbsp;└─ Sample: Content Length: 107 characters<br>&nbsp;&nbsp;└─ Sample: Post Date: 2025-11-22 23:35:30<br>&nbsp;&nbsp;└─ Sample: Post Type: post<br></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 3: Create &amp; Populate WP_Query</strong><br>&nbsp;&nbsp;└─ WP_Query Class: Already loaded or file not found at: /var/www/html/wordpress-4.9/wp-includes/class-wp-query.php<br>&nbsp;&nbsp;└─ WP_Query Created: Success<br>&nbsp;&nbsp;└─ Posts Count: 4<br>&nbsp;&nbsp;└─ Found Posts: 4<br>&nbsp;&nbsp;└─ Max Num Pages: 1<br>&nbsp;&nbsp;└─ Query Flags: 5 items<br>&nbsp;&nbsp;└─ WP_Query Object: WP_Query object (42 properties)<br></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 4: Load WordPress Core Files</strong><br>&nbsp;&nbsp;└─ __DIR__: /var/www/html/backdrop-1.30/themes/wp/templates<br>&nbsp;&nbsp;└─ BACKDROP_ROOT: /var/www/html/backdrop-1.30<br>&nbsp;&nbsp;└─ Calculated Project Root: /var/www/html<br>&nbsp;&nbsp;└─ Project Root Exists?: YES<br>&nbsp;&nbsp;└─ WordPress Dir Exists?: YES<br>&nbsp;&nbsp;└─ ABSPATH: /var/www/html/wordpress-4.9/<br>&nbsp;&nbsp;└─ ABSPATH Exists?: YES<br>&nbsp;&nbsp;└─ WPINC: wp-includes<br>&nbsp;&nbsp;└─ WPINC Path: /var/www/html/wordpress-4.9/wp-includes<br>&nbsp;&nbsp;└─ WPINC Exists?: YES<br>&nbsp;&nbsp;└─ WP_CONTENT_DIR: /var/www/html/wordpress-4.9/wp-content<br>&nbsp;&nbsp;└─ Skipped: query.php: WP_Query/have_posts already defined<br>&nbsp;&nbsp;└─ Skipped: post.php: get_post already defined<br>&nbsp;&nbsp;└─ Skipped: post-template.php: post-template tags already defined<br>&nbsp;&nbsp;└─ Skipped: general-template.php: general-template hooks already defined<br>&nbsp;&nbsp;└─ Skipped: link-template.php: the_permalink already defined<br>&nbsp;&nbsp;└─ Skipped: formatting.php: formatting helpers already defined<br>&nbsp;&nbsp;└─ Skipped: plugin.php: add_filter already defined<br>&nbsp;&nbsp;└─ Skipped: l10n.php: __ already defined<br>&nbsp;&nbsp;└─ Loaded: kses.php: 48.97 KB<br>&nbsp;&nbsp;└─ Skipped: load.php: timer_start already defined<br>&nbsp;&nbsp;└─ Skipped: functions.wp-styles.php: wp_print_styles already defined<br>&nbsp;&nbsp;└─ Skipped: functions.wp-scripts.php: wp_print_scripts already defined<br>&nbsp;&nbsp;└─ Total Files Loaded: 12<br>&nbsp;&nbsp;└─ Total Size: 48.97 KB<br>&nbsp;&nbsp;└─ Failed Files: 0<br>&nbsp;&nbsp;└─ Available Functions: 5 items<br></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 5: Test The Loop</strong><br>&nbsp;&nbsp;└─ have_posts() result: true<br>&nbsp;&nbsp;└─ Initial current_post: -1<br>&nbsp;&nbsp;└─ Initial $post: null<br>&nbsp;&nbsp;└─ Iteration 1: 7 items<br>&nbsp;&nbsp;└─ Iteration 2: 7 items<br>&nbsp;&nbsp;└─ Iteration 3: 7 items<br>&nbsp;&nbsp;└─ Total Iterations: 3<br>&nbsp;&nbsp;└─ have_posts() after loop: true<br>&nbsp;&nbsp;└─ Final current_post: -1<br>&nbsp;&nbsp;└─ wp_reset_postdata(): Called<br>&nbsp;&nbsp;└─ Post before reset: 7<br>&nbsp;&nbsp;└─ Post after reset: 7<br>&nbsp;&nbsp;└─ Final $wp_query state: 4 items<br>&nbsp;&nbsp;└─ Template Tag Tests: 3 items<br></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 6: Theme functions.php &amp; Hooks</strong><br>&nbsp;&nbsp;└─ Active Theme: outlined<br>&nbsp;&nbsp;└─ Theme Dir: /var/www/html/backdrop-1.30/themes/wp/wp-content/themes/outlined<br>&nbsp;&nbsp;└─ functions.php Path: /var/www/html/backdrop-1.30/themes/wp/wp-content/themes/outlined/functions.php<br>&nbsp;&nbsp;└─ functions.php: Loaded<br>&nbsp;&nbsp;└─ after_setup_theme: Fired<br>&nbsp;&nbsp;└─ wp_enqueue_scripts: Fired<br>&nbsp;&nbsp;└─ Registered Hooks: 3 items<br></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 7: Template Hierarchy</strong><br>&nbsp;&nbsp;└─ Conditionals: 6 items<br>&nbsp;&nbsp;└─ Template Candidates: 2 items<br>&nbsp;&nbsp;└─ Using Template: index.php<br>&nbsp;&nbsp;└─ Template Path: /var/www/html/backdrop-1.30/themes/wp/wp-content/themes/outlined/index.php<br></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 8: Capture Template Output</strong><br>&nbsp;&nbsp;└─ Loop Rewound: Reset current_post to start<br>&nbsp;&nbsp;└─ Pre-Include Loop State: 4 items<br>&nbsp;&nbsp;└─ Template Included: /var/www/html/backdrop-1.30/themes/wp/wp-content/themes/outlined/index.php<br>&nbsp;&nbsp;└─ Captured HTML Length: 8111 characters<br>&nbsp;&nbsp;└─ Post-Include Loop State: 5 items<br></div><div style="margin-bottom: 15px; padding: 10px; background: #ffffff; border-left: 4px solid #4a9eff;"><strong style="color: #111;">Stage 9: Inject Backdrop Assets</strong><br>&nbsp;&nbsp;└─ Backdrop CSS: Injected before &lt;/head&gt;<br>&nbsp;&nbsp;└─ CSS Length: 1000 bytes<br>&nbsp;&nbsp;└─ Total Injection Points: 1<br>&nbsp;&nbsp;└─ Injected Assets: 1 items<br>&nbsp;&nbsp;└─ Final HTML Length: 9112 bytes<br></div></div>
+<!-- Help Text -->
+<div style="margin: 20px; padding: 20px; background: #eef5ff; color: #0f2a45; border-left: 4px solid #4a9eff;">
+  <h3 style="color: #0f2a45;">🎛️ Debug Controls</h3>
+
+  <h4 style="color: #0f2a45; margin-top: 0;">Output Display</h4>
+  <p>
+          <strong>Rendered Output: OFF</strong> |
+      <a href="?wp4bd_debug=2&wp4bd_show_output=1" style="color: #0056b3; font-weight: bold;">🎉 Show Rendered Output!</a>
+      </p>
+
+  <h4 style="color: #0f2a45;">Debug Level</h4>
+  <p>Add <code style="background: #dce9fb; color: #0f2a45; padding: 2px 6px;">?wp4bd_debug=N</code> to URL to change debug level:</p>
+  <ul>
+    <li><a href="?wp4bd_debug=1" style="color: #0056b3;">Level 1</a> - Flow Tracking (timing only)</li>
+    <li><a href="?wp4bd_debug=2" style="color: #0056b3;">Level 2</a> - Data Counts (default)</li>
+    <li><a href="?wp4bd_debug=3" style="color: #0056b3;">Level 3</a> - Data Samples (titles, IDs)</li>
+    <li><a href="?wp4bd_debug=4" style="color: #0056b3;">Level 4</a> - Full Data Dump</li>
+  </ul>
+
+  <h3 style="color: #0f2a45;">✅ Current Status</h3>
+  <ul>
+    <li>✅ <strong>WP4BD-001:</strong> Debug helper functions created</li>
+    <li>✅ <strong>WP4BD-002:</strong> Debug template created</li>
+    <li>✅ <strong>WP4BD-003:</strong> Stage 1 - Backdrop Query</li>
+    <li>✅ <strong>WP4BD-004:</strong> Stage 2 - Transform to WP_Post</li>
+    <li>✅ <strong>WP4BD-005:</strong> Stage 3 - Populate WP_Query</li>
+    <li>✅ <strong>WP4BD-006:</strong> Stage 4 - Load WordPress Core</li>
+    <li>✅ <strong>WP4BD-007:</strong> Stage 5 - Test The Loop</li>
+    <li>✅ <strong>WP4BD-009:</strong> Stage 6 - Theme functions.php & Hooks</li>
+    <li>✅ <strong>WP4BD-010:</strong> Stage 7 - Template Hierarchy</li>
+    <li>✅ <strong>WP4BD-011:</strong> Stage 8 - Capture Template Output</li>
+    <li>✅ <strong>WP4BD-012:</strong> Stage 9 - Inject Backdrop Assets</li>
+    <li>✅ <strong>WP4BD-013:</strong> Display Output Toggle (you are here!)</li>
+  </ul>
+
+  <h3 style="color: #0f2a45;">🎉 What You're Seeing</h3>
+  <p><strong>All 9 stages are complete!</strong> WordPress themes render with Backdrop data and assets:</p>
+  <ul>
+    <li>Stage 1: Query Backdrop nodes ✓</li>
+    <li>Stage 2: Transform to WP_Post objects ✓</li>
+    <li>Stage 3: Populate WP_Query ✓</li>
+    <li>Stage 4: Load WordPress core ✓</li>
+    <li>Stage 5: Test The Loop ✓</li>
+    <li>Stage 6: Load theme functions.php ✓</li>
+    <li>Stage 7: Detect template hierarchy ✓</li>
+    <li>Stage 8: Capture template output ✓</li>
+    <li>Stage 9: Inject Backdrop assets ✓</li>
+  </ul>
+
+  <h3 style="color: #0f2a45;">📋 What's Working</h3>
+  <ol>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">have_posts()</code> correctly checks for posts</li>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">the_post()</code> advances through the loop</li>
+    <li>Template tags (<code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">the_title()</code>, <code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">get_permalink()</code>) work</li>
+    <li>Global <code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">$post</code> variable is set correctly</li>
+    <li><code style="background: #eef2fa; color: #0f2a45; padding: 2px 6px;">wp_reset_postdata()</code> resets the loop</li>
+  </ol>
+
+  <h3 style="color: #0f2a45;">🔧 Implementation Progress</h3>
+  <p><strong>Epic 1: Debug Infrastructure</strong> - ✅ Complete! (2/2 tickets done)</p>
+  <p><strong>Epic 2: Data Loading</strong> - ✅ Complete! (3/3 tickets done)</p>
+  <p><strong>Epic 3: WordPress Integration</strong> - ✅ Complete! (2/2 tickets done)</p>
+  <p><strong>🎊 Core WordPress Loop is now functional!</strong></p>
+</div>
+
+<div style="margin: 20px; padding: 20px; background: #f7f7f7; color: #222; border-left: 4px solid #ccc;">
+  <h3 style="color: #222;">🔍 Environment Info</h3>
+  <ul>
+    <li><strong>Backdrop Root:</strong> /var/www/html/backdrop-1.30</li>
+    <li><strong>Current Path:</strong> home</li>
+    <li><strong>Backdrop Theme:</strong> wp</li>
+    <li><strong>WordPress Theme:</strong> outlined</li>
+    <li><strong>Debug Level:</strong> 2</li>
+    <li><strong>PHP Version:</strong> 8.3.27</li>
+  </ul>
+</div>
+
+
+<!-- END OUTPUT from 'themes/wp/templates/page.tpl.php' -->
+

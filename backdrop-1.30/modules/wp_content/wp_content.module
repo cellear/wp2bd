@@ -9,7 +9,7 @@
 /**
  * Implements hook_init().
  *
- * Load WordPress compatibility layer on every page load.
+ * Set up theme paths and basic compatibility on every page load.
  */
 function wp_content_init() {
   // Don't load WordPress compatibility on admin pages
@@ -168,6 +168,152 @@ function wp_content_init() {
   if (function_exists('add_filter')) {
     add_filter('the_content', 'wp_content_convert_backdrop_attributes', 10);
   }
+}
+
+/**
+ * Implements hook_bootstrap_full().
+ *
+ * Load WordPress core after Backdrop bootstrap FULL phase completes.
+ * This ensures WordPress loads after all Backdrop systems are initialized.
+ */
+function wp_content_bootstrap_full() {
+  // Only proceed if wp theme is active
+  global $theme_key;
+  if ($theme_key !== 'wp') {
+    return;
+  }
+
+  // Don't load on admin pages
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
+  // Load WordPress bootstrap
+  if (function_exists('wp4bd_bootstrap_wordpress')) {
+    $bootstrap_success = wp4bd_bootstrap_wordpress();
+    if (!$bootstrap_success) {
+      watchdog('wp_content', 'WordPress bootstrap failed during FULL phase', array(), WATCHDOG_ERROR);
+      return;
+    }
+  } else {
+    watchdog('wp_content', 'wp4bd_bootstrap_wordpress function not found', array(), WATCHDOG_ERROR);
+    return;
+  }
+
+  // Initialize WordPress globals from Backdrop data
+  if (function_exists('wp4bd_init_wordpress_globals')) {
+    wp4bd_init_wordpress_globals();
+  } else {
+    watchdog('wp_content', 'wp4bd_init_wordpress_globals function not found', array(), WATCHDOG_ERROR);
+  }
+}
+
+/**
+ * Page render callback for WordPress theme rendering (Epic 6).
+ *
+ * This function implements the core of Epic 6: Bootstrap Integration.
+ * It queries Backdrop for nodes, transforms them to WP_Post objects,
+ * populates WordPress globals, and renders the WordPress theme.
+ *
+ * @return string
+ *   Rendered HTML output from WordPress theme.
+ */
+function wp_content_render_page() {
+  // 1. Query Backdrop for nodes
+  $site_config = config('system.core');
+  $select = db_select('node', 'n')
+    ->fields('n', array('nid', 'type', 'sticky', 'created'))
+    ->condition('n.status', 1)
+    ->orderBy('n.sticky', 'DESC')
+    ->orderBy('n.created', 'DESC')
+    ->addTag('node_access');
+
+  $is_front = backdrop_is_front_page();
+  if ($is_front) {
+    $select->condition('n.promote', 1);
+    $limit = $site_config->get('default_nodes_main') ?: 10;
+  } else {
+    $limit = 20;
+  }
+
+  $select->range(0, $limit);
+  $nids = $select->execute()->fetchCol();
+
+  // 2. Transform Backdrop nodes to WP_Post objects (using Epic 3's code)
+  $wp_posts = array();
+  if (!empty($nids)) {
+    $nodes = node_load_multiple($nids);
+    foreach ($nodes as $node) {
+      if (!is_object($node) || !isset($node->nid)) {
+        continue;
+      }
+
+      // Ensure node has required properties
+      if (!isset($node->type)) {
+        $full_node = node_load($node->nid);
+        if ($full_node && isset($full_node->type)) {
+          $node = $full_node;
+        } else {
+          continue;
+        }
+      }
+
+      if (!isset($node->type)) {
+        continue;
+      }
+
+      // Transform to WP_Post using Epic 3's WP_Post::from_node() method
+      $wp_posts[] = WP_Post::from_node($node);
+    }
+  }
+
+  // 3. Populate WordPress globals (using Epic 4's code)
+  // Set up WP_Query
+  global $wp_query, $post;
+  $wp_query = new WP_Query(array('post_type' => 'post'));
+  $wp_query->posts = $wp_posts;
+  $wp_query->post_count = count($wp_posts);
+  $wp_query->current_post = -1;
+  $wp_query->is_home = $is_front;
+  $wp_query->is_archive = !$is_front;
+  $wp_query->is_front_page = $is_front;
+  $wp_query->post = null;
+
+  $GLOBALS['wp_query'] = $wp_query;
+  $GLOBALS['post'] = null;
+
+  // 4. Load WordPress theme template
+  // Determine which template to use based on WordPress template hierarchy
+  $template = _wp_content_get_template();
+
+  // 5. Execute "The Loop" - render the template
+  ob_start();
+
+  if ($template && file_exists($template)) {
+    try {
+      include $template;
+    } catch (Exception $e) {
+      echo '<!-- WordPress template EXCEPTION: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Template @template failed: @error', array(
+        '@template' => basename($template),
+        '@error' => $e->getMessage(),
+      ), WATCHDOG_ERROR);
+    } catch (Error $e) {
+      echo '<!-- WordPress template FATAL ERROR: ' . htmlspecialchars($e->getMessage()) . ' -->';
+      watchdog('wp_content', 'Template @template FATAL: @error', array(
+        '@template' => basename($template),
+        '@error' => $e->getMessage(),
+      ), WATCHDOG_ERROR);
+    }
+  } else {
+    echo '<!-- WordPress template not found -->';
+    watchdog('wp_content', 'No suitable WordPress template found', array(), WATCHDOG_ERROR);
+  }
+
+  $output = ob_get_clean();
+
+  // 6. Return rendered HTML
+  return $output;
 }
 
 /**

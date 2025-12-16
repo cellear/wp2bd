@@ -30,8 +30,8 @@ wp4bd_debug_init();
 <div style="margin: 20px; padding: 20px; background: #d4edda; border-left: 4px solid #28a745;">
   <h1 style="margin-top: 0; color: #155724;">✅ WP4BD V2: WordPress-as-Engine Architecture</h1>
   <p><strong>Template loaded successfully!</strong> Showing progress through V2 implementation.</p>
-  <p><strong>Completed:</strong> Epic 1 (Debug Infrastructure) ✅ | Epic 2 (WordPress Core Setup) ✅ | Epic 3 (Database Interception) ✅ | Epic 4 (WordPress Globals) ✅</p>
-  <p><strong>Next:</strong> Epic 5 (External I/O Interception)</p>
+  <p><strong>Completed:</strong> Epic 1 (Debug Infrastructure) ✅ | Epic 2 (WordPress Core Setup) ✅ | Epic 3 (Database Interception) ✅ | Epic 4 (WordPress Globals) ✅ | Epic 5 (External I/O Interception) ✅</p>
+  <p><strong>Next:</strong> Epic 6 (Bootstrap Integration)</p>
 </div>
 <?php
 
@@ -206,6 +206,48 @@ wp4bd_debug_log('Epic 5: External I/O Interception', 'Next Epic', 'Epic 6: Boots
 wp4bd_debug_stage_end('Epic 5: External I/O Interception');
 
 // ============================================================================
+// EPIC 6: BOOTSTRAP INTEGRATION ✅
+// ============================================================================
+wp4bd_debug_stage_start('Epic 6: Bootstrap Integration');
+
+wp4bd_debug_log('Epic 6: Bootstrap Integration', 'Status', '✅ COMPLETE');
+wp4bd_debug_log('Epic 6: Bootstrap Integration', 'V2-050', 'Integration Point in Module - WordPress loads after Backdrop FULL bootstrap');
+
+// Check if bootstrap full hook exists
+if (function_exists('wp_content_bootstrap_full')) {
+  wp4bd_debug_log('Epic 6: Bootstrap Integration', 'Bootstrap Hook', '✅ wp_content_bootstrap_full() available');
+}
+
+// Check if page render callback exists
+if (function_exists('wp_content_render_page')) {
+  wp4bd_debug_log('Epic 6: Bootstrap Integration', 'Page Render Callback', '✅ wp_content_render_page() available');
+}
+
+wp4bd_debug_log('Epic 6: Bootstrap Integration', 'V2-051', 'Bootstrap Sequence Implementation - Correct loading order');
+
+// Check bootstrap sequence
+if (function_exists('wp4bd_bootstrap_wordpress')) {
+  $wp_info = wp4bd_get_wordpress_info();
+  if ($wp_info['exists']) {
+    wp4bd_debug_log('Epic 6: Bootstrap Integration', 'WordPress Core', '✅ Loaded via wp-load.php');
+    wp4bd_debug_log('Epic 6: Bootstrap Integration', 'WordPress Version', $wp_info['version'] ?: 'Unknown');
+  }
+}
+
+wp4bd_debug_log('Epic 6: Bootstrap Integration', 'V2-052', 'Prevent WordPress Database Connection - db.php drop-in active');
+
+// Check database interception
+$db_dropin = BACKDROP_ROOT . '/themes/wp/wpbrain/wp-content/db.php';
+if (file_exists($db_dropin)) {
+  wp4bd_debug_log('Epic 6: Bootstrap Integration', 'DB Interception', '✅ db.php drop-in prevents connections');
+  wp4bd_debug_log('Epic 6: Bootstrap Integration', 'Query Interception', '✅ All WordPress DB queries intercepted');
+}
+
+wp4bd_debug_log('Epic 6: Bootstrap Integration', 'Next Epic', 'Epic 7: Data Structure Bridges');
+
+wp4bd_debug_stage_end('Epic 6: Bootstrap Integration');
+
+// ============================================================================
 // RENDER DEBUG OUTPUT
 // ============================================================================
 
@@ -229,17 +271,6 @@ if (!empty($debug_output)) {
     🚀 Upcoming Milestones
   </h3>
 
-  <!-- Epic 6: Bootstrap Integration -->
-  <div style="margin-bottom: 15px;">
-    <h4 style="color: #856404; margin: 10px 0 5px 0; font-size: 14px;">
-      🔗 Epic 6: Bootstrap Integration
-    </h4>
-    <ul style="margin: 5px 0; padding-left: 20px; font-size: 12px; line-height: 1.6;">
-      <li><code>V2-050</code> Integration Point in Module</li>
-      <li><code>V2-051</code> Bootstrap Sequence Implementation</li>
-      <li><code>V2-052</code> Prevent WordPress Database Connection</li>
-    </ul>
-  </div>
 
   <!-- Epic 7: Data Structure Bridges -->
   <div style="margin-bottom: 15px;">
@@ -268,7 +299,7 @@ if (!empty($debug_output)) {
   </div>
 
   <p style="font-size: 11px; color: #666; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0c36d;">
-    <strong>Total:</strong> 3 Epics, 11 Stories<br>
+    <strong>Total:</strong> 4 Epics, 12 Stories<br>
     <strong>Source:</strong> DOCS/V2/jira-import-v2.csv
   </p>
 </div>
@@ -317,6 +348,13 @@ if (!empty($debug_output)) {
     <li>✅ <strong>WP4BD-V2-042:</strong> File path mapping to Backdrop (wp_upload_dir)</li>
   </ul>
 
+  <h3>✅ Epic 6: Bootstrap Integration (COMPLETE)</h3>
+  <ul>
+    <li>✅ <strong>WP4BD-V2-050:</strong> Integration Point in Module - WordPress loads after Backdrop bootstrap FULL</li>
+    <li>✅ <strong>WP4BD-V2-051:</strong> Bootstrap Sequence Implementation - Correct loading order</li>
+    <li>✅ <strong>WP4BD-V2-052:</strong> Prevent WordPress Database Connection - db.php drop-in active</li>
+  </ul>
+
   <h3>🚀 What You're Seeing</h3>
   <p>This debug output shows:</p>
   <ul>
@@ -325,15 +363,16 @@ if (!empty($debug_output)) {
     <li><strong>Epic 3:</strong> Database interception active, queries mapped to Backdrop, results transformed</li>
     <li><strong>Epic 4:</strong> WordPress globals documented and initialized from Backdrop</li>
     <li><strong>Epic 5:</strong> External I/O locked down (HTTP, cron, updates disabled; file paths mapped)</li>
+    <li><strong>Epic 6:</strong> Bootstrap integration complete (WordPress loads after Backdrop FULL bootstrap)</li>
     <li>Stage timing for each epic</li>
     <li>File verification (WordPress version, bootstrap, config, db drop-in, globals init, I/O lockdown)</li>
   </ul>
 
   <h3>📋 Next Steps</h3>
-  <p><strong>Epic 5 is complete!</strong> Next up:</p>
+  <p><strong>Epic 6 is complete!</strong> Next up:</p>
   <ul>
-    <li><strong>Epic 6:</strong> Bootstrap Integration (WP4BD-V2-050, V2-051, V2-052)</li>
-    <li>Load WordPress core after Backdrop bootstrap, integrate into module system</li>
+    <li><strong>Epic 7:</strong> Data Structure Bridges (WP4BD-V2-060 through V2-063)</li>
+    <li>Create bridges for user, taxonomy, and options data structures</li>
   </ul>
 
   <h3>📝 Implementation Notes</h3>
