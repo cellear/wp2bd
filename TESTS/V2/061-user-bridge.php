@@ -69,6 +69,7 @@ function test_basic_user_conversion() {
   assert($wp_user->last_name === 'Doe', 'Last name should be extracted');
 
   echo "  ✅ Basic user properties verified\n";
+  echo "    👤 Converted user: ID={$wp_user->ID}, Login='{$wp_user->user_login}', Display='{$wp_user->display_name}', Email='{$wp_user->user_email}', Roles=[" . implode(',', $wp_user->roles) . "]\n";
 }
 
 /**
@@ -150,9 +151,11 @@ function test_batch_user_conversion() {
   assert(is_array($wp_users), 'Result should be an array');
   assert(count($wp_users) === 3, 'Should have 3 users');
 
+  echo "  👥 Batch conversion created " . count($wp_users) . " WordPress users:\n";
   foreach ($wp_users as $i => $wp_user) {
     assert(is_object($wp_user), "User $i should be an object");
     assert($wp_user->ID === ($i + 1), "User $i ID should match");
+    echo "    👤 User " . ($i + 1) . ": ID={$wp_user->ID}, Login='{$wp_user->user_login}', Display='{$wp_user->display_name}', Roles=[" . implode(',', $wp_user->roles) . "]\n";
   }
 
   echo "  ✅ Batch user conversion verified\n";

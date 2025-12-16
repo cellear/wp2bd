@@ -65,6 +65,7 @@ function test_basic_term_conversion() {
   assert($wp_term->count === 15, 'Count should match');
 
   echo "  ✅ Basic term properties verified\n";
+  echo "    🏷️  Converted term: ID={$wp_term->term_id}, Name='{$wp_term->name}', Slug='{$wp_term->slug}', Taxonomy='{$wp_term->taxonomy}', Count={$wp_term->count}\n";
 }
 
 /**
@@ -139,9 +140,11 @@ function test_batch_term_conversion() {
   assert(is_array($wp_terms), 'Result should be an array');
   assert(count($wp_terms) === 3, 'Should have 3 terms');
 
+  echo "  🏷️  Batch conversion created " . count($wp_terms) . " WordPress terms:\n";
   foreach ($wp_terms as $i => $wp_term) {
     assert(is_object($wp_term), "Term $i should be an object");
     assert($wp_term->term_id === ($i + 1), "Term $i ID should match");
+    echo "    🏷️  Term " . ($i + 1) . ": ID={$wp_term->term_id}, Name='{$wp_term->name}', Taxonomy='{$wp_term->taxonomy}'\n";
   }
 
   echo "  ✅ Batch term conversion verified\n";

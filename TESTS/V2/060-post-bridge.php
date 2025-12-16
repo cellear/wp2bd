@@ -37,6 +37,23 @@ require_once BACKDROP_ROOT . '/modules/wp_content/includes/wp-post-bridge.php';
 function test_node_to_wp_post_conversion() {
   echo "  Testing node to WP_Post conversion...\n";
 
+  // Bootstrap WordPress first to load core classes
+  echo "    🔧 Bootstrapping WordPress core...\n";
+  $bootstrap_result = wp4bd_bootstrap_wordpress();
+  echo "    🔧 Bootstrap result: " . ($bootstrap_result ? 'SUCCESS' : 'FAILED') . "\n";
+
+  if (!$bootstrap_result) {
+    echo "    ❌ Bootstrap failed, cannot test post conversion\n";
+    exit(1);
+  }
+
+  // Check if WP_Post class is now available
+  echo "    🔧 Checking if WP_Post class exists: " . (class_exists('WP_Post') ? 'YES' : 'NO') . "\n";
+  if (!class_exists('WP_Post')) {
+    echo "    ❌ WP_Post class not found after bootstrap\n";
+    exit(1);
+  }
+
   // Create a mock Backdrop node
   $mock_node = (object) array(
     'nid' => 123,
@@ -76,6 +93,7 @@ function test_node_to_wp_post_conversion() {
   assert($wp_post->post_modified === '2024-01-15 11:00:00', 'Modified date should be formatted correctly');
 
   echo "  ✅ Basic conversion properties verified\n";
+  echo "    📝 Converted post: ID={$wp_post->ID}, Title='{$wp_post->post_title}', Type='{$wp_post->post_type}', Status='{$wp_post->post_status}'\n";
 }
 
 /**
@@ -127,6 +145,16 @@ function test_invalid_node() {
 function test_batch_conversion() {
   echo "  Testing batch conversion...\n";
 
+  // Ensure bootstrap has been called (should be done in first test, but be safe)
+  if (!class_exists('WP_Post')) {
+    echo "    🔧 Bootstrapping WordPress core for batch test...\n";
+    $bootstrap_result = wp4bd_bootstrap_wordpress();
+    if (!$bootstrap_result) {
+      echo "    ❌ Bootstrap failed for batch test\n";
+      exit(1);
+    }
+  }
+
   $nodes = array(
     (object) array('nid' => 1, 'title' => 'Post 1', 'type' => 'post'),
     (object) array('nid' => 2, 'title' => 'Post 2', 'type' => 'post'),
@@ -138,9 +166,11 @@ function test_batch_conversion() {
   assert(is_array($wp_posts), 'Result should be an array');
   assert(count($wp_posts) === 3, 'Should have 3 posts');
 
+  echo "  📊 Batch conversion created " . count($wp_posts) . " WordPress posts:\n";
   foreach ($wp_posts as $i => $wp_post) {
     assert($wp_post instanceof WP_Post, "Post $i should be WP_Post instance");
     assert($wp_post->ID === ($i + 1), "Post $i ID should match");
+    echo "    📄 Post " . ($i + 1) . ": ID={$wp_post->ID}, Title='{$wp_post->post_title}', Type='{$wp_post->post_type}'\n";
   }
 
   echo "  ✅ Batch conversion verified\n";
