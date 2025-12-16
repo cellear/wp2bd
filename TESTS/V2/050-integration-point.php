@@ -1,14 +1,34 @@
+#!/usr/bin/env php
 <?php
 /**
- * Test Epic 6: V2-050 Integration Point in Module
+ * Test script for WP4BD-V2-050: Integration Point in Module
  *
- * Tests that wp_content module loads WordPress core after Backdrop bootstrap FULL phase.
+ * Run from command line:
+ *   php TESTS/V2/050-integration-point.php
  *
- * @package WP4BD
- * @subpackage Tests
+ * Or from within ddev:
+ *   ddev exec 'php /var/www/html/TESTS/V2/050-integration-point.php'
  */
 
-require_once __DIR__ . '/../bootstrap.php';
+// Setup BACKDROP_ROOT for both environments
+if (file_exists('/var/www/html/backdrop-1.30')) {
+  define('BACKDROP_ROOT', '/var/www/html/backdrop-1.30');
+} else {
+  // We're in TESTS/V2/, so go up two levels to repo root, then into backdrop-1.30
+  define('BACKDROP_ROOT', dirname(dirname(__DIR__)) . '/backdrop-1.30');
+}
+
+// Define WordPress paths
+$wp_root = BACKDROP_ROOT . '/themes/wp/wpbrain/';
+if (!defined('ABSPATH')) {
+  define('ABSPATH', $wp_root);
+}
+if (!defined('WPINC')) {
+  define('WPINC', 'wp-includes');
+}
+
+// Load our module functions (this defines the hook functions)
+require_once BACKDROP_ROOT . '/modules/wp_content/wp_content.module';
 
 /**
  * Test that WordPress core loads after Backdrop bootstrap FULL phase.

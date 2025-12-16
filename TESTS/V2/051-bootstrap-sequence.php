@@ -1,19 +1,41 @@
+#!/usr/bin/env php
 <?php
 /**
- * Test Epic 6: V2-051 Bootstrap Sequence Implementation
+ * Test script for WP4BD-V2-051: Bootstrap Sequence Implementation
  *
- * Tests the correct WordPress bootstrap sequence after Backdrop FULL phase.
+ * Run from command line:
+ *   php TESTS/V2/051-bootstrap-sequence.php
  *
- * @package WP4BD
- * @subpackage Tests
+ * Or from within ddev:
+ *   ddev exec 'php /var/www/html/TESTS/V2/051-bootstrap-sequence.php'
  */
 
-require_once __DIR__ . '/../bootstrap.php';
+// Setup BACKDROP_ROOT for both environments
+if (file_exists('/var/www/html/backdrop-1.30')) {
+  define('BACKDROP_ROOT', '/var/www/html/backdrop-1.30');
+} else {
+  // We're in TESTS/V2/, so go up two levels to repo root, then into backdrop-1.30
+  define('BACKDROP_ROOT', dirname(dirname(__DIR__)) . '/backdrop-1.30');
+}
+
+// Define WordPress paths
+$wp_root = BACKDROP_ROOT . '/themes/wp/wpbrain/';
+if (!defined('ABSPATH')) {
+  define('ABSPATH', $wp_root);
+}
+if (!defined('WPINC')) {
+  define('WPINC', 'wp-includes');
+}
+
+// Load WordPress bootstrap functions
+require_once BACKDROP_ROOT . '/modules/wp_content/includes/wp-bootstrap.php';
+require_once BACKDROP_ROOT . '/modules/wp_content/includes/wp-globals-init.php';
 
 /**
  * Test that bootstrap sequence executes in correct order.
  */
 function test_bootstrap_sequence_order() {
+  echo "  Testing bootstrap sequence...\n";
   // 1. Backdrop bootstrap completes (simulated)
   // 2. Check if wp theme active (simulated)
   $GLOBALS['theme_key'] = 'wp';
@@ -21,7 +43,9 @@ function test_bootstrap_sequence_order() {
 
   // 3. Define WordPress constants (this should happen in wp4bd_bootstrap_wordpress)
   // 4. Include wp49brain/wp-load.php (this should happen in wp4bd_bootstrap_wordpress)
+  echo "  Calling wp4bd_bootstrap_wordpress()...\n";
   $bootstrap_result = wp4bd_bootstrap_wordpress();
+  echo "  Bootstrap result: " . ($bootstrap_result ? 'TRUE' : 'FALSE') . "\n";
 
   assert($bootstrap_result === TRUE, 'wp4bd_bootstrap_wordpress should return TRUE');
 
@@ -86,12 +110,19 @@ function test_wordpress_initialization_without_db() {
 }
 
 // Run tests
+echo "Starting V2-051 tests...\n";
 try {
+  echo "Running test_bootstrap_sequence_order...\n";
   test_bootstrap_sequence_order();
+  echo "Running test_wp_load_inclusion...\n";
   test_wp_load_inclusion();
+  echo "Running test_wordpress_initialization_without_db...\n";
   test_wordpress_initialization_without_db();
   echo "\n🎉 All V2-051 tests passed!\n";
 } catch (Exception $e) {
   echo "❌ V2-051 Test failed: " . $e->getMessage() . "\n";
+  exit(1);
+} catch (Error $e) {
+  echo "❌ V2-051 Fatal error: " . $e->getMessage() . "\n";
   exit(1);
 }

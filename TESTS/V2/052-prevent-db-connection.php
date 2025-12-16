@@ -1,14 +1,34 @@
+#!/usr/bin/env php
 <?php
 /**
- * Test Epic 6: V2-052 Prevent WordPress Database Connection
+ * Test script for WP4BD-V2-052: Prevent WordPress Database Connection
  *
- * Tests that WordPress cannot connect to database during bootstrap.
+ * Run from command line:
+ *   php TESTS/V2/052-prevent-db-connection.php
  *
- * @package WP4BD
- * @subpackage Tests
+ * Or from within ddev:
+ *   ddev exec 'php /var/www/html/TESTS/V2/052-prevent-db-connection.php'
  */
 
-require_once __DIR__ . '/../bootstrap.php';
+// Setup BACKDROP_ROOT for both environments
+if (file_exists('/var/www/html/backdrop-1.30')) {
+  define('BACKDROP_ROOT', '/var/www/html/backdrop-1.30');
+} else {
+  // We're in TESTS/V2/, so go up two levels to repo root, then into backdrop-1.30
+  define('BACKDROP_ROOT', dirname(dirname(__DIR__)) . '/backdrop-1.30');
+}
+
+// Define WordPress paths
+$wp_root = BACKDROP_ROOT . '/themes/wp/wpbrain/';
+if (!defined('ABSPATH')) {
+  define('ABSPATH', $wp_root);
+}
+if (!defined('WPINC')) {
+  define('WPINC', 'wp-includes');
+}
+
+// Load WordPress bootstrap functions
+require_once BACKDROP_ROOT . '/modules/wp_content/includes/wp-bootstrap.php';
 
 /**
  * Test that db.php drop-in exists and is properly loaded.
