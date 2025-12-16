@@ -154,10 +154,25 @@ function wp_content_init() {
     }
   }
 
-  // Only load WordPress theme functions.php on frontend pages (not admin)
-  // Check if we're using the wp theme on the current page
+  // WP4BD V2-050: Load WordPress core when wp theme is active
   global $theme_key;
   if ($theme_key === 'wp' && !path_is_admin(current_path())) {
+    // Include WordPress bootstrap helper
+    $bootstrap_file = dirname(__FILE__) . '/includes/wp-bootstrap.php';
+    if (file_exists($bootstrap_file)) {
+      require_once $bootstrap_file;
+
+      // Bootstrap WordPress (sets constants, verifies files)
+      if (wp4bd_bootstrap_wordpress()) {
+        // WordPress constants are now set, core files verified
+        // Load additional WordPress initialization in V2-051
+        watchdog('wp4bd', 'WordPress bootstrap successful', array(), WATCHDOG_INFO);
+      } else {
+        watchdog('wp4bd', 'WordPress bootstrap failed - check logs', array(), WATCHDOG_ERROR);
+      }
+    }
+
+    // Load WordPress theme functions.php
     $theme_functions = WP2BD_ACTIVE_THEME_DIR . '/functions.php';
     if (file_exists($theme_functions)) {
       require_once $theme_functions;
