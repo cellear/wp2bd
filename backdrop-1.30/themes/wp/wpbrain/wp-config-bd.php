@@ -20,24 +20,35 @@
 // =============================================================================
 
 /**
- * These credentials are dummy values. WordPress expects them to be defined,
- * but the db.php drop-in (Epic 3) will prevent WordPress from ever attempting
- * to connect to a database using these credentials.
+ * WP4BD V2-052: Prevent WordPress Database Connection
+ *
+ * These credentials are INTENTIONALLY INVALID. WordPress expects them to be
+ * defined, but the db.php drop-in (Epic 3: WP4BD-V2-020) intercepts all
+ * database operations BEFORE WordPress can attempt to connect.
+ *
+ * If you see a database connection error, it means:
+ * 1. db.php drop-in is missing or not loading correctly
+ * 2. WordPress is trying to connect before db.php is loaded
+ * 3. The bootstrap sequence (Epic 6: V2-051) is incorrect
+ *
+ * These credentials MUST remain invalid to ensure WordPress never
+ * accidentally connects to a real database.
  */
 if (!defined('DB_NAME')) {
-  define('DB_NAME', 'wp4bd_intercepted');
+  define('DB_NAME', 'INVALID_DATABASE_WP4BD_INTERCEPTED');
 }
 
 if (!defined('DB_USER')) {
-  define('DB_USER', 'wp4bd_intercepted');
+  define('DB_USER', 'INVALID_USER_WP4BD_INTERCEPTED');
 }
 
 if (!defined('DB_PASSWORD')) {
-  define('DB_PASSWORD', 'wp4bd_intercepted');
+  define('DB_PASSWORD', 'INVALID_PASSWORD_WP4BD_INTERCEPTED');
 }
 
 if (!defined('DB_HOST')) {
-  define('DB_HOST', 'localhost');
+  // Use non-existent host to ensure connection fails if attempted
+  define('DB_HOST', '127.0.0.1:9999');
 }
 
 if (!defined('DB_CHARSET')) {
