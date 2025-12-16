@@ -1869,46 +1869,36 @@ function wp_get_upload_dir() {
  * @return array See above for description.
  */
 function wp_upload_dir( $time = null, $create_dir = true, $refresh_cache = false ) {
-	static $cache = array(), $tested_paths = array();
+	// WP4BD V2-042 (2025-12-16): Map wp_upload_dir() to Backdrop file paths
+	// WordPress themes may call this to get upload directory information.
+	// We return Backdrop's public files directory instead.
+	//
+	// Original function queried WordPress options and constructed wp-content/uploads paths.
+	// See git history for original ~45 line implementation.
 
-	$key = sprintf( '%d-%s', get_current_blog_id(), (string) $time );
+	// Backdrop's public files directory
+	$backdrop_files_dir = BACKDROP_ROOT . '/files';
+	$backdrop_files_url = $GLOBALS['base_url'] . '/files';
 
-	if ( $refresh_cache || empty( $cache[ $key ] ) ) {
-		$cache[ $key ] = _wp_upload_dir( $time );
+	// Optional: add year/month subdirectory if $time is provided
+	$subdir = '';
+	if ( $time ) {
+		$subdir = '/' . gmdate( 'Y/m', $time );
 	}
 
-	/**
-	 * Filters the uploads directory data.
-	 *
-	 * @since 2.0.0
-	 *
-	 * @param array $uploads Array of upload directory data with keys of 'path',
-	 *                       'url', 'subdir, 'basedir', and 'error'.
-	 */
-	$uploads = apply_filters( 'upload_dir', $cache[ $key ] );
+	// Return WordPress-compatible array structure
+	$uploads = array(
+		'path'    => $backdrop_files_dir . $subdir,
+		'url'     => $backdrop_files_url . $subdir,
+		'subdir'  => $subdir,
+		'basedir' => $backdrop_files_dir,
+		'baseurl' => $backdrop_files_url,
+		'error'   => false,
+	);
 
-	if ( $create_dir ) {
-		$path = $uploads['path'];
-
-		if ( array_key_exists( $path, $tested_paths ) ) {
-			$uploads['error'] = $tested_paths[ $path ];
-		} else {
-			if ( ! wp_mkdir_p( $path ) ) {
-				if ( 0 === strpos( $uploads['basedir'], ABSPATH ) ) {
-					$error_path = str_replace( ABSPATH, '', $uploads['basedir'] ) . $uploads['subdir'];
-				} else {
-					$error_path = basename( $uploads['basedir'] ) . $uploads['subdir'];
-				}
-
-				$uploads['error'] = sprintf(
-					/* translators: %s: directory path */
-					__( 'Unable to create directory %s. Is its parent directory writable by the server?' ),
-					esc_html( $error_path )
-				);
-			}
-
-			$tested_paths[ $path ] = $uploads['error'];
-		}
+	// Create directory if requested (using wp_mkdir_p which should still work)
+	if ( $create_dir && ! empty( $subdir ) ) {
+		wp_mkdir_p( $uploads['path'] );
 	}
 
 	return $uploads;
