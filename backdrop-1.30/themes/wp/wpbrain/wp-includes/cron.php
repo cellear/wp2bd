@@ -25,44 +25,14 @@
  * @return false|void False if the event does not get scheduled.
  */
 function wp_schedule_single_event( $timestamp, $hook, $args = array()) {
-	// Make sure timestamp is a positive integer
-	if ( ! is_numeric( $timestamp ) || $timestamp <= 0 ) {
-		return false;
-	}
+	// WP4BD V2-041 (2025-12-16): Cron scheduling disabled
+	// WordPress should not schedule background tasks in WP4BD architecture.
+	// Backdrop handles all background processing.
+	//
+	// Original code modified WordPress options table to schedule tasks.
+	// In WP4BD, WordPress is read-only and cannot schedule events.
 
-	// Don't schedule a duplicate if there's already an identical event due within 10 minutes of it
-	$next = wp_next_scheduled($hook, $args);
-	if ( $next && abs( $next - $timestamp ) <= 10 * MINUTE_IN_SECONDS ) {
-		return false;
-	}
-
-	$crons = _get_cron_array();
-	$event = (object) array( 'hook' => $hook, 'timestamp' => $timestamp, 'schedule' => false, 'args' => $args );
-	/**
-	 * Filters a single event before it is scheduled.
-	 *
-	 * @since 3.1.0
-	 *
-	 * @param stdClass $event {
-	 *     An object containing an event's data.
-	 *
-	 *     @type string       $hook      Action hook to execute when event is run.
-	 *     @type int          $timestamp Unix timestamp (UTC) for when to run the event.
-	 *     @type string|false $schedule  How often the event should recur. See `wp_get_schedules()`.
-	 *     @type array        $args      Arguments to pass to the hook's callback function.
-	 * }
-	 */
-	$event = apply_filters( 'schedule_event', $event );
-
-	// A plugin disallowed this event
-	if ( ! $event )
-		return false;
-
-	$key = md5(serialize($event->args));
-
-	$crons[$event->timestamp][$event->hook][$key] = array( 'schedule' => $event->schedule, 'args' => $event->args );
-	uksort( $crons, "strnatcasecmp" );
-	_set_cron_array( $crons );
+	return false;
 }
 
 /**
@@ -86,30 +56,11 @@ function wp_schedule_single_event( $timestamp, $hook, $args = array()) {
  * @return false|void False if the event does not get scheduled.
  */
 function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array()) {
-	// Make sure timestamp is a positive integer
-	if ( ! is_numeric( $timestamp ) || $timestamp <= 0 ) {
-		return false;
-	}
+	// WP4BD V2-041 (2025-12-16): Recurring cron scheduling disabled
+	// Original code modified WordPress options to store cron schedules.
+	// WordPress is read-only in WP4BD.
 
-	$crons = _get_cron_array();
-	$schedules = wp_get_schedules();
-
-	if ( !isset( $schedules[$recurrence] ) )
-		return false;
-
-	$event = (object) array( 'hook' => $hook, 'timestamp' => $timestamp, 'schedule' => $recurrence, 'args' => $args, 'interval' => $schedules[$recurrence]['interval'] );
-	/** This filter is documented in wp-includes/cron.php */
-	$event = apply_filters( 'schedule_event', $event );
-
-	// A plugin disallowed this event
-	if ( ! $event )
-		return false;
-
-	$key = md5(serialize($event->args));
-
-	$crons[$event->timestamp][$event->hook][$key] = array( 'schedule' => $event->schedule, 'args' => $event->args, 'interval' => $event->interval );
-	uksort( $crons, "strnatcasecmp" );
-	_set_cron_array( $crons );
+	return false;
 }
 
 /**
@@ -124,38 +75,8 @@ function wp_schedule_event( $timestamp, $recurrence, $hook, $args = array()) {
  * @return false|void False if the event does not get rescheduled.
  */
 function wp_reschedule_event( $timestamp, $recurrence, $hook, $args = array() ) {
-	// Make sure timestamp is a positive integer
-	if ( ! is_numeric( $timestamp ) || $timestamp <= 0 ) {
-		return false;
-	}
-
-	$crons = _get_cron_array();
-	$schedules = wp_get_schedules();
-	$key = md5( serialize( $args ) );
-	$interval = 0;
-
-	// First we try to get it from the schedule
-	if ( isset( $schedules[ $recurrence ] ) ) {
-		$interval = $schedules[ $recurrence ]['interval'];
-	}
-	// Now we try to get it from the saved interval in case the schedule disappears
-	if ( 0 == $interval ) {
-		$interval = $crons[ $timestamp ][ $hook ][ $key ]['interval'];
-	}
-	// Now we assume something is wrong and fail to schedule
-	if ( 0 == $interval ) {
-		return false;
-	}
-
-	$now = time();
-
-	if ( $timestamp >= $now ) {
-		$timestamp = $now + $interval;
-	} else {
-		$timestamp = $now + ( $interval - ( ( $now - $timestamp ) % $interval ) );
-	}
-
-	wp_schedule_event( $timestamp, $recurrence, $hook, $args );
+	// WP4BD V2-041 (2025-12-16): Cron rescheduling disabled
+	return false;
 }
 
 /**
@@ -175,19 +96,8 @@ function wp_reschedule_event( $timestamp, $recurrence, $hook, $args = array() ) 
  * @return false|void False if the event does not get unscheduled.
  */
 function wp_unschedule_event( $timestamp, $hook, $args = array() ) {
-	// Make sure timestamp is a positive integer
-	if ( ! is_numeric( $timestamp ) || $timestamp <= 0 ) {
-		return false;
-	}
-
-	$crons = _get_cron_array();
-	$key = md5(serialize($args));
-	unset( $crons[$timestamp][$hook][$key] );
-	if ( empty($crons[$timestamp][$hook]) )
-		unset( $crons[$timestamp][$hook] );
-	if ( empty($crons[$timestamp]) )
-		unset( $crons[$timestamp] );
-	_set_cron_array( $crons );
+	// WP4BD V2-041 (2025-12-16): Cron unscheduling disabled
+	return false;
 }
 
 /**
@@ -273,94 +183,14 @@ function wp_next_scheduled( $hook, $args = array() ) {
  * @param int $gmt_time Optional. Unix timestamp (UTC). Default 0 (current time is used).
  */
 function spawn_cron( $gmt_time = 0 ) {
-	if ( ! $gmt_time )
-		$gmt_time = microtime( true );
+	// WP4BD V2-041 (2025-12-16): spawn_cron() CRITICAL DISABLE
+	// This function makes an HTTP request back to the site itself (wp_remote_post)
+	// to trigger background cron processing. This MUST be disabled in WP4BD.
+	// All background processing should be handled by Backdrop's cron system.
+	//
+	// Original function made HTTP POST request to site_url('wp-cron.php')
 
-	if ( defined('DOING_CRON') || isset($_GET['doing_wp_cron']) )
-		return;
-
-	/*
-	 * Get the cron lock, which is a Unix timestamp of when the last cron was spawned
-	 * and has not finished running.
-	 *
-	 * Multiple processes on multiple web servers can run this code concurrently,
-	 * this lock attempts to make spawning as atomic as possible.
-	 */
-	$lock = get_transient('doing_cron');
-
-	if ( $lock > $gmt_time + 10 * MINUTE_IN_SECONDS )
-		$lock = 0;
-
-	// don't run if another process is currently running it or more than once every 60 sec.
-	if ( $lock + WP_CRON_LOCK_TIMEOUT > $gmt_time )
-		return;
-
-	//sanity check
-	$crons = _get_cron_array();
-	if ( !is_array($crons) )
-		return;
-
-	$keys = array_keys( $crons );
-	if ( isset($keys[0]) && $keys[0] > $gmt_time )
-		return;
-
-	if ( defined( 'ALTERNATE_WP_CRON' ) && ALTERNATE_WP_CRON ) {
-		if ( 'GET' !== $_SERVER['REQUEST_METHOD'] || defined( 'DOING_AJAX' ) ||  defined( 'XMLRPC_REQUEST' ) ) {
-			return;
-		}
-
-		$doing_wp_cron = sprintf( '%.22F', $gmt_time );
-		set_transient( 'doing_cron', $doing_wp_cron );
-
-		ob_start();
-		wp_redirect( add_query_arg( 'doing_wp_cron', $doing_wp_cron, wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
-		echo ' ';
-
-		// flush any buffers and send the headers
-		while ( @ob_end_flush() );
-		flush();
-
-		WP_DEBUG ? include_once( ABSPATH . 'wp-cron.php' ) : @include_once( ABSPATH . 'wp-cron.php' );
-		return;
-	}
-
-	// Set the cron lock with the current unix timestamp, when the cron is being spawned.
-	$doing_wp_cron = sprintf( '%.22F', $gmt_time );
-	set_transient( 'doing_cron', $doing_wp_cron );
-
-	/**
-	 * Filters the cron request arguments.
-	 *
-	 * @since 3.5.0
-	 * @since 4.5.0 The `$doing_wp_cron` parameter was added.
-	 *
-	 * @param array $cron_request_array {
-	 *     An array of cron request URL arguments.
-	 *
-	 *     @type string $url  The cron request URL.
-	 *     @type int    $key  The 22 digit GMT microtime.
-	 *     @type array  $args {
-	 *         An array of cron request arguments.
-	 *
-	 *         @type int  $timeout   The request timeout in seconds. Default .01 seconds.
-	 *         @type bool $blocking  Whether to set blocking for the request. Default false.
-	 *         @type bool $sslverify Whether SSL should be verified for the request. Default false.
-	 *     }
-	 * }
-	 * @param string $doing_wp_cron The unix timestamp of the cron lock.
-	 */
-	$cron_request = apply_filters( 'cron_request', array(
-		'url'  => add_query_arg( 'doing_wp_cron', $doing_wp_cron, site_url( 'wp-cron.php' ) ),
-		'key'  => $doing_wp_cron,
-		'args' => array(
-			'timeout'   => 0.01,
-			'blocking'  => false,
-			/** This filter is documented in wp-includes/class-wp-http-streams.php */
-			'sslverify' => apply_filters( 'https_local_ssl_verify', false )
-		)
-	), $doing_wp_cron );
-
-	wp_remote_post( $cron_request['url'], $cron_request['args'] );
+	return;
 }
 
 /**
@@ -369,28 +199,11 @@ function spawn_cron( $gmt_time = 0 ) {
  * @since 2.1.0
  */
 function wp_cron() {
-	// Prevent infinite loops caused by lack of wp-cron.php
-	if ( strpos($_SERVER['REQUEST_URI'], '/wp-cron.php') !== false || ( defined('DISABLE_WP_CRON') && DISABLE_WP_CRON ) )
-		return;
+	// WP4BD V2-041 (2025-12-16): Cron execution disabled
+	// This function executes scheduled WordPress cron tasks.
+	// Disabled in WP4BD - Backdrop handles background processing.
 
-	if ( false === $crons = _get_cron_array() )
-		return;
-
-	$gmt_time = microtime( true );
-	$keys = array_keys( $crons );
-	if ( isset($keys[0]) && $keys[0] > $gmt_time )
-		return;
-
-	$schedules = wp_get_schedules();
-	foreach ( $crons as $timestamp => $cronhooks ) {
-		if ( $timestamp > $gmt_time ) break;
-		foreach ( (array) $cronhooks as $hook => $args ) {
-			if ( isset($schedules[$hook]['callback']) && !call_user_func( $schedules[$hook]['callback'] ) )
-				continue;
-			spawn_cron( $gmt_time );
-			break 2;
-		}
-	}
+	return;
 }
 
 /**
