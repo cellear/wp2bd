@@ -359,61 +359,19 @@ function wp_content_menu() {
 function wp_content_settings_form($form, &$form_state) {
   $config = config('wp_content.settings');
 
-  // Add a notice that these settings have moved to theme settings
-  backdrop_set_message(t('Note: WordPress theme settings have moved to the theme configuration page. Visit the theme settings for the "wp" theme to configure WordPress theme options.'), 'warning');
-
-  // Get available themes by scanning the directory
-  $themes_dir = BACKDROP_ROOT . '/themes/wp/wp-content/themes';
-  $available_themes = array();
-
-  if (is_dir($themes_dir)) {
-    $theme_dirs = scandir($themes_dir);
-    foreach ($theme_dirs as $dir) {
-      if ($dir != '.' && $dir != '..' && is_dir($themes_dir . '/' . $dir)) {
-        // Check if it has a style.css (basic theme validation)
-        if (file_exists($themes_dir . '/' . $dir . '/style.css')) {
-          // Try to read theme name from style.css
-          $style_css = file_get_contents($themes_dir . '/' . $dir . '/style.css', false, null, 0, 500);
-          if (preg_match('/Theme Name:\s*(.+)/i', $style_css, $matches)) {
-            $theme_name = trim($matches[1]);
-          } else {
-            $theme_name = ucwords(str_replace(array('-', '_'), ' ', $dir));
-          }
-          $available_themes[$dir] = $theme_name;
-        }
-      }
-    }
-  }
-
-  // Sort themes alphabetically by name
-  asort($available_themes);
-
-  $form['active_theme'] = array(
-    '#type' => 'select',
-    '#title' => t('Active WordPress Theme'),
-    '#description' => t('Select which WordPress theme to use for rendering content.'),
-    '#options' => $available_themes,
-    '#default_value' => $config->get('active_theme') ?: 'twentysixteen',
-    '#required' => TRUE,
+  // Add a prominent notice that these settings have moved to theme settings
+  $form['migration_notice'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div class="alert alert-warning"><strong>' . t('WordPress theme settings have moved!') . '</strong><br />' .
+                 t('These settings are now configured in the theme settings. Please visit the <a href="!url">WordPress theme settings page</a> to configure WordPress theme options.',
+                   array('!url' => url('admin/appearance/settings/wp'))) . '</div>',
+    '#weight' => -100,
   );
 
-  $form['theme_directory'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Theme Directory'),
-    '#description' => t('Path to WordPress themes directory (relative to Backdrop root).'),
-    '#default_value' => $config->get('theme_directory') ?: 'themes/wp/wp-content/themes',
-    '#required' => TRUE,
-  );
-
-  $form['available_themes'] = array(
-    '#type' => 'value',
-    '#value' => array_keys($available_themes),
-  );
-
-  $form['actions']['#type'] = 'actions';
-  $form['actions']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save configuration'),
+  // Add a link to the theme settings
+  $form['go_to_theme_settings'] = array(
+    '#type' => 'markup',
+    '#markup' => '<p><a href="' . url('admin/appearance/settings/wp') . '" class="button">' . t('Go to WordPress Theme Settings') . '</a></p>',
   );
 
   return $form;
@@ -423,18 +381,8 @@ function wp_content_settings_form($form, &$form_state) {
  * Submit handler for WordPress Content settings form.
  */
 function wp_content_settings_form_submit($form, &$form_state) {
-  // These settings have moved to theme settings, but we'll still save them
-  // for backward compatibility in case someone uses the old admin page
-  $config = config('wp_content.settings');
-
-  $config->set('active_theme', $form_state['values']['active_theme']);
-  $config->set('theme_directory', $form_state['values']['theme_directory']);
-  $config->set('available_themes', $form_state['values']['available_themes']);
-
-  $config->save();
-
-  backdrop_set_message(t('Settings saved, but please use the theme settings page for WordPress theme configuration.'));
-  backdrop_flush_all_caches();
+  // Redirect to theme settings since these settings have moved
+  $form_state['redirect'] = 'admin/appearance/settings/wp';
 }
 
 /**
