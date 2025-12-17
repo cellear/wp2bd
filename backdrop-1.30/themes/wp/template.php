@@ -61,24 +61,35 @@ if (!$epic8_active) {
   // Load WordPress compatibility shim classes
   require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
   require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
-}
-// If Epic 8 is active, wp_content_init() will handle WordPress bootstrap
-// and real WordPress classes will be loaded from wpbrain/wp-includes/
 
-// Load WordPress compatibility functions
-require_once WP2BD_THEME_DIR . '/functions/hooks.php';
-require_once WP2BD_THEME_DIR . '/functions/escaping.php';
-require_once WP2BD_THEME_DIR . '/functions/i18n.php';
-require_once WP2BD_THEME_DIR . '/functions/loop.php';
-require_once WP2BD_THEME_DIR . '/functions/enqueue.php';
-require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
-require_once WP2BD_THEME_DIR . '/functions/content-display.php';
-require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
-require_once WP2BD_THEME_DIR . '/functions/utilities.php';
-require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
-require_once WP2BD_THEME_DIR . '/functions/widgets.php';
-// Note: stubs.php has been archived to _archive/ as of Dec 2024
-// Functions should be properly implemented in the appropriate file above
+  // Load WordPress compatibility functions (LEGACY MODE ONLY)
+  require_once WP2BD_THEME_DIR . '/functions/hooks.php';
+  require_once WP2BD_THEME_DIR . '/functions/escaping.php';
+  require_once WP2BD_THEME_DIR . '/functions/i18n.php';
+  require_once WP2BD_THEME_DIR . '/functions/loop.php';
+  require_once WP2BD_THEME_DIR . '/functions/enqueue.php';
+  require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
+  require_once WP2BD_THEME_DIR . '/functions/content-display.php';
+  require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
+  require_once WP2BD_THEME_DIR . '/functions/utilities.php';
+  require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
+  require_once WP2BD_THEME_DIR . '/functions/widgets.php';
+  // Note: stubs.php has been archived to _archive/ as of Dec 2024
+  // Functions should be properly implemented in the appropriate file above
+}
+else {
+  // EPIC 8 MODE: Bootstrap real WordPress core before loading theme functions.php
+  $bootstrap_file = BACKDROP_ROOT . '/modules/wp_content/includes/wp-bootstrap.php';
+  if (file_exists($bootstrap_file)) {
+    require_once $bootstrap_file;
+
+    // Bootstrap WordPress (loads real WordPress classes and functions)
+    $bootstrap_result = wp4bd_bootstrap_wordpress();
+    if (!$bootstrap_result) {
+      watchdog('wp_content', 'WordPress bootstrap failed in template.php', array(), WATCHDOG_ERROR);
+    }
+  }
+}
 
 // Debug template suggestion removed; debug view should be activated manually.
 

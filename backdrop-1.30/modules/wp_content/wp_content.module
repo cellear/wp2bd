@@ -967,7 +967,11 @@ function _wp_content_setup_query() {
         continue;
       }
 
-      $posts[] = WP_Post::from_node($node);
+      // Epic 8: Use bridge function instead of old shim method
+      $wp_post = wp4bd_node_to_post($node);
+      if ($wp_post) {
+        $posts[] = $wp_post;
+      }
     }
   }
 

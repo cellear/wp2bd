@@ -103,16 +103,85 @@ function wp4bd_bootstrap_wordpress() {
       return FALSE;
     }
 
-    // Step 3: Load critical WordPress core files
-    // Order matters - load dependencies first
+    // Step 3: Load WordPress core via wp-settings.php
+    // This loads all WordPress functions and classes
+    // Our db.php drop-in prevents database connection
 
-    // Load version and constants
-    require_once ABSPATH . WPINC . '/version.php';
-    require_once ABSPATH . WPINC . '/compat.php';
+    // First define essential constants/stubs that wp-settings expects
+
+    // Define essential WordPress functions that conflict with Backdrop or are needed early
+    if (!function_exists('wp_installing')) {
+      /**
+       * Check whether WordPress is in installation mode.
+       * @return bool False - we're not installing WordPress
+       */
+      function wp_installing() {
+        return FALSE;
+      }
+    }
+
+    // Stub cache functions - we use Backdrop's caching instead
+    if (!function_exists('wp_cache_get')) {
+      function wp_cache_get($key, $group = '', &$found = null) {
+        $found = FALSE;
+        return FALSE;
+      }
+    }
+    if (!function_exists('wp_cache_set')) {
+      function wp_cache_set($key, $data, $group = '', $expire = 0) {
+        return TRUE;
+      }
+    }
+    if (!function_exists('wp_cache_add')) {
+      function wp_cache_add($key, $data, $group = '', $expire = 0) {
+        return TRUE;
+      }
+    }
+    if (!function_exists('wp_cache_delete')) {
+      function wp_cache_delete($key, $group = '') {
+        return TRUE;
+      }
+    }
+
+    // WordPress utility functions
+    if (!function_exists('wp_parse_args')) {
+      /**
+       * Merge user defined arguments into defaults array.
+       * @param string|array|object $args Value to merge with $defaults.
+       * @param array $defaults Array that serves as the defaults.
+       * @return array Merged user defined values with defaults.
+       */
+      function wp_parse_args($args, $defaults = '') {
+        if (is_object($args)) {
+          $r = get_object_vars($args);
+        } elseif (is_array($args)) {
+          $r =& $args;
+        } else {
+          parse_str($args, $r);
+        }
+
+        if (is_array($defaults)) {
+          return array_merge($defaults, $r);
+        }
+        return $r;
+      }
+    }
+
+    if (!function_exists('absint')) {
+      /**
+       * Convert a value to non-negative integer.
+       * @param mixed $maybeint Data to be converted to non-negative integer.
+       * @return int Non-negative integer.
+       */
+      function absint($maybeint) {
+        return abs(intval($maybeint));
+      }
+    }
 
     // Load class definitions
     require_once ABSPATH . WPINC . '/class-wp-post.php';
     require_once ABSPATH . WPINC . '/class-wp-query.php';
+    require_once ABSPATH . WPINC . '/class-wp-hook.php';
 
     // Load plugin system (needed for hooks)
     require_once ABSPATH . WPINC . '/plugin.php';
@@ -138,6 +207,9 @@ function wp4bd_bootstrap_wordpress() {
 
     // Load internationalization
     require_once ABSPATH . WPINC . '/l10n.php';
+
+    // DO NOT load WordPress's option.php - we provide our own get_option() via wp-options-bridge.php
+    // require_once ABSPATH . WPINC . '/option.php';
 
     // Step 4: Initialize $wpdb global using our drop-in class
     global $wpdb;

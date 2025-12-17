@@ -815,6 +815,71 @@ class wpdb {
   public function get_query_log() {
     return $this->wp4bd_query_log;
   }
+
+  /**
+   * Enable or disable error suppression
+   *
+   * @param bool $suppress Whether to suppress errors
+   * @return bool Previous value
+   */
+  public function suppress_errors( $suppress = true ) {
+    $previous = $this->suppress_errors;
+    $this->suppress_errors = (bool) $suppress;
+    return $previous;
+  }
+
+  /**
+   * Enable or disable error display
+   *
+   * @param bool $show Whether to show errors
+   */
+  public function show_errors( $show = true ) {
+    $this->show_errors = (bool) $show;
+  }
+
+  /**
+   * Hide errors
+   */
+  public function hide_errors() {
+    $this->show_errors = false;
+  }
+
+  /**
+   * Print SQL/DB error
+   *
+   * @param string $str Error message
+   */
+  public function print_error( $str = '' ) {
+    if (!$this->show_errors) {
+      return false;
+    }
+
+    $this->last_error = $str ? $str : 'Database error';
+
+    if (function_exists('watchdog')) {
+      watchdog('wp4bd', 'wpdb error: @error', array('@error' => $this->last_error), WATCHDOG_ERROR);
+    }
+
+    return false;
+  }
+
+  /**
+   * Flush cached query results
+   */
+  public function flush() {
+    $this->last_query = null;
+    $this->last_error = '';
+    return true;
+  }
+
+  /**
+   * Check database connection
+   *
+   * @return bool Always returns true (we're "connected" via Backdrop)
+   */
+  public function check_connection( $allow_bail = true ) {
+    return true;
+  }
 }
 
 // WordPress expects a global $wpdb variable

@@ -12,9 +12,11 @@
 /**
  * Get a WordPress option value from Backdrop configuration.
  *
+ * This is the main get_option() function that WordPress themes call.
  * Maps common WordPress option names to their Backdrop config equivalents.
- * This allows WordPress themes to call get_option('blogname') and receive
- * Backdrop's site_name value.
+ *
+ * NOTE: This replaces WordPress's native get_option() from option.php
+ * because we don't want WordPress trying to query the database.
  *
  * @param string $option
  *   WordPress option name (e.g., 'blogname', 'blogdescription').
@@ -24,7 +26,16 @@
  * @return mixed
  *   The option value from Backdrop config, or $default if not found.
  */
-function wp4bd_get_option($option, $default = FALSE) {
+function get_option($option, $default = FALSE) {
+  // Special case: 'template' and 'stylesheet' should return WordPress theme name
+  if ($option === 'template' || $option === 'stylesheet') {
+    if (defined('WP2BD_ACTIVE_THEME')) {
+      return WP2BD_ACTIVE_THEME;
+    }
+    // Fallback if constant not defined yet
+    $config_theme = config_get('wp_content.settings', 'active_theme');
+    return $config_theme ? $config_theme : 'twentyseventeen';
+  }
   // Map WordPress option names to Backdrop config paths
   $option_map = array(
     // Site identity
@@ -54,9 +65,7 @@ function wp4bd_get_option($option, $default = FALSE) {
     // Language
     'WPLANG' => array('config' => 'system.core', 'key' => 'language_default'),
 
-    // Theme settings (will need to be dynamic based on active theme)
-    'template' => array('config' => 'system.theme', 'key' => 'default'),
-    'stylesheet' => array('config' => 'system.theme', 'key' => 'default'),
+    // Note: 'template' and 'stylesheet' are handled specially above
 
     // Posts per page
     'posts_per_page' => array('config' => 'system.core', 'key' => 'default_nodes_main'),

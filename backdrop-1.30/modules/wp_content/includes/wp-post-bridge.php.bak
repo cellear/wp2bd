@@ -81,22 +81,22 @@ function wp4bd_node_to_post($node) {
 
   // Created date
   if (isset($node->created)) {
-    $post_data->post_date = date('Y-m-d H:i:s', $node->created);
-    $post_data->post_date_gmt = gmdate('Y-m-d H:i:s', $node->created);
+    $post->post_date = date('Y-m-d H:i:s', $node->created);
+    $post->post_date_gmt = gmdate('Y-m-d H:i:s', $node->created);
   }
   else {
-    $post_data->post_date = '0000-00-00 00:00:00';
-    $post_data->post_date_gmt = '0000-00-00 00:00:00';
+    $post->post_date = '0000-00-00 00:00:00';
+    $post->post_date_gmt = '0000-00-00 00:00:00';
   }
 
   // Modified date
   if (isset($node->changed)) {
-    $post_data->post_modified = date('Y-m-d H:i:s', $node->changed);
-    $post_data->post_modified_gmt = gmdate('Y-m-d H:i:s', $node->changed);
+    $post->post_modified = date('Y-m-d H:i:s', $node->changed);
+    $post->post_modified_gmt = gmdate('Y-m-d H:i:s', $node->changed);
   }
   else {
-    $post_data->post_modified = '0000-00-00 00:00:00';
-    $post_data->post_modified_gmt = '0000-00-00 00:00:00';
+    $post->post_modified = '0000-00-00 00:00:00';
+    $post->post_modified_gmt = '0000-00-00 00:00:00';
   }
 
   // ========================================================================
@@ -104,7 +104,7 @@ function wp4bd_node_to_post($node) {
   // ========================================================================
 
   // Post status - published nodes are 'publish', unpublished are 'draft'
-  $post_data->post_status = (isset($node->status) && $node->status == 1) ? 'publish' : 'draft';
+  $post->post_status = (isset($node->status) && $node->status == 1) ? 'publish' : 'draft';
 
   // ========================================================================
   // CONTENT
@@ -112,20 +112,20 @@ function wp4bd_node_to_post($node) {
 
   // Extract body content
   // Backdrop stores body in $node->body[LANGUAGE_NONE][0]
-  $post_data->post_content = '';
-  $post_data->post_excerpt = '';
+  $post->post_content = '';
+  $post->post_excerpt = '';
 
   if (isset($node->body) && is_array($node->body)) {
     // Check for LANGUAGE_NONE constant or use 'und'
     $lang_key = defined('LANGUAGE_NONE') ? LANGUAGE_NONE : 'und';
 
     if (isset($node->body[$lang_key][0]['value'])) {
-      $post_data->post_content = $node->body[$lang_key][0]['value'];
+      $post->post_content = $node->body[$lang_key][0]['value'];
     }
 
     // Extract summary/excerpt if available
     if (isset($node->body[$lang_key][0]['summary'])) {
-      $post_data->post_excerpt = $node->body[$lang_key][0]['summary'];
+      $post->post_excerpt = $node->body[$lang_key][0]['summary'];
     }
   }
 
@@ -134,20 +134,20 @@ function wp4bd_node_to_post($node) {
   // ========================================================================
 
   // Post name/slug - try to get from path alias
-  $post_data->post_name = '';
+  $post->post_name = '';
   if (isset($node->path) && is_array($node->path) && isset($node->path['alias'])) {
-    $post_data->post_name = $node->path['alias'];
+    $post->post_name = $node->path['alias'];
   }
   elseif (function_exists('backdrop_get_path_alias')) {
     $alias = backdrop_get_path_alias('node/' . $node->nid);
     if ($alias != 'node/' . $node->nid) {
-      $post_data->post_name = $alias;
+      $post->post_name = $alias;
     }
   }
 
   // If no alias, create slug from title
-  if (empty($post_data->post_name) && !empty($post_data->post_title)) {
-    $post_data->post_name = wp4bd_sanitize_title($post_data->post_title);
+  if (empty($post->post_name) && !empty($post->post_title)) {
+    $post->post_name = wp4bd_sanitize_title($post->post_title);
   }
 
   // ========================================================================
@@ -155,48 +155,45 @@ function wp4bd_node_to_post($node) {
   // ========================================================================
 
   // Comment count
-  $post_data->comment_count = isset($node->comment_count) ? (int) $node->comment_count : 0;
+  $post->comment_count = isset($node->comment_count) ? (int) $node->comment_count : 0;
 
   // Comment status
   if (isset($node->comment)) {
     // Backdrop comment values: 0 = hidden, 1 = closed, 2 = open
-    $post_data->comment_status = ($node->comment == 2) ? 'open' : 'closed';
+    $post->comment_status = ($node->comment == 2) ? 'open' : 'closed';
   }
   else {
-    $post_data->comment_status = 'closed';
+    $post->comment_status = 'closed';
   }
 
   // Ping status - Backdrop doesn't have pingbacks
-  $post_data->ping_status = 'closed';
+  $post->ping_status = 'closed';
 
   // ========================================================================
   // MISC PROPERTIES
   // ========================================================================
 
   // Post password - Backdrop doesn't have password-protected content
-  $post_data->post_password = '';
+  $post->post_password = '';
 
   // To ping - Backdrop doesn't have pingback URLs
-  $post_data->to_ping = '';
+  $post->to_ping = '';
 
   // Pinged - Backdrop doesn't track pinged URLs
-  $post_data->pinged = '';
+  $post->pinged = '';
 
   // Post MIME type - only used for attachments
-  $post_data->post_mime_type = '';
+  $post->post_mime_type = '';
 
   // GUID - global unique identifier (typically the permalink)
   // We'll construct this from the base URL and node path
   global $base_url;
-  if (!empty($post_data->post_name)) {
-    $post_data->guid = $base_url . '/' . $post_data->post_name;
+  if (!empty($post->post_name)) {
+    $post->guid = $base_url . '/' . $post->post_name;
   }
   else {
-    $post_data->guid = $base_url . '/node/' . $post_data->ID;
+    $post->guid = $base_url . '/node/' . $post->ID;
   }
-
-  // Create the real WordPress WP_Post object
-  $post = new WP_Post($post_data);
 
   return $post;
 }
