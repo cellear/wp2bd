@@ -13,23 +13,16 @@
 // STEP 1: Define Theme Constants
 // ============================================================================
 
-// Get active WordPress theme from config (not Backdrop theme!)
+// Get active WordPress theme from theme settings (not Backdrop theme!)
 if (!defined('WP2BD_ACTIVE_THEME')) {
   $active_theme = 'twentyseventeen'; // Default fallback
 
-  // Try to get from theme-specific config
-  try {
-    if (function_exists('config')) {
-      $config = config('wp.settings');
-      if ($config) {
-        $config_theme = $config->get('active_theme');
-        if (!empty($config_theme)) {
-          $active_theme = $config_theme;
-        }
-      }
+  // Try to get from theme settings
+  if (function_exists('theme_get_setting')) {
+    $theme_setting = theme_get_setting('active_theme', 'wp');
+    if (!empty($theme_setting)) {
+      $active_theme = $theme_setting;
     }
-  } catch (Exception $e) {
-    // Config not available, use default
   }
 
   define('WP2BD_ACTIVE_THEME', $active_theme);
