@@ -399,9 +399,7 @@ function wp_preprocess_page(&$variables)
   }
 
   // Add Backdrop messages for display
-  if (function_exists('theme')) {
-    $variables['messages'] = theme('status_messages');
-  }
+  $variables['messages'] = theme('status_messages');
 
   // Body classes are now handled in wp_content.module
 }
