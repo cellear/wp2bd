@@ -350,9 +350,13 @@ function get_template_directory() {
         }
     }
 
-    // Fallback: Use hardcoded path for Twenty Seventeen
+    // Fallback: Use wpbrain path (Epic 8 architecture)
     if ($template_dir === null) {
-        $template_dir = '/home/user/wp2bd/wordpress-4.9/wp-content/themes/twentyseventeen';
+        if (defined('BACKDROP_ROOT')) {
+            $template_dir = BACKDROP_ROOT . '/themes/wp/wpbrain/wp-content/themes/twentyseventeen';
+        } else {
+            $template_dir = '/var/www/html/backdrop-1.30/themes/wp/wpbrain/wp-content/themes/twentyseventeen';
+        }
     }
 
     // Remove trailing slash if present

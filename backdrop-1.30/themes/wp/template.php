@@ -31,9 +31,9 @@ if (!defined('WP2BD_THEME_DIR')) {
 }
 
 // Define WordPress root paths so we can load core files early.
-$project_root = dirname(BACKDROP_ROOT);
+// NOTE: Epic 8 uses wpbrain directory, not wordpress-4.9
 if (!defined('ABSPATH')) {
-  define('ABSPATH', $project_root . '/wordpress-4.9/');
+  define('ABSPATH', BACKDROP_ROOT . '/themes/wp/wpbrain/');
 }
 if (!defined('WPINC')) {
   define('WPINC', 'wp-includes');
@@ -53,9 +53,13 @@ $GLOBALS['wp_version'] = '4.9';
 $pagenow = 'index.php'; // Default to index.php for theme compatibility
 $GLOBALS['pagenow'] = 'index.php';
 
-// Load WordPress compatibility classes
-require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
-require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
+// Load WordPress compatibility classes (only if not already loaded by Epic 8 bootstrap)
+if (!class_exists('WP_Post')) {
+  require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
+}
+if (!class_exists('WP_Query')) {
+  require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
+}
 
 // Load WordPress compatibility functions
 require_once WP2BD_THEME_DIR . '/functions/hooks.php';
