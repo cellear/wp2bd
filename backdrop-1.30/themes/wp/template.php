@@ -30,36 +30,40 @@ if (!defined('WP2BD_THEME_DIR')) {
   define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
 }
 
-// Define WordPress root paths so we can load core files early.
-// NOTE: Epic 8 uses wpbrain directory, not wordpress-4.9
-if (!defined('ABSPATH')) {
-  define('ABSPATH', BACKDROP_ROOT . '/themes/wp/wpbrain/');
-}
-if (!defined('WPINC')) {
-  define('WPINC', 'wp-includes');
-}
-if (!defined('WP_CONTENT_DIR')) {
-  define('WP_CONTENT_DIR', ABSPATH . 'wp-content');
-}
+// Check if Epic 8 bootstrap is active (wp_content module)
+// If wp_content module is enabled and will handle WordPress bootstrap, skip the old shim architecture
+$epic8_active = module_exists('wp_content');
 
-// Initialize WordPress globals
-global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version, $pagenow;
-$wp_filter = array();
-$wp_actions = array();
-$wp_current_filter = array();
-$post = null;
-$wp_version = '4.9'; // WordPress 4.9 compatibility
-$GLOBALS['wp_version'] = '4.9';
-$pagenow = 'index.php'; // Default to index.php for theme compatibility
-$GLOBALS['pagenow'] = 'index.php';
+if (!$epic8_active) {
+  // LEGACY MODE (Epics 1-7): Use compatibility shims
+  // Define WordPress root paths so we can load core files early.
+  if (!defined('ABSPATH')) {
+    define('ABSPATH', BACKDROP_ROOT . '/themes/wp/wpbrain/');
+  }
+  if (!defined('WPINC')) {
+    define('WPINC', 'wp-includes');
+  }
+  if (!defined('WP_CONTENT_DIR')) {
+    define('WP_CONTENT_DIR', ABSPATH . 'wp-content');
+  }
 
-// Load WordPress compatibility classes (only if not already loaded by Epic 8 bootstrap)
-if (!class_exists('WP_Post')) {
+  // Initialize WordPress globals
+  global $wp_query, $wp_filter, $wp_actions, $wp_current_filter, $post, $wp_version, $pagenow;
+  $wp_filter = array();
+  $wp_actions = array();
+  $wp_current_filter = array();
+  $post = null;
+  $wp_version = '4.9'; // WordPress 4.9 compatibility
+  $GLOBALS['wp_version'] = '4.9';
+  $pagenow = 'index.php'; // Default to index.php for theme compatibility
+  $GLOBALS['pagenow'] = 'index.php';
+
+  // Load WordPress compatibility shim classes
   require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
-}
-if (!class_exists('WP_Query')) {
   require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
 }
+// If Epic 8 is active, wp_content_init() will handle WordPress bootstrap
+// and real WordPress classes will be loaded from wpbrain/wp-includes/
 
 // Load WordPress compatibility functions
 require_once WP2BD_THEME_DIR . '/functions/hooks.php';
