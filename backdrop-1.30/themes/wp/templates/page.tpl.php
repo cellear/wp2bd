@@ -39,37 +39,28 @@ if (isset($_GET['wp4bd_debug'])) {
 }
 
 // ============================================================================
-// BOOTSTRAP WORDPRESS
+// CHECK WORDPRESS IS LOADED
 // ============================================================================
+// NOTE: WordPress is bootstrapped by wp_content_init() in the module,
+// not by this template. We just verify it loaded successfully.
 $wp4bd_bootstrap_success = FALSE;
 $wp4bd_bootstrap_errors = array();
 
-try {
-  // Load WordPress bootstrap
+// Check if WordPress core classes exist (indicates successful bootstrap)
+if (class_exists('WP_Post') && class_exists('WP_Query') && function_exists('have_posts')) {
+  $wp4bd_bootstrap_success = TRUE;
+} else {
+  $wp4bd_bootstrap_errors[] = 'WordPress classes not loaded - wp_content module may not be enabled or bootstrap may have failed';
+
+  // Check common causes
+  if (!defined('ABSPATH')) {
+    $wp4bd_bootstrap_errors[] = 'ABSPATH not defined - WordPress core not loaded';
+  }
+
   $bootstrap_file = BACKDROP_ROOT . '/modules/wp_content/includes/wp-bootstrap.php';
-  if (file_exists($bootstrap_file)) {
-    require_once $bootstrap_file;
-
-    // Bootstrap WordPress
-    $wp4bd_bootstrap_success = wp4bd_bootstrap_wordpress($wp4bd_bootstrap_errors);
-
-    if (!$wp4bd_bootstrap_success && $wp4bd_debug_mode) {
-      echo '<div style="margin: 20px; padding: 20px; background: #f8d7da; border-left: 4px solid #dc3545;">';
-      echo '<h3>⚠️ WordPress Bootstrap Failed</h3>';
-      if (!empty($wp4bd_bootstrap_errors)) {
-        echo '<ul>';
-        foreach ($wp4bd_bootstrap_errors as $error) {
-          echo '<li>' . htmlspecialchars($error) . '</li>';
-        }
-        echo '</ul>';
-      }
-      echo '</div>';
-    }
-  } else {
+  if (!file_exists($bootstrap_file)) {
     $wp4bd_bootstrap_errors[] = 'Bootstrap file not found: ' . $bootstrap_file;
   }
-} catch (Exception $e) {
-  $wp4bd_bootstrap_errors[] = 'Exception during bootstrap: ' . $e->getMessage();
 }
 
 // ============================================================================
