@@ -22,15 +22,26 @@ if (!isset($GLOBALS['wp_version'])) {
 
 // Determine active theme early
 $active_theme = 'twentyseventeen'; // Default fallback
-try {
-  if (function_exists('config')) {
-    $config_theme = config('wp_content.settings')->get('active_theme');
-    if (!empty($config_theme)) {
-      $active_theme = $config_theme;
+
+// Check for theme setting (Backdrop config system)
+if (function_exists('config_get')) {
+  try {
+    $theme_config = config_get('system.theme.wp');
+    if (isset($theme_config['wp_active_theme']) && !empty($theme_config['wp_active_theme'])) {
+      $active_theme = $theme_config['wp_active_theme'];
     }
+  } catch (Exception $e) {
+    // Config might not exist yet
   }
-} catch (Exception $e) {
-  // Config might not be available yet
+}
+
+// Fallback: check for a simple theme selector (for testing)
+if (isset($_GET['wp_theme']) && !empty($_GET['wp_theme'])) {
+  $requested_theme = preg_replace('/[^a-zA-Z0-9-_]/', '', $_GET['wp_theme']);
+  $theme_path = __DIR__ . '/wp-content/themes/' . $requested_theme;
+  if (is_dir($theme_path) && file_exists($theme_path . '/style.css')) {
+    $active_theme = $requested_theme;
+  }
 }
 
 // Define theme directory constants early
