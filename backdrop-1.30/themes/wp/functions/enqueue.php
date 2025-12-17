@@ -129,6 +129,15 @@ if (!function_exists('wp_enqueue_style')) {
 
         // Mark as enqueued
         $wp_styles->enqueue($handle);
+
+        // Add to Backdrop's CSS system
+        if (function_exists('backdrop_add_css') && !empty($src)) {
+            $options = array();
+            if ($media !== 'all') {
+                $options['media'] = $media;
+            }
+            backdrop_add_css($src, $options);
+        }
     }
 }
 
@@ -185,6 +194,15 @@ if (!function_exists('wp_enqueue_script')) {
         
         // Mark as enqueued
         $wp_scripts->enqueue($handle);
+
+        // Add to Backdrop's JS system
+        if (function_exists('backdrop_add_js') && !empty($src)) {
+            $options = array();
+            if ($in_footer) {
+                $options['scope'] = 'footer';
+            }
+            backdrop_add_js($src, $options);
+        }
     }
 }
 

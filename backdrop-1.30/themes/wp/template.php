@@ -11,6 +11,41 @@
 require_once __DIR__ . '/classes/WP_Post.php';
 require_once __DIR__ . '/classes/WP_Query.php';
 
+// Load essential template functions early
+require_once __DIR__ . '/functions/utilities.php';
+require_once __DIR__ . '/functions/hooks.php';
+
+// Set WordPress globals early
+if (!isset($GLOBALS['wp_version'])) {
+  $GLOBALS['wp_version'] = '4.9';
+}
+
+// Determine active theme early
+$active_theme = 'twentyseventeen'; // Default fallback
+try {
+  if (function_exists('config')) {
+    $config_theme = config('wp_content.settings')->get('active_theme');
+    if (!empty($config_theme)) {
+      $active_theme = $config_theme;
+    }
+  }
+} catch (Exception $e) {
+  // Config might not be available yet
+}
+
+// Define theme directory constants early
+$wp_themes_dir = __DIR__ . '/wp-content/themes';
+$active_theme_dir = $wp_themes_dir . '/' . $active_theme;
+define('WP2BD_WP_THEMES_DIR', $wp_themes_dir);
+define('WP2BD_ACTIVE_THEME', $active_theme);
+define('WP2BD_ACTIVE_THEME_DIR', $active_theme_dir);
+
+// Load WordPress theme's functions.php early so enqueueing works
+$functions_file = $active_theme_dir . '/functions.php';
+if (file_exists($functions_file)) {
+  require_once $functions_file;
+}
+
 // Load essential WordPress functions early
 require_once __DIR__ . '/functions/post-metadata.php';
 
@@ -30,11 +65,9 @@ if (!defined('WP2BD_ACTIVE_THEME')) {
   define('WP2BD_ACTIVE_THEME', $active_theme);
 }
 
-// Define paths
+// Define theme directory constant
 if (!defined('WP2BD_THEME_DIR')) {
   define('WP2BD_THEME_DIR', __DIR__);
-  define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wp-content/themes');
-  define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
 }
 
 // WordPress Compatibility Mode
@@ -405,12 +438,9 @@ function wp_preprocess_page(&$variables)
 }
 
 /**
- * Load WordPress theme's functions.php if it exists
+ * WordPress theme's functions.php is now loaded early at the top of this file
+ * to ensure enqueueing works properly during wp_head()
  */
-$functions_file = WP2BD_ACTIVE_THEME_DIR . '/functions.php';
-if (file_exists($functions_file)) {
-  require_once $functions_file;
-}
 
 /**
  * Implements template_preprocess_html().

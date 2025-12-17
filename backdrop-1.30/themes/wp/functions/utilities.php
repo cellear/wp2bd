@@ -2084,3 +2084,29 @@ if (!function_exists('get_queried_object_id')) {
     return ($obj && isset($obj->ID)) ? $obj->ID : 0;
   }
 }
+
+/**
+ * Retrieves the path of a file in the theme.
+ *
+ * @param string $file Optional. File to return the path for in the theme directory.
+ * @return string The path of the file.
+ */
+if (!function_exists('get_theme_file_path')) {
+  function get_theme_file_path($file = '') {
+    $file = ltrim($file, '/');
+    return get_template_directory() . ($file ? '/' . $file : '');
+  }
+}
+
+/**
+ * Retrieves the path of a file in the parent theme.
+ *
+ * @param string $file Optional. File to return the path for in the template directory.
+ * @return string The path of the file.
+ */
+if (!function_exists('get_parent_theme_file_path')) {
+  function get_parent_theme_file_path($file = '') {
+    $file = ltrim($file, '/');
+    return get_theme_file_path($file);
+  }
+}
