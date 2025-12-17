@@ -1,4 +1,4 @@
-name: wp4bd
+name: wp4bd-grok
 type: backdrop
 docroot: backdrop-1.30
 php_version: "8.3"

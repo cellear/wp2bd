@@ -81,12 +81,21 @@ function wp4bd_bootstrap_wordpress() {
 
     // WP4BD V2-051: Load WordPress core files in correct sequence
 
-    // Step 1: Set table prefix (WordPress expects this global)
+    // Step 1: Load I/O stubs FIRST - prevents all network, file, and external I/O operations
+    $io_stubs_file = dirname(__FILE__) . '/io-stubs.php';
+    if (file_exists($io_stubs_file)) {
+      require_once $io_stubs_file;
+    } else {
+      $errors[] = "I/O stubs file not found: {$io_stubs_file}";
+      return FALSE;
+    }
+
+    // Step 2: Set table prefix (WordPress expects this global)
     if (!isset($GLOBALS['table_prefix'])) {
       $GLOBALS['table_prefix'] = 'wp_';
     }
 
-    // Step 2: Load db.php drop-in FIRST (Epic 3) - prevents WordPress database connection
+    // Step 3: Load db.php drop-in SECOND (Epic 3) - prevents WordPress database connection
     // IMPORTANT: Check the ACTUAL path where db.php should be, not just WP_CONTENT_DIR
     // because WP_CONTENT_DIR might have been defined elsewhere with a different value
     $expected_db_dropin = $wpbrain_path . '/wp-content/db.php';
@@ -110,34 +119,52 @@ function wp4bd_bootstrap_wordpress() {
     require_once ABSPATH . WPINC . '/version.php';
     require_once ABSPATH . WPINC . '/compat.php';
 
-    // Load class definitions
+    // Load ONLY the essential WordPress classes - avoid loading functions that conflict
     require_once ABSPATH . WPINC . '/class-wp-post.php';
     require_once ABSPATH . WPINC . '/class-wp-query.php';
 
-    // Load plugin system (needed for hooks)
-    require_once ABSPATH . WPINC . '/plugin.php';
+    // Provide minimal function stubs for WordPress themes to work
+    if (!function_exists('add_action')) {
+      function add_action($tag, $function_to_add, $priority = 10, $accepted_args = 1) {
+        return true;
+      }
+    }
+    if (!function_exists('add_filter')) {
+      function add_filter($tag, $function_to_add, $priority = 10, $accepted_args = 1) {
+        return true;
+      }
+    }
+    if (!function_exists('do_action')) {
+      function do_action($tag, ...$args) {
+        return;
+      }
+    }
+    if (!function_exists('apply_filters')) {
+      function apply_filters($tag, $value, ...$args) {
+        return $value;
+      }
+    }
 
-    // Load formatting and escaping
-    require_once ABSPATH . WPINC . '/formatting.php';
-    require_once ABSPATH . WPINC . '/kses.php';
+    // Minimal template functions needed by themes
+    if (!function_exists('get_the_title')) {
+      function get_the_title($post = 0) {
+        global $post;
+        if ($post && isset($post->post_title)) {
+          return $post->post_title;
+        }
+        return '';
+      }
+    }
 
-    // Load post functions
-    require_once ABSPATH . WPINC . '/post.php';
-    require_once ABSPATH . WPINC . '/query.php';
-
-    // Load template functions
-    require_once ABSPATH . WPINC . '/post-template.php';
-    require_once ABSPATH . WPINC . '/general-template.php';
-    require_once ABSPATH . WPINC . '/link-template.php';
-    require_once ABSPATH . WPINC . '/author-template.php';
-    require_once ABSPATH . WPINC . '/category-template.php';
-
-    // Load theme support
-    require_once ABSPATH . WPINC . '/theme.php';
-    require_once ABSPATH . WPINC . '/template.php';
-
-    // Load internationalization
-    require_once ABSPATH . WPINC . '/l10n.php';
+    if (!function_exists('get_the_content')) {
+      function get_the_content($more_link_text = null, $strip_teaser = false) {
+        global $post;
+        if ($post && isset($post->post_content)) {
+          return $post->post_content;
+        }
+        return '';
+      }
+    }
 
     // Step 4: Initialize $wpdb global using our drop-in class
     global $wpdb;

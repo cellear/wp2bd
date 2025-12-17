@@ -30,12 +30,12 @@ if (!defined('WP2BD_THEME_DIR')) {
   define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
 }
 
-// Check if Epic 8 bootstrap is active (wp_content module)
-// If wp_content module is enabled and will handle WordPress bootstrap, skip the old shim architecture
-$epic8_active = module_exists('wp_content');
+// WordPress Compatibility Mode
+// We use compatibility shims instead of loading WordPress core to avoid conflicts with Backdrop
+$wordpress_bootstrapped = false;
 
-if (!$epic8_active) {
-  // LEGACY MODE (Epics 1-7): Use compatibility shims
+if (!$wordpress_bootstrapped) {
+  // FALLBACK: LEGACY MODE (Epics 1-7): Use compatibility shims
   // Define WordPress root paths so we can load core files early.
   if (!defined('ABSPATH')) {
     define('ABSPATH', BACKDROP_ROOT . '/themes/wp/wpbrain/');
@@ -61,24 +61,22 @@ if (!$epic8_active) {
   // Load WordPress compatibility shim classes
   require_once WP2BD_THEME_DIR . '/classes/WP_Post.php';
   require_once WP2BD_THEME_DIR . '/classes/WP_Query.php';
-}
-// If Epic 8 is active, wp_content_init() will handle WordPress bootstrap
-// and real WordPress classes will be loaded from wpbrain/wp-includes/
 
-// Load WordPress compatibility functions
-require_once WP2BD_THEME_DIR . '/functions/hooks.php';
-require_once WP2BD_THEME_DIR . '/functions/escaping.php';
-require_once WP2BD_THEME_DIR . '/functions/i18n.php';
-require_once WP2BD_THEME_DIR . '/functions/loop.php';
-require_once WP2BD_THEME_DIR . '/functions/enqueue.php';
-require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
-require_once WP2BD_THEME_DIR . '/functions/content-display.php';
-require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
-require_once WP2BD_THEME_DIR . '/functions/utilities.php';
-require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
-require_once WP2BD_THEME_DIR . '/functions/widgets.php';
-// Note: stubs.php has been archived to _archive/ as of Dec 2024
-// Functions should be properly implemented in the appropriate file above
+  // Load WordPress compatibility functions (only in legacy mode)
+  require_once WP2BD_THEME_DIR . '/functions/hooks.php';
+  require_once WP2BD_THEME_DIR . '/functions/escaping.php';
+  require_once WP2BD_THEME_DIR . '/functions/i18n.php';
+  require_once WP2BD_THEME_DIR . '/functions/loop.php';
+  require_once WP2BD_THEME_DIR . '/functions/enqueue.php';
+  require_once WP2BD_THEME_DIR . '/functions/template-loading.php';
+  require_once WP2BD_THEME_DIR . '/functions/content-display.php';
+  require_once WP2BD_THEME_DIR . '/functions/conditionals.php';
+  require_once WP2BD_THEME_DIR . '/functions/utilities.php';
+  require_once WP2BD_THEME_DIR . '/functions/post-metadata.php';
+  require_once WP2BD_THEME_DIR . '/functions/widgets.php';
+  // Note: stubs.php has been archived to _archive/ as of Dec 2024
+  // Functions should be properly implemented in the appropriate file above
+}
 
 // Debug template suggestion removed; debug view should be activated manually.
 
