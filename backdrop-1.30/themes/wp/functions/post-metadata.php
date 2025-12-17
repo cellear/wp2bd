@@ -301,6 +301,32 @@ function get_the_date( $format = '', $post = null ) {
 }
 
 /**
+ * Display or retrieve the date the current post was written (once per date).
+ *
+ * Will only output the date if the current post's date is different from the
+ * previous one output.
+ *
+ * @global object $wp_post The current post object (WP2BD compatibility).
+ *
+ * @param string $format  Optional. PHP date format. Default is date format option.
+ * @param string $before  Optional. Output before the date. Default empty.
+ * @param string $after   Optional. Output after the date. Default empty.
+ * @param bool   $display Optional. Whether to echo or return the date. Default true.
+ * @return string|void String if $display is false, void otherwise.
+ */
+function the_date( $format = '', $before = '', $after = '', $display = true ) {
+  global $wp_post;
+
+  $the_date = $before . get_the_date( $format ) . $after;
+
+  if ( $display ) {
+    echo $the_date;
+  } else {
+    return $the_date;
+  }
+}
+
+/**
  * Retrieve the time at which the post was written.
  *
  * WordPress Behavior:

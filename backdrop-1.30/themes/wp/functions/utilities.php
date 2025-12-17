@@ -1367,6 +1367,19 @@ if (!function_exists('get_the_tag_list')) {
   }
 }
 
+if (!function_exists('has_tag')) {
+  /**
+   * Check if the current post has any tags.
+   *
+   * @param string|int|array $tag     Optional. Tag ID, name, slug, or array of IDs.
+   * @param int              $post_id Optional. Post ID. Defaults to current post.
+   * @return bool True if the post has tags, false otherwise.
+   */
+  function has_tag($tag = '', $post_id = false) {
+    return has_term($tag, 'post_tag', $post_id);
+  }
+}
+
 if (!function_exists('the_tags')) {
   /**
    * Display the tags for a post.
@@ -1635,6 +1648,118 @@ if (!function_exists('get_posts')) {
     }
     
     return array();
+  }
+}
+
+if (!function_exists('get_the_terms')) {
+  /**
+   * Retrieve the terms of the taxonomy that are attached to the post.
+   *
+   * @param int    $post_id Post ID.
+   * @param string $taxonomy Taxonomy name.
+   * @return array|WP_Error Array of term objects, or WP_Error on failure.
+   */
+  function get_the_terms($post_id, $taxonomy) {
+    // Convert WordPress taxonomy names to Backdrop vocabulary names
+    $vocabulary_map = array(
+      'category' => 'categories',
+      'post_tag' => 'tags',
+    );
+
+    $vocabulary = isset($vocabulary_map[$taxonomy]) ? $vocabulary_map[$taxonomy] : $taxonomy;
+
+    // Get terms using Backdrop's taxonomy API
+    if (function_exists('taxonomy_select_nodes')) {
+      $tids = taxonomy_select_nodes($post_id, false);
+      if (!empty($tids)) {
+        $terms = taxonomy_term_load_multiple($tids);
+        // Convert Backdrop terms to WordPress-like term objects
+        $wp_terms = array();
+        foreach ($terms as $term) {
+          if (isset($term->vocabulary) && $term->vocabulary == $vocabulary) {
+            $wp_term = new stdClass();
+            $wp_term->term_id = $term->tid;
+            $wp_term->name = $term->name;
+            $wp_term->slug = $term->name; // Backdrop doesn't have slugs, use name
+            $wp_term->taxonomy = $taxonomy;
+            $wp_terms[] = $wp_term;
+          }
+        }
+        return $wp_terms;
+      }
+    }
+
+    return array(); // No terms found
+  }
+}
+
+if (!function_exists('has_term')) {
+  /**
+   * Check if the current post has any of given terms.
+   *
+   * @param string|int|array $term     Term to check for.
+   * @param string           $taxonomy Taxonomy name.
+   * @param int              $post_id  Optional. Post ID. Defaults to current post.
+   * @return bool True if the post has terms, false otherwise.
+   */
+  function has_term($term = '', $taxonomy = '', $post_id = false) {
+    global $wp_post;
+
+    // If no post ID provided, use global post
+    if (!$post_id) {
+      $post_id = isset($wp_post) && isset($wp_post->ID) ? $wp_post->ID : null;
+      if (!$post_id && isset($wp_post) && isset($wp_post->nid)) {
+        $post_id = $wp_post->nid;
+      }
+    }
+
+    if (!$post_id) {
+      return false;
+    }
+
+    // Get terms for this post
+    $terms = get_the_terms($post_id, $taxonomy);
+
+    if (is_wp_error($terms) || empty($terms)) {
+      return false;
+    }
+
+    // If no specific term requested, just check if any terms exist
+    if (empty($term)) {
+      return !empty($terms);
+    }
+
+    // Check if specific term exists
+    if (is_array($term)) {
+      foreach ($term as $t) {
+        foreach ($terms as $post_term) {
+          if ($post_term->term_id == $t || $post_term->name == $t || $post_term->slug == $t) {
+            return true;
+          }
+        }
+      }
+      return false;
+    } else {
+      foreach ($terms as $post_term) {
+        if ($post_term->term_id == $term || $post_term->name == $term || $post_term->slug == $term) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+}
+
+if (!function_exists('has_category')) {
+  /**
+   * Check if the current post has any categories.
+   *
+   * @param string|int|array $category Optional. Category ID, name, slug, or array of IDs.
+   * @param int              $post_id  Optional. Post ID. Defaults to current post.
+   * @return bool True if the post has categories, false otherwise.
+   */
+  function has_category($category = '', $post_id = false) {
+    return has_term($category, 'category', $post_id);
   }
 }
 

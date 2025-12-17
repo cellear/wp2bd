@@ -7,6 +7,13 @@
  * rendering to a WordPress theme.
  */
 
+// Load WordPress compatibility classes early
+require_once __DIR__ . '/classes/WP_Post.php';
+require_once __DIR__ . '/classes/WP_Query.php';
+
+// Load essential WordPress functions early
+require_once __DIR__ . '/functions/post-metadata.php';
+
 // Define the active WordPress theme
 if (!defined('WP2BD_ACTIVE_THEME')) {
   $active_theme = 'twentyseventeen'; // Default fallback
@@ -389,6 +396,11 @@ function wp_preprocess_page(&$variables)
       $wp_query = new WP_Query(array('p' => 0, 'post__in' => array(-999)));
       $GLOBALS['wp_query'] = $wp_query;
     }
+  }
+
+  // Add Backdrop messages for display
+  if (function_exists('theme')) {
+    $variables['messages'] = theme('status_messages');
   }
 
   // Body classes are now handled in wp_content.module
