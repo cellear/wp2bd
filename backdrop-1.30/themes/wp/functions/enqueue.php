@@ -122,6 +122,10 @@ if (!function_exists('wp_enqueue_style')) {
     function wp_enqueue_style($handle, $src = '', $deps = array(), $ver = false, $media = 'all') {
         global $wp_styles;
 
+        if (function_exists('watchdog')) {
+          watchdog('wp4bd_debug', 'wp_enqueue_style called: @handle - @src', array('@handle' => $handle, '@src' => $src), WATCHDOG_DEBUG);
+        }
+
         // If not registered yet, register it
         if (!isset($wp_styles->registered[$handle])) {
             wp_register_style($handle, $src, $deps, $ver, $media);

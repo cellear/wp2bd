@@ -19,6 +19,9 @@ require_once __DIR__ . '/functions/hooks.php';
 if (!isset($GLOBALS['wp_version'])) {
   $GLOBALS['wp_version'] = '4.9';
 }
+if (!isset($GLOBALS['pagenow'])) {
+  $GLOBALS['pagenow'] = 'index.php';
+}
 
 // Determine active theme early
 $active_theme = 'twentyseventeen'; // Default fallback
@@ -36,13 +39,25 @@ if (function_exists('config_get')) {
 }
 
 // Fallback: check for a simple theme selector (for testing)
+$theme_changed = false;
 if (isset($_GET['wp_theme']) && !empty($_GET['wp_theme'])) {
   $requested_theme = preg_replace('/[^a-zA-Z0-9-_]/', '', $_GET['wp_theme']);
   $theme_path = __DIR__ . '/wp-content/themes/' . $requested_theme;
-  if (is_dir($theme_path) && file_exists($theme_path . '/style.css')) {
+  if (function_exists('watchdog')) {
+    watchdog('wp4bd_debug', 'Theme switch requested: @theme (path exists: @exists)', array('@theme' => $requested_theme, '@exists' => is_dir($theme_path) ? 'yes' : 'no'), WATCHDOG_DEBUG);
+  }
+  if (is_dir($theme_path) && file_exists($theme_path . '/style.css') && $requested_theme !== $active_theme) {
     $active_theme = $requested_theme;
+    $theme_changed = true;
+    if (function_exists('watchdog')) {
+      watchdog('wp4bd_debug', 'Theme switched to: @theme', array('@theme' => $active_theme), WATCHDOG_DEBUG);
+    }
   }
 }
+
+// Set final theme constants
+define('WP2BD_ACTIVE_THEME', $active_theme);
+define('WP2BD_ACTIVE_THEME_DIR', __DIR__ . '/wp-content/themes/' . $active_theme);
 
 // Define theme directory constants early
 $wp_themes_dir = __DIR__ . '/wp-content/themes';
@@ -51,30 +66,12 @@ define('WP2BD_WP_THEMES_DIR', $wp_themes_dir);
 define('WP2BD_ACTIVE_THEME', $active_theme);
 define('WP2BD_ACTIVE_THEME_DIR', $active_theme_dir);
 
-// Load WordPress theme's functions.php early so enqueueing works
-$functions_file = $active_theme_dir . '/functions.php';
-if (file_exists($functions_file)) {
-  require_once $functions_file;
-}
+// WordPress theme's functions.php will be loaded later after final theme determination
 
 // Load essential WordPress functions early
 require_once __DIR__ . '/functions/post-metadata.php';
 
-// Define the active WordPress theme
-if (!defined('WP2BD_ACTIVE_THEME')) {
-  $active_theme = 'twentyseventeen'; // Default fallback
-  try {
-    if (function_exists('config')) {
-      $config_theme = config('wp_content.settings')->get('active_theme');
-      if (!empty($config_theme)) {
-        $active_theme = $config_theme;
-      }
-    }
-  } catch (Exception $e) {
-    // Config might not be available yet
-  }
-  define('WP2BD_ACTIVE_THEME', $active_theme);
-}
+// Theme already determined and defined above
 
 // Define theme directory constant
 if (!defined('WP2BD_THEME_DIR')) {

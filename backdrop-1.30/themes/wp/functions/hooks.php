@@ -52,8 +52,15 @@ function add_filter($hook, $callback, $priority = 10, $accepted_args = 1)
 {
     global $wp_filter;
 
+    if (function_exists('watchdog')) {
+      watchdog('wp4bd_debug', 'add_filter called: @hook -> @callback', array('@hook' => $hook, '@callback' => is_string($callback) ? $callback : 'closure'), WATCHDOG_DEBUG);
+    }
+
     // Validate callback is callable
     if (!is_callable($callback)) {
+        if (function_exists('watchdog')) {
+          watchdog('wp4bd_debug', 'Callback not callable: @callback', array('@callback' => is_string($callback) ? $callback : 'closure'), WATCHDOG_ERROR);
+        }
         return false;
     }
 
@@ -242,8 +249,19 @@ function do_action($hook, ...$args)
 
     // If no actions registered, exit
     if (!isset($wp_filter[$hook])) {
+        if (function_exists('watchdog') && $hook === 'wp_enqueue_scripts') {
+          watchdog('wp4bd_debug', 'No callbacks registered for hook: @hook', array('@hook' => $hook), WATCHDOG_DEBUG);
+        }
         array_pop($wp_current_filter);
         return;
+    }
+
+    if (function_exists('watchdog') && $hook === 'wp_enqueue_scripts') {
+      $callback_count = 0;
+      foreach ($wp_filter[$hook] as $priority => $callbacks) {
+        $callback_count += count($callbacks);
+      }
+      watchdog('wp4bd_debug', 'Found @count callbacks for wp_enqueue_scripts', array('@count' => $callback_count), WATCHDOG_DEBUG);
     }
 
     // Sort by priority (ascending)
@@ -259,6 +277,9 @@ function do_action($hook, ...$args)
             $callback_args = array_slice($args, 0, $accepted_args);
 
             // Call the callback (ignore return value for actions)
+            if (function_exists('watchdog')) {
+              watchdog('wp4bd_debug', 'Executing callback: @callback for hook @hook', array('@callback' => is_string($callback) ? $callback : 'closure', '@hook' => $hook), WATCHDOG_DEBUG);
+            }
             call_user_func_array($callback, $callback_args);
         }
     }
@@ -329,6 +350,12 @@ function wp_head()
 
     // Buffer output to capture meta tags, inline styles, etc.
     ob_start();
+
+    // Fire wp_enqueue_scripts before wp_head (WordPress standard)
+    if (function_exists('watchdog')) {
+      watchdog('wp4bd_debug', 'Firing wp_enqueue_scripts action', array(), WATCHDOG_DEBUG);
+    }
+    do_action('wp_enqueue_scripts');
 
     do_action('wp_head');
 
