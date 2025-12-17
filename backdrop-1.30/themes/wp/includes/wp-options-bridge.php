@@ -27,6 +27,25 @@
  *   The option value from Backdrop config, or $default if not found.
  */
 function get_option($option, $default = FALSE) {
+  // Special handling for theme mods
+  if (strpos($option, 'theme_mods_') === 0) {
+    // Theme mods are stored as 'theme_mods_{theme_name}'
+    $theme_name = substr($option, 11); // Remove 'theme_mods_' prefix
+
+    if ($theme_name) {
+      // Get all theme mods for this theme from Backdrop config
+      $config_name = 'wp.settings';
+      $theme_mods = config_get($config_name, 'theme_mods.' . $theme_name);
+
+      if (is_array($theme_mods)) {
+        return $theme_mods;
+      }
+    }
+
+    // Return default (empty array for theme mods)
+    return is_array($default) ? $default : array();
+  }
+
   // Special case: 'template' and 'stylesheet' should return WordPress theme name
   if ($option === 'template' || $option === 'stylesheet') {
     if (defined('WP2BD_ACTIVE_THEME')) {
@@ -131,8 +150,94 @@ function get_option($option, $default = FALSE) {
       return ($frontpage && $frontpage !== 'node') ? 'page' : 'posts';
   }
 
+  // Check for unmapped options stored in wp.settings with 'options.' prefix
+  $stored_value = config_get('wp.settings', 'options.' . $option);
+  if ($stored_value !== NULL) {
+    return $stored_value;
+  }
+
   // Option not found, return default
   return $default;
+}
+
+/**
+ * Update a WordPress option value in Backdrop configuration.
+ *
+ * This is the main update_option() function that WordPress themes call.
+ * Maps common WordPress option names to their Backdrop config equivalents.
+ *
+ * NOTE: This replaces WordPress's native update_option() from option.php
+ * because we don't want WordPress trying to query the database.
+ *
+ * @param string $option
+ *   WordPress option name (e.g., 'blogname', 'blogdescription').
+ * @param mixed $value
+ *   The value to store.
+ *
+ * @return bool
+ *   TRUE on success, FALSE on failure.
+ */
+function update_option($option, $value) {
+  // Special handling for theme mods
+  if (strpos($option, 'theme_mods_') === 0) {
+    // Theme mods are stored as 'theme_mods_{theme_name}'
+    // We store them in Backdrop theme settings
+    $theme_name = substr($option, 11); // Remove 'theme_mods_' prefix
+
+    if ($theme_name && is_array($value)) {
+      // Store each theme mod in Backdrop theme settings
+      $config_name = 'wp.settings';
+      foreach ($value as $mod_name => $mod_value) {
+        config_set($config_name, 'theme_mods.' . $theme_name . '.' . $mod_name, $mod_value);
+      }
+      return TRUE;
+    }
+  }
+
+  // Map WordPress option names to Backdrop config paths
+  $option_map = array(
+    // Site identity
+    'blogname' => array('config' => 'system.core', 'key' => 'site_name'),
+    'blogdescription' => array('config' => 'system.core', 'key' => 'site_slogan'),
+    'siteurl' => array('config' => 'system.core', 'key' => 'base_url'),
+    'home' => array('config' => 'system.core', 'key' => 'base_url'),
+
+    // Admin email
+    'admin_email' => array('config' => 'system.core', 'key' => 'site_mail'),
+
+    // Date and time
+    'date_format' => array('config' => 'system.date', 'key' => 'date_format_short'),
+    'time_format' => array('config' => 'system.date', 'key' => 'date_format_short'),
+
+    // Timezone
+    'timezone_string' => array('config' => 'system.date', 'key' => 'default_timezone'),
+
+    // Language
+    'WPLANG' => array('config' => 'system.core', 'key' => 'language_default'),
+
+    // Posts per page
+    'posts_per_page' => array('config' => 'system.core', 'key' => 'default_nodes_main'),
+
+    // Template and stylesheet - store in wp.settings
+    'template' => array('config' => 'wp.settings', 'key' => 'active_theme'),
+    'stylesheet' => array('config' => 'wp.settings', 'key' => 'active_theme'),
+  );
+
+  // Check if we have a mapping for this option
+  if (isset($option_map[$option])) {
+    $mapping = $option_map[$option];
+
+    // If it's a config mapping, set the value in Backdrop
+    if (isset($mapping['config']) && isset($mapping['key'])) {
+      config_set($mapping['config'], $mapping['key'], $value);
+      return TRUE;
+    }
+  }
+
+  // For unmapped options, we'll store them in wp.settings with an 'options.' prefix
+  // This allows WordPress themes to store custom options without breaking
+  config_set('wp.settings', 'options.' . $option, $value);
+  return TRUE;
 }
 
 /**

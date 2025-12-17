@@ -81,6 +81,11 @@ function wp4bd_bootstrap_wordpress() {
       define('WP_LANG_DIR', WP_CONTENT_DIR . '/languages');
     }
 
+    if (!defined('AUTOSAVE_INTERVAL')) {
+      // Autosave interval in seconds (WordPress default: 60)
+      define('AUTOSAVE_INTERVAL', 60);
+    }
+
     // Verify critical WordPress files exist
     $wp_includes_path = ABSPATH . WPINC;
     if (!is_dir($wp_includes_path)) {
@@ -106,6 +111,16 @@ function wp4bd_bootstrap_wordpress() {
     // Step 1: Set table prefix (WordPress expects this global)
     if (!isset($GLOBALS['table_prefix'])) {
       $GLOBALS['table_prefix'] = 'wp_';
+    }
+
+    // Set WordPress version global (themes check this)
+    if (!isset($GLOBALS['wp_version'])) {
+      $GLOBALS['wp_version'] = '4.9.0';
+    }
+
+    // Initialize shortcode_tags global (used by wptexturize)
+    if (!isset($GLOBALS['shortcode_tags'])) {
+      $GLOBALS['shortcode_tags'] = array();
     }
 
     // Step 2: Load db.php drop-in FIRST (Epic 3) - prevents WordPress database connection
@@ -162,6 +177,29 @@ function wp4bd_bootstrap_wordpress() {
       }
     }
 
+    if (!function_exists('get_current_blog_id')) {
+      /**
+       * Get current blog ID (multisite function).
+       * @return int Always 1 for single site
+       */
+      function get_current_blog_id() {
+        return 1;
+      }
+    }
+
+    if (!function_exists('get_site_option')) {
+      /**
+       * Get site option (multisite function).
+       * For single site, just use get_option.
+       * @param string $option Option name
+       * @param mixed $default Default value
+       * @return mixed Option value
+       */
+      function get_site_option($option, $default = FALSE) {
+        return get_option($option, $default);
+      }
+    }
+
     if (!function_exists('is_admin_bar_showing')) {
       /**
        * Check if WordPress admin bar should be shown.
@@ -182,18 +220,18 @@ function wp4bd_bootstrap_wordpress() {
       }
     }
 
-    // TODO: TEMPORARY - Theme functions not loading correctly
-    // This should be in theme's inc/template-functions.php
-    if (!function_exists('twentyseventeen_is_frontpage')) {
+    if (!function_exists('force_ssl_admin')) {
       /**
-       * Check if we're on the front page for Twenty Seventeen theme.
-       * @return bool
+       * Check if SSL should be forced for admin.
+       * @return bool False - we don't force SSL
        */
-      function twentyseventeen_is_frontpage() {
-        return (function_exists('is_front_page') && is_front_page() && !is_home());
+      function force_ssl_admin() {
+        return FALSE;
       }
     }
 
+    // TODO: TEMPORARY - Theme functions not loading correctly
+    // This should be in theme's inc/template-functions.php
     if (!function_exists('is_user_logged_in')) {
       /**
        * Check if current user is logged in.
@@ -247,6 +285,8 @@ function wp4bd_bootstrap_wordpress() {
     }
 
     // WordPress utility functions
+    // Note: Most utility functions now loaded from functions.php
+
     if (!function_exists('wp_parse_args')) {
       /**
        * Merge user defined arguments into defaults array.
@@ -281,41 +321,140 @@ function wp4bd_bootstrap_wordpress() {
       }
     }
 
+    if (!function_exists('wp_json_encode')) {
+      /**
+       * Encode data to JSON with WordPress-specific handling.
+       * @param mixed $data Data to encode
+       * @param int $options Optional json_encode options
+       * @param int $depth Optional maximum depth
+       * @return string|false JSON string or false on failure
+       */
+      function wp_json_encode($data, $options = 0, $depth = 512) {
+        return json_encode($data, $options, $depth);
+      }
+    }
+
+    if (!function_exists('add_query_arg')) {
+      /**
+       * Add or modify query string parameters in a URL.
+       * Simplified stub - supports common use cases.
+       * @param string|array $key Parameter name or array of parameters
+       * @param string $value Parameter value (if $key is string)
+       * @param string|bool $url URL to modify (FALSE = current URL)
+       * @return string Modified URL
+       */
+      function add_query_arg($key, $value = '', $url = FALSE) {
+        if (is_array($key)) {
+          // First arg is array of params, second arg is URL
+          $params = $key;
+          $url = ($value !== FALSE && $value !== '') ? $value : $_SERVER['REQUEST_URI'];
+        }
+        else {
+          // Standard: key, value, url
+          $params = array($key => $value);
+          if (func_num_args() > 2) {
+            $url = func_get_arg(2);
+          }
+          if ($url === FALSE || $url === '') {
+            $url = $_SERVER['REQUEST_URI'];
+          }
+        }
+
+        // Parse URL
+        $parsed = parse_url($url);
+        $query_string = isset($parsed['query']) ? $parsed['query'] : '';
+
+        // Parse existing query
+        parse_str($query_string, $existing);
+
+        // Merge parameters
+        $merged = array_merge($existing, $params);
+
+        // Build new query string
+        $new_query = http_build_query($merged);
+
+        // Rebuild URL
+        $result = '';
+        if (isset($parsed['scheme'])) {
+          $result .= $parsed['scheme'] . '://';
+        }
+        if (isset($parsed['host'])) {
+          $result .= $parsed['host'];
+        }
+        if (isset($parsed['port'])) {
+          $result .= ':' . $parsed['port'];
+        }
+        if (isset($parsed['path'])) {
+          $result .= $parsed['path'];
+        }
+        if ($new_query) {
+          $result .= '?' . $new_query;
+        }
+        if (isset($parsed['fragment'])) {
+          $result .= '#' . $parsed['fragment'];
+        }
+
+        return $result;
+      }
+    }
+
+    if (!function_exists('remove_query_arg')) {
+      /**
+       * Remove query string parameters from a URL.
+       * @param string|array $key Parameter name(s) to remove
+       * @param string|bool $url URL to modify (FALSE = current URL)
+       * @return string Modified URL
+       */
+      function remove_query_arg($key, $url = FALSE) {
+        if ($url === FALSE) {
+          $url = $_SERVER['REQUEST_URI'];
+        }
+
+        $keys = is_array($key) ? $key : array($key);
+
+        // Parse URL
+        $parsed = parse_url($url);
+        $query_string = isset($parsed['query']) ? $parsed['query'] : '';
+
+        // Parse existing query
+        parse_str($query_string, $existing);
+
+        // Remove specified keys
+        foreach ($keys as $k) {
+          unset($existing[$k]);
+        }
+
+        // Build new query string
+        $new_query = http_build_query($existing);
+
+        // Rebuild URL
+        $result = '';
+        if (isset($parsed['scheme'])) {
+          $result .= $parsed['scheme'] . '://';
+        }
+        if (isset($parsed['host'])) {
+          $result .= $parsed['host'];
+        }
+        if (isset($parsed['port'])) {
+          $result .= ':' . $parsed['port'];
+        }
+        if (isset($parsed['path'])) {
+          $result .= $parsed['path'];
+        }
+        if ($new_query) {
+          $result .= '?' . $new_query;
+        }
+        if (isset($parsed['fragment'])) {
+          $result .= '#' . $parsed['fragment'];
+        }
+
+        return $result;
+      }
+    }
+
     // Utility functions from functions.php (safe subset - no I/O)
     // Note: We do NOT load full functions.php as it contains dangerous I/O operations
     // (wp_remote_fopen, file operations, etc.) See DOCS/dec17-CLAUDE-FUNCTIONS-ANALYSIS.md
-
-    if (!function_exists('mysql2date')) {
-      /**
-       * Convert MySQL datetime to PHP date format.
-       * @param string $format PHP date format
-       * @param string $date MySQL datetime string
-       * @param bool $translate Whether to translate (use date_i18n)
-       * @return string|int|false Formatted date or false on error
-       */
-      function mysql2date($format, $date, $translate = TRUE) {
-        if (empty($date)) {
-          return FALSE;
-        }
-
-        if ('G' == $format) {
-          return strtotime($date . ' +0000');
-        }
-
-        $i = strtotime($date);
-
-        if ('U' == $format) {
-          return $i;
-        }
-
-        if ($translate && function_exists('date_i18n')) {
-          return date_i18n($format, $i);
-        }
-        else {
-          return date($format, $i);
-        }
-      }
-    }
 
     if (!function_exists('_cleanup_header_comment')) {
       /**
@@ -347,6 +486,266 @@ function wp4bd_bootstrap_wordpress() {
         }
 
         return $protocols;
+      }
+    }
+
+    if (!function_exists('wp_guess_url')) {
+      /**
+       * Guess the site URL (used by script-loader).
+       * @return string Site URL
+       */
+      function wp_guess_url() {
+        // We know the site URL - it's the Backdrop site URL
+        return url('', array('absolute' => TRUE));
+      }
+    }
+
+    if (!function_exists('_wp_translate_php_url_constant_to_key')) {
+      /**
+       * Translate PHP_URL_* constant to array key name.
+       * @param int $constant PHP_URL_* constant
+       * @return string|false Key name or false
+       */
+      function _wp_translate_php_url_constant_to_key($constant) {
+        $translation = array(
+          PHP_URL_SCHEME   => 'scheme',
+          PHP_URL_HOST     => 'host',
+          PHP_URL_PORT     => 'port',
+          PHP_URL_USER     => 'user',
+          PHP_URL_PASS     => 'pass',
+          PHP_URL_PATH     => 'path',
+          PHP_URL_QUERY    => 'query',
+          PHP_URL_FRAGMENT => 'fragment',
+        );
+
+        return isset($translation[$constant]) ? $translation[$constant] : FALSE;
+      }
+    }
+
+    if (!function_exists('_get_component_from_parsed_url_array')) {
+      /**
+       * Get specific component from parsed URL array.
+       * @param array $url_parts Parsed URL array
+       * @param int $component Component to retrieve
+       * @return mixed Component value or array
+       */
+      function _get_component_from_parsed_url_array($url_parts, $component = -1) {
+        if (-1 === $component) {
+          return $url_parts;
+        }
+
+        $key = _wp_translate_php_url_constant_to_key($component);
+        if (FALSE !== $key && is_array($url_parts) && isset($url_parts[$key])) {
+          return $url_parts[$key];
+        }
+        else {
+          return NULL;
+        }
+      }
+    }
+
+    if (!function_exists('wp_parse_url')) {
+      /**
+       * Parse URL with support for schemeless URLs.
+       * @param string $url URL to parse
+       * @param int $component Optional component to retrieve
+       * @return mixed Parsed URL array or component
+       */
+      function wp_parse_url($url, $component = -1) {
+        $to_unset = array();
+        $url = strval($url);
+
+        if ('//' === substr($url, 0, 2)) {
+          $to_unset[] = 'scheme';
+          $url = 'placeholder:' . $url;
+        }
+        elseif ('/' === substr($url, 0, 1)) {
+          $to_unset[] = 'scheme';
+          $to_unset[] = 'host';
+          $url = 'placeholder://placeholder' . $url;
+        }
+
+        $parts = @parse_url($url);
+
+        if (FALSE === $parts) {
+          return $parts;
+        }
+
+        // Remove placeholder values
+        foreach ($to_unset as $key) {
+          unset($parts[$key]);
+        }
+
+        return _get_component_from_parsed_url_array($parts, $component);
+      }
+    }
+
+    if (!function_exists('mbstring_binary_safe_encoding')) {
+      /**
+       * Set mbstring encoding to binary-safe for WordPress operations.
+       * @param bool $reset Whether to reset encoding
+       */
+      function mbstring_binary_safe_encoding($reset = FALSE) {
+        // No-op for now - we assume binary-safe encoding
+      }
+    }
+
+    if (!function_exists('reset_mbstring_encoding')) {
+      /**
+       * Reset mbstring encoding after binary-safe operations.
+       */
+      function reset_mbstring_encoding() {
+        // No-op for now
+      }
+    }
+
+    if (!function_exists('wp_load_alloptions')) {
+      /**
+       * Load all WordPress options (autoload options from database).
+       * In our bridge, we return empty array since we use get_option() bridge.
+       * @return array Empty array (options accessed via get_option bridge)
+       */
+      function wp_load_alloptions() {
+        // Return empty array - all options accessed through get_option() bridge
+        return array();
+      }
+    }
+
+    if (!function_exists('current_user_can')) {
+      /**
+       * Check if current user has a capability.
+       * For read-only display, we return FALSE (no permissions).
+       * @param string $capability Capability to check
+       * @return bool Always FALSE (no permissions for read-only display)
+       */
+      function current_user_can($capability) {
+        // For read-only display, user has no edit capabilities
+        return FALSE;
+      }
+    }
+
+    if (!function_exists('get_transient')) {
+      /**
+       * Get the value of a transient (temporary cached data).
+       * For now, always return FALSE (no cache).
+       * @param string $transient Transient name
+       * @return mixed FALSE (no cached value)
+       */
+      function get_transient($transient) {
+        // No caching for now - always return FALSE
+        return FALSE;
+      }
+    }
+
+    if (!function_exists('set_transient')) {
+      /**
+       * Set/update the value of a transient.
+       * For now, this is a no-op.
+       * @param string $transient Transient name
+       * @param mixed $value Transient value
+       * @param int $expiration Time until expiration in seconds
+       * @return bool TRUE on success
+       */
+      function set_transient($transient, $value, $expiration = 0) {
+        // No caching for now - no-op
+        return TRUE;
+      }
+    }
+
+    if (!function_exists('delete_transient')) {
+      /**
+       * Delete a transient.
+       * For now, this is a no-op.
+       * @param string $transient Transient name
+       * @return bool TRUE on success
+       */
+      function delete_transient($transient) {
+        // No caching for now - no-op
+        return TRUE;
+      }
+    }
+
+    if (!function_exists('is_active_sidebar')) {
+      /**
+       * Check if a sidebar has widgets.
+       * For now, always return FALSE (no widgets).
+       * @param string|int $index Sidebar index/name/ID
+       * @return bool FALSE (no active widgets)
+       */
+      function is_active_sidebar($index) {
+        // No widgets for now
+        return FALSE;
+      }
+    }
+
+    if (!function_exists('comments_open')) {
+      /**
+       * Check if comments are open for a post.
+       * For read-only display, always return FALSE.
+       * @param int|WP_Post $post_id Post ID or object
+       * @return bool FALSE (comments closed for read-only)
+       */
+      function comments_open($post_id = NULL) {
+        // Comments closed for read-only display
+        return FALSE;
+      }
+    }
+
+    if (!function_exists('pings_open')) {
+      /**
+       * Check if pings/trackbacks are open for a post.
+       * For read-only display, always return FALSE.
+       * @param int|WP_Post $post_id Post ID or object
+       * @return bool FALSE (pings closed for read-only)
+       */
+      function pings_open($post_id = NULL) {
+        // Pings closed for read-only display
+        return FALSE;
+      }
+    }
+
+    if (!function_exists('get_metadata')) {
+      /**
+       * Retrieve metadata for an object.
+       * Stub for now - returns FALSE (no metadata).
+       * TODO: Bridge to Backdrop's field system
+       * @param string $meta_type Type of object metadata is for (post, comment, user)
+       * @param int $object_id ID of the object metadata is for
+       * @param string $meta_key Optional. Metadata key
+       * @param bool $single Optional. Return single value
+       * @return mixed FALSE for now (no metadata)
+       */
+      function get_metadata($meta_type, $object_id, $meta_key = '', $single = FALSE) {
+        // Stub: return FALSE (no metadata)
+        // TODO: Bridge to Backdrop fields when needed
+        return FALSE;
+      }
+    }
+
+    if (!function_exists('has_post_thumbnail')) {
+      /**
+       * Check if post has a featured image (post thumbnail).
+       * For now, return FALSE (no thumbnails).
+       * TODO: Bridge to Backdrop image fields
+       * @param int|WP_Post $post Optional. Post ID or object
+       * @return bool FALSE (no featured images for now)
+       */
+      function has_post_thumbnail($post = NULL) {
+        // Stub: no featured images for now
+        return FALSE;
+      }
+    }
+
+    if (!function_exists('get_post_thumbnail_id')) {
+      /**
+       * Get the ID of the post thumbnail (featured image).
+       * For now, return FALSE (no thumbnails).
+       * @param int|WP_Post $post Optional. Post ID or object
+       * @return int|false FALSE (no thumbnails)
+       */
+      function get_post_thumbnail_id($post = NULL) {
+        // Stub: no featured images for now
+        return FALSE;
       }
     }
 
@@ -471,6 +870,8 @@ function wp4bd_bootstrap_wordpress() {
     require_once ABSPATH . WPINC . '/class-wp-user.php';
     require_once ABSPATH . WPINC . '/class-wp-theme.php';  // Note: reads local template files
 
+    // Note: script/style classes loaded by script-loader.php below
+
     // Load plugin system (needed for hooks)
     require_once ABSPATH . WPINC . '/plugin.php';
 
@@ -505,6 +906,27 @@ function wp4bd_bootstrap_wordpress() {
     // Load internationalization
     require_once ABSPATH . WPINC . '/pomo/translations.php';
     require_once ABSPATH . WPINC . '/l10n.php';
+
+    // Load script and style enqueue system
+    // Note: script-loader.php loads functions.wp-styles.php and functions.wp-scripts.php
+    require_once ABSPATH . WPINC . '/script-loader.php';  // wp_enqueue_scripts(), wp_print_styles(), etc.
+
+    // Load default WordPress hooks/filters (sets up wp_head hooks for enqueueing)
+    require_once ABSPATH . WPINC . '/default-filters.php';
+
+    // Remove hooks for WordPress features we don't need in read-only display
+    // These would cause errors since we don't load their supporting files
+    // NOTE: This is intentional - we're removing admin/API features we don't want
+    // Priorities must match those in default-filters.php
+    remove_action('wp_head', 'wp_post_preview_js', 1);           // Admin preview (priority 1)
+    remove_action('wp_head', 'rest_output_link_wp_head', 10);     // REST API discovery (priority 10)
+    remove_action('wp_head', 'wp_oembed_add_discovery_links', 10); // oEmbed discovery (priority 10)
+    remove_action('wp_head', 'wp_oembed_add_host_js', 10);        // oEmbed JavaScript (priority 10)
+    remove_action('wp_footer', 'wp_admin_bar_render', 1000);      // Admin toolbar
+    remove_action('wp_head', 'wp_generator', 10);                 // WordPress version meta tag (security)
+
+    // DO NOT load functions.php - it conflicts with our stubs
+    // require_once ABSPATH . WPINC . '/functions.php';
 
     // DO NOT load WordPress's option.php - we provide our own get_option() via wp-options-bridge.php
     // require_once ABSPATH . WPINC . '/option.php';

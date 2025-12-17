@@ -31,7 +31,7 @@ if (!defined('WP2BD_ACTIVE_THEME')) {
 // Define theme paths
 if (!defined('WP2BD_THEME_DIR')) {
   define('WP2BD_THEME_DIR', __DIR__);
-  define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wp-content/themes');
+  define('WP2BD_WP_THEMES_DIR', WP2BD_THEME_DIR . '/wpbrain/wp-content/themes');
   define('WP2BD_ACTIVE_THEME_DIR', WP2BD_WP_THEMES_DIR . '/' . WP2BD_ACTIVE_THEME);
 }
 
@@ -73,6 +73,23 @@ if (file_exists($theme_functions)) {
   require_once $theme_functions;
 }
 
+// Manually load theme's include files in case functions.php didn't load them
+// (Twenty Seventeen includes these at the end of functions.php)
+$theme_includes = array(
+  '/inc/custom-header.php',
+  '/inc/template-tags.php',
+  '/inc/template-functions.php',
+  '/inc/customizer.php',
+  '/inc/icon-functions.php',
+);
+
+foreach ($theme_includes as $inc_file) {
+  $inc_path = WP2BD_ACTIVE_THEME_DIR . $inc_file;
+  if (file_exists($inc_path)) {
+    require_once $inc_path;
+  }
+}
+
 // ============================================================================
 // Theme Preprocessing Functions (Backdrop theme layer)
 // ============================================================================
@@ -86,5 +103,12 @@ function wp_preprocess_page(&$variables) {
   // Make node available if viewing a node
   if (!empty($variables['node'])) {
     $variables['wp_node'] = $variables['node'];
+  }
+  // If node not in variables, check if we're on a node page
+  elseif (arg(0) == 'node' && is_numeric(arg(1))) {
+    $node = node_load(arg(1));
+    if ($node) {
+      $variables['wp_node'] = $node;
+    }
   }
 }
