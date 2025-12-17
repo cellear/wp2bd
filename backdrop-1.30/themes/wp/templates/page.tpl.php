@@ -189,8 +189,8 @@ if (!empty($wp_posts)) {
   ?>
 
   <!-- Backdrop Assets -->
-  <?php print $styles; ?>
-  <?php print $scripts; ?>
+  <?php if (isset($styles)) print $styles; ?>
+  <?php if (isset($scripts)) print $scripts; ?>
 
   <style>
     /* Basic styling if theme doesn't load */

@@ -87,16 +87,19 @@ function wp4bd_bootstrap_wordpress() {
     }
 
     // Step 2: Load db.php drop-in FIRST (Epic 3) - prevents WordPress database connection
-    $db_dropin = WP_CONTENT_DIR . '/db.php';
-    if (file_exists($db_dropin)) {
-      require_once $db_dropin;
+    // IMPORTANT: Check the ACTUAL path where db.php should be, not just WP_CONTENT_DIR
+    // because WP_CONTENT_DIR might have been defined elsewhere with a different value
+    $expected_db_dropin = $wpbrain_path . '/wp-content/db.php';
+
+    if (file_exists($expected_db_dropin)) {
+      require_once $expected_db_dropin;
       // Verify wpdb class is now loaded from our drop-in
       if (!class_exists('wpdb')) {
         $errors[] = 'db.php drop-in loaded but wpdb class not found';
         return FALSE;
       }
     } else {
-      $errors[] = 'db.php drop-in not found - WordPress would try to connect to database!';
+      $errors[] = "db.php drop-in not found at: {$expected_db_dropin} - WordPress would try to connect to database!";
       return FALSE;
     }
 
