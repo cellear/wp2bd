@@ -61,32 +61,73 @@
     <?php print backdrop_get_css(); ?>
     <?php print backdrop_get_js(); ?>
   </head>
-  <body <?php if (function_exists('body_class')) { body_class(); } else { echo 'class="' . implode(' ', $classes) . '"'; } ?><?php print backdrop_attributes($body_attributes); ?>>
+  <body <?php
+    // Build body classes
+    $body_classes = array();
+    if (function_exists('get_body_class')) {
+      $body_classes = get_body_class();
+    } elseif (isset($classes) && is_array($classes)) {
+      $body_classes = $classes;
+    }
+
+    // Add has-sidebar class if sidebar should be shown
+    if ($show_sidebar) {
+      $body_classes[] = 'has-sidebar';
+    }
+
+    echo 'class="' . implode(' ', $body_classes) . '"';
+  ?><?php print backdrop_attributes($body_attributes); ?>>
     <?php
     // Check if WordPress theme has template parts
     $has_wordpress_header = function_exists('get_header') && !empty(locate_template('header.php'));
     $has_wordpress_sidebar = function_exists('get_sidebar') && !empty(locate_template('sidebar.php'));
     $has_wordpress_footer = function_exists('get_footer') && !empty(locate_template('footer.php'));
 
+    // Check if sidebar should be shown (has widgets)
+    $show_sidebar = $has_wordpress_sidebar && function_exists('is_active_sidebar') && is_active_sidebar('sidebar-1');
+
 
     /* Use WordPress template parts when available for proper theme integration */
     if ($has_wordpress_header) {
       get_header();
-    }
-
-    // If $page is a string (rendered content), use it; otherwise render WordPress content
-    if (isset($page) && is_string($page)) {
-      print $page;
     } else {
-      print wp_render_wordpress_content();
+      // Fallback header
+      echo '<header id="masthead" class="site-header" role="banner"><div class="site-branding"><h1 class="site-title">WordPress Site</h1></div></header>';
     }
+    ?>
 
-    if ($has_wordpress_sidebar) {
-      get_sidebar();
-    }
+    <div class="site-content-contain">
+      <div id="content" class="site-content">
 
+        <div class="wrap">
+          <div id="primary" class="content-area" role="main">
+            <?php
+            // If $page is a string (rendered content), use it; otherwise render WordPress content
+            if (isset($page) && is_string($page)) {
+              print $page;
+            } else {
+              print wp_render_wordpress_content();
+            }
+            ?>
+          </div><!-- #primary -->
+
+          <?php if ($show_sidebar && !isset($GLOBALS['wp2bd_sidebar_rendered'])): ?>
+            <aside id="secondary" class="widget-area" role="complementary" aria-label="Blog Sidebar">
+              <?php get_sidebar(); ?>
+            </aside><!-- #secondary -->
+          <?php endif; ?>
+
+        </div><!-- .wrap -->
+
+      </div><!-- #content -->
+    </div><!-- .site-content-contain -->
+
+    <?php
     if ($has_wordpress_footer) {
       get_footer();
+    } else {
+      // Fallback footer
+      echo '<footer id="colophon" class="site-footer" role="contentinfo"><div class="site-info">Powered by WordPress</div></footer>';
     }
 
     // Render page bottom (includes admin bar for users with permissions)

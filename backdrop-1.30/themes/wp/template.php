@@ -79,7 +79,16 @@ function wp_render_home_page_posts() {
         </header>
 
         <div class="entry-content">
-          <?php the_content(); ?>
+          <?php
+          $content = get_the_content();
+          // Convert data-align attributes to WordPress alignment classes
+          $content = preg_replace('/<img([^>]+)data-align="([^"]+)"/', '<img$1class="align$2"', $content);
+          // Convert Backdrop alignment classes to WordPress format
+          $content = preg_replace('/class="([^"]*\b)right(\b[^"]*)"/', 'class="$1alignright$2"', $content);
+          $content = preg_replace('/class="([^"]*\b)left(\b[^"]*)"/', 'class="$1alignleft$2"', $content);
+          $content = preg_replace('/class="([^"]*\b)center(\b[^"]*)"/', 'class="$1aligncenter$2"', $content);
+          echo apply_filters('the_content', $content);
+          ?>
         </div>
       </article>
       <?php
