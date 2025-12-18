@@ -22,7 +22,9 @@ $wordpress_ready = (
   function_exists('the_post') &&
   class_exists('WP_Post') &&
   class_exists('WP_Query') &&
-  function_exists('wp4bd_node_to_post')
+  function_exists('wp4bd_node_to_post') &&
+  function_exists('add_action') &&  // Hook system must be loaded
+  function_exists('add_filter')
 );
 
 if (!$wordpress_ready) {

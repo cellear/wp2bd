@@ -65,30 +65,10 @@ if (file_exists($bootstrap_file)) {
 // ============================================================================
 // STEP 3: Load WordPress Theme's functions.php
 // ============================================================================
-
-// Load the active WordPress theme's functions.php
-// This is where the theme registers its hooks, enqueues scripts, etc.
-$theme_functions = WP2BD_ACTIVE_THEME_DIR . '/functions.php';
-if (file_exists($theme_functions)) {
-  require_once $theme_functions;
-}
-
-// Manually load theme's include files in case functions.php didn't load them
-// (Twenty Seventeen includes these at the end of functions.php)
-$theme_includes = array(
-  '/inc/custom-header.php',
-  '/inc/template-tags.php',
-  '/inc/template-functions.php',
-  '/inc/customizer.php',
-  '/inc/icon-functions.php',
-);
-
-foreach ($theme_includes as $inc_file) {
-  $inc_path = WP2BD_ACTIVE_THEME_DIR . $inc_file;
-  if (file_exists($inc_path)) {
-    require_once $inc_path;
-  }
-}
+// NOTE: Functions.php loading moved to wp-rendering-logic.inc
+// This prevents errors during cache clear and non-page requests where
+// WordPress isn't bootstrapped. The theme's functions.php will be loaded
+// when the page is actually rendered, after WordPress bootstrap completes.
 
 // ============================================================================
 // Theme Preprocessing Functions (Backdrop theme layer)
