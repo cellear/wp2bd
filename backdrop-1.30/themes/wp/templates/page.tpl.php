@@ -21,13 +21,14 @@
         do_action('wp_enqueue_scripts');
       }
 
-      // Also manually call twentyseventeen_scripts if it exists
-      if (function_exists('twentyseventeen_scripts')) {
-        print "<!-- Calling twentyseventeen_scripts -->\n";
-        twentyseventeen_scripts();
-        print "<!-- twentyseventeen_scripts completed -->\n";
+      // Call the active theme's scripts function
+      $theme_scripts_function = str_replace('-', '', WP2BD_ACTIVE_THEME) . '_scripts';
+      if (function_exists($theme_scripts_function)) {
+        print "<!-- Calling $theme_scripts_function -->\n";
+        call_user_func($theme_scripts_function);
+        print "<!-- $theme_scripts_function completed -->\n";
       } else {
-        print "<!-- twentyseventeen_scripts function not found -->\n";
+        print "<!-- $theme_scripts_function function not found -->\n";
       }
 
       // Print WordPress styles directly as link tags
@@ -67,42 +68,25 @@
     $has_wordpress_sidebar = function_exists('get_sidebar') && !empty(locate_template('sidebar.php'));
     $has_wordpress_footer = function_exists('get_footer') && !empty(locate_template('footer.php'));
 
-    // Use WordPress template parts if available
+
+    /* Use WordPress template parts when available for proper theme integration */
     if ($has_wordpress_header) {
-      // Include WordPress header
       get_header();
+    }
+
+    // If $page is a string (rendered content), use it; otherwise render WordPress content
+    if (isset($page) && is_string($page)) {
+      print $page;
     } else {
-      // Fallback wrapper
-    ?>
-    <div class="page-wrapper">
-    <?php } ?>
+      print wp_render_wordpress_content();
+    }
 
-      <div class="main-wrapper">
-        <div id="content" class="content" role="main">
-          <?php
-          // If $page is a string (rendered content), use it; otherwise render WordPress content
-          if (isset($page) && is_string($page)) {
-            print $page;
-          } else {
-            print wp_render_wordpress_content();
-          }
-          ?>
-        </div>
+    if ($has_wordpress_sidebar) {
+      get_sidebar();
+    }
 
-        <?php if ($has_wordpress_sidebar): ?>
-          <?php get_sidebar(); ?>
-        <?php endif; ?>
-      </div>
-
-    <?php
     if ($has_wordpress_footer) {
-      // Include WordPress footer
       get_footer();
-    } else {
-      // Close wrapper if we opened it
-    ?>
-    </div>
-    <?php
     }
 
     // Render page bottom (includes admin bar for users with permissions)
@@ -110,16 +94,35 @@
       print $page_bottom;
     }
 
-    // Output Twenty Seventeen localized data
-    // This provides the twentyseventeenScreenReaderText variable that global.js needs
-    $twentyseventeen_data = array(
-      'quote' => '<svg class="icon icon-quote-right" aria-hidden="true" role="img"> <use href="#icon-quote-right" xlink:href="#icon-quote-right"></use> </svg>'
-    );
-    echo "<script type='text/javascript'>\n";
-    echo "/* <![CDATA[ */\n";
-    echo "var twentyseventeenScreenReaderText = " . json_encode($twentyseventeen_data) . ";\n";
-    echo "/* ]]> */\n";
-    echo "</script>\n";
+    // Output theme-specific localized data
+    // This provides the JavaScript variables that theme scripts need
+    $theme_data = array();
+    $theme_var_name = '';
+
+    switch (WP2BD_ACTIVE_THEME) {
+      case 'twentyseventeen':
+        $theme_var_name = 'twentyseventeenScreenReaderText';
+        $theme_data = array(
+          'quote' => '<svg class="icon icon-quote-right" aria-hidden="true" role="img"> <use href="#icon-quote-right" xlink:href="#icon-quote-right"></use> </svg>'
+        );
+        break;
+      case 'twentysixteen':
+        $theme_var_name = 'screenReaderText';
+        $theme_data = array(
+          'expand' => 'expand child menu',
+          'collapse' => 'collapse child menu',
+        );
+        break;
+      // Add other themes as needed
+    }
+
+    if (!empty($theme_var_name) && !empty($theme_data)) {
+      echo "<script type='text/javascript'>\n";
+      echo "/* <![CDATA[ */\n";
+      echo "var $theme_var_name = " . json_encode($theme_data) . ";\n";
+      echo "/* ]]> */\n";
+      echo "</script>\n";
+    }
 
     // Output WordPress footer scripts
     if (function_exists('wp_print_scripts')) {

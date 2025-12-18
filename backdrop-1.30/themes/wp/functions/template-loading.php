@@ -112,13 +112,12 @@ function get_header($name = null) {
                     require $template_file;
                     $header_content = ob_get_clean();
 
-                    // Remove HTML structure tags that conflict with Backdrop's page template
-                    // This is a simple approach - we remove common HTML structure elements
+                    // Remove HTML document structure that conflicts with Backdrop's page template
+                    // Remove DOCTYPE, html, head, and body tags, but keep the content inside
                     $header_content = preg_replace('#<!DOCTYPE[^>]*>#i', '', $header_content);
-                    $header_content = preg_replace('#<html[^>]*>.*?</html>#is', '', $header_content);
+                    $header_content = preg_replace('#<html[^>]*>(.*)</html>#is', '$1', $header_content);
                     $header_content = preg_replace('#<head[^>]*>.*?</head>#is', '', $header_content);
-                    $header_content = preg_replace('#<body[^>]*>#i', '', $header_content);
-                    $header_content = preg_replace('#</body>#i', '', $header_content);
+                    $header_content = preg_replace('#<body[^>]*>(.*)</body>#is', '$1', $header_content);
 
                     echo $header_content;
                 } else {
@@ -199,13 +198,11 @@ function get_footer($name = null) {
                     require $template_file;
                     $footer_content = ob_get_clean();
 
-                    // Remove HTML structure tags that conflict with Backdrop's page template
-                    // This is a simple approach - we remove common HTML structure elements
+                    // Remove HTML document structure that conflicts with Backdrop's page template
                     $footer_content = preg_replace('#<!DOCTYPE[^>]*>#i', '', $footer_content);
-                    $footer_content = preg_replace('#<html[^>]*>.*?</html>#is', '', $footer_content);
+                    $footer_content = preg_replace('#<html[^>]*>(.*)</html>#is', '$1', $footer_content);
                     $footer_content = preg_replace('#<head[^>]*>.*?</head>#is', '', $footer_content);
-                    $footer_content = preg_replace('#<body[^>]*>#i', '', $footer_content);
-                    $footer_content = preg_replace('#</body>#i', '', $footer_content);
+                    $footer_content = preg_replace('#<body[^>]*>(.*)</body>#is', '$1', $footer_content);
 
                     echo $footer_content;
                 } else {
@@ -263,13 +260,11 @@ function get_sidebar($name = null) {
                     require $template_file;
                     $sidebar_content = ob_get_clean();
 
-                    // Remove HTML structure tags that conflict with Backdrop's page template
-                    // This is a simple approach - we remove common HTML structure elements
+                    // Remove HTML document structure that conflicts with Backdrop's page template
                     $sidebar_content = preg_replace('#<!DOCTYPE[^>]*>#i', '', $sidebar_content);
-                    $sidebar_content = preg_replace('#<html[^>]*>.*?</html>#is', '', $sidebar_content);
+                    $sidebar_content = preg_replace('#<html[^>]*>(.*)</html>#is', '$1', $sidebar_content);
                     $sidebar_content = preg_replace('#<head[^>]*>.*?</head>#is', '', $sidebar_content);
-                    $sidebar_content = preg_replace('#<body[^>]*>#i', '', $sidebar_content);
-                    $sidebar_content = preg_replace('#</body>#i', '', $sidebar_content);
+                    $sidebar_content = preg_replace('#<body[^>]*>(.*)</body>#is', '$1', $sidebar_content);
 
                     echo $sidebar_content;
                 } else {

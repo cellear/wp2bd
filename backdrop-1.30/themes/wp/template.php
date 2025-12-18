@@ -185,16 +185,19 @@ if (isset($_GET['wp_theme']) && !empty($_GET['wp_theme'])) {
   }
 }
 
-// Set final theme constants (will be redefined below with correct path)
-define('WP2BD_ACTIVE_THEME', $active_theme);
-
 // Define theme directory constants early
 // WordPress themes are in wpbrain/wp-content/themes/
 $wp_themes_dir = __DIR__ . '/wpbrain/wp-content/themes';
 $active_theme_dir = $wp_themes_dir . '/' . $active_theme;
-define('WP2BD_WP_THEMES_DIR', $wp_themes_dir);
-define('WP2BD_ACTIVE_THEME', $active_theme);
-define('WP2BD_ACTIVE_THEME_DIR', $active_theme_dir);
+if (!defined('WP2BD_WP_THEMES_DIR')) {
+  define('WP2BD_WP_THEMES_DIR', $wp_themes_dir);
+}
+if (!defined('WP2BD_ACTIVE_THEME')) {
+  define('WP2BD_ACTIVE_THEME', $active_theme);
+}
+if (!defined('WP2BD_ACTIVE_THEME_DIR')) {
+  define('WP2BD_ACTIVE_THEME_DIR', $active_theme_dir);
+}
 
 // Load the theme's functions.php
 $functions_file = __DIR__ . '/wpbrain/wp-content/themes/' . $active_theme . '/functions.php';
