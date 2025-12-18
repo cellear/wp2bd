@@ -140,6 +140,10 @@ if (!function_exists('wp_enqueue_style')) {
             if ($media !== 'all') {
                 $options['media'] = $media;
             }
+            // If src is a full URL (starts with http:// or https://), mark as external
+            if (preg_match('#^https?://#', $src)) {
+                $options['type'] = 'external';
+            }
             backdrop_add_css($src, $options);
         }
     }

@@ -618,12 +618,36 @@ function get_the_excerpt($post = null)
   // Maps WordPress $post->post_excerpt to Backdrop $node->body['summary']
   $excerpt = '';
 
-  if (isset($post->post_excerpt)) {
-    // WordPress-style post object
+  if (isset($post->post_excerpt) && !empty($post->post_excerpt)) {
+    // WordPress-style post object with explicit excerpt
     $excerpt = $post->post_excerpt;
-  } elseif (isset($post->body) && is_array($post->body) && isset($post->body['summary'])) {
+  } elseif (isset($post->body) && is_array($post->body) && isset($post->body['summary']) && !empty($post->body['summary'])) {
     // Backdrop-style node object with body summary
     $excerpt = $post->body['summary'];
+  }
+
+  // If no excerpt exists, auto-generate from content (WordPress behavior)
+  if (empty($excerpt)) {
+    $content = '';
+    if (isset($post->post_content)) {
+      $content = $post->post_content;
+    } elseif (isset($post->body)) {
+      if (is_string($post->body)) {
+        $content = $post->body;
+      } elseif (is_array($post->body) && isset($post->body['und'][0]['value'])) {
+        $content = $post->body['und'][0]['value'];
+      }
+    }
+
+    if (!empty($content)) {
+      // Strip HTML tags and get first 55 words (WordPress default)
+      $content = strip_tags($content);
+      $words = explode(' ', $content);
+      $excerpt = implode(' ', array_slice($words, 0, 55));
+      if (count($words) > 55) {
+        $excerpt .= '...';
+      }
+    }
   }
 
   // Apply 'get_the_excerpt' filter
