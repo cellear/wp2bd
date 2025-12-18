@@ -79,7 +79,7 @@ function wp_render_home_page_posts() {
         </header>
 
         <div class="entry-content">
-          <?php the_excerpt(); ?>
+          <?php the_content(); ?>
         </div>
       </article>
       <?php
