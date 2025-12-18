@@ -40,10 +40,12 @@ if (!$wordpress_ready) {
 
 global $wp_query, $post;
 
-// Debug mode - set to TRUE to see data flow
-$debug_mode = TRUE;
+// Debug mode - only enable if ?DEBUG parameter is present in URL
+$debug_mode = isset($_GET['DEBUG']);
 $debug_info = array();
-$debug_info['test'] = 'Debug system is active';
+if ($debug_mode) {
+  $debug_info['test'] = 'Debug system is active';
+}
 
 // Collect debug info about Backdrop data
 if ($debug_mode) {
