@@ -55,6 +55,13 @@ function get_option($option, $default = FALSE) {
     $config_theme = config_get('wp_content.settings', 'active_theme');
     return $config_theme ? $config_theme : 'twentyseventeen';
   }
+
+  // Special case: 'siteurl' should point to where WordPress files are located
+  if ($option === 'siteurl') {
+    $base_url = config_get('system.core', 'base_url');
+    // WordPress files are in /themes/wp/wpbrain/
+    return $base_url . '/themes/wp/wpbrain';
+  }
   // Map WordPress option names to Backdrop config paths
   $option_map = array(
     // Site identity
