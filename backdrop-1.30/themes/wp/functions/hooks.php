@@ -254,20 +254,22 @@ function do_action($hook, ...$args)
     // Track current action for nested calls
     $GLOBALS['wp_current_filter'][] = $hook;
 
-    // Sort by priority (ascending)
-    ksort($GLOBALS['wp_filter'][$hook]);
+    // Sort by priority (ascending) and execute callbacks
+    if (isset($GLOBALS['wp_filter'][$hook]) && is_array($GLOBALS['wp_filter'][$hook])) {
+        ksort($GLOBALS['wp_filter'][$hook]);
 
-    // Execute each callback at each priority level
-    foreach ($GLOBALS['wp_filter'][$hook] as $priority => $callbacks) {
-        foreach ($callbacks as $callback_id => $callback_data) {
-            $callback = $callback_data['function'];
-            $accepted_args = $callback_data['accepted_args'];
+        // Execute each callback at each priority level
+        foreach ($GLOBALS['wp_filter'][$hook] as $priority => $callbacks) {
+            foreach ($callbacks as $callback_id => $callback_data) {
+                $callback = $callback_data['function'];
+                $accepted_args = $callback_data['accepted_args'];
 
-            // Slice arguments based on accepted_args
-            $callback_args = array_slice($args, 0, $accepted_args);
+                // Slice arguments based on accepted_args
+                $callback_args = array_slice($args, 0, $accepted_args);
 
-            // Call the callback (ignore return value for actions)
-            call_user_func_array($callback, $callback_args);
+                // Call the callback (ignore return value for actions)
+                call_user_func_array($callback, $callback_args);
+            }
         }
     }
 

@@ -10,134 +10,6 @@
 // Debug: Template loaded
 echo '<!-- Template.php loaded -->';
 
-function wp_render_wordpress_content() {
-  // Get current Backdrop node
-  $node = menu_get_object();
-
-  // For home page, show multiple posts
-  if (!$node && backdrop_is_front_page()) {
-    return wp_render_home_page_posts();
-  }
-
-  // For single post pages
-  if ($node) {
-    return wp_render_single_post($node);
-  }
-
-  return '<div class="no-content"><p>No content available for this page.</p></div>';
-}
-
-function wp_render_home_page_posts() {
-  // Load multiple published nodes for the home page
-  $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'node')
-        ->propertyCondition('status', 1) // Published
-        ->propertyOrderBy('created', 'DESC')
-        ->range(0, 10); // Show up to 10 posts
-  $result = $query->execute();
-
-  if (empty($result['node'])) {
-    return '<div class="no-content"><p>No posts available.</p></div>';
-  }
-
-  $nids = array_keys($result['node']);
-  $nodes = node_load_multiple($nids);
-
-  // Set up WordPress query for home page
-  global $wp_query, $post;
-  $wp_posts = array();
-
-  foreach ($nodes as $node) {
-    $wp_posts[] = WP_Post::from_node($node);
-  }
-
-  $wp_query = new WP_Query();
-  $wp_query->posts = $wp_posts;
-  $wp_query->post_count = count($wp_posts);
-  $wp_query->current_post = -1;
-  $wp_query->is_home = true;
-  $wp_query->is_archive = false;
-  $wp_query->queried_object = null;
-
-  $GLOBALS['wp_query'] = $wp_query;
-
-  // Render posts in a loop
-  ob_start();
-
-  if (have_posts()) {
-    while (have_posts()) {
-      the_post();
-      ?>
-      <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
-        <header class="entry-header">
-          <h2 class="entry-title">
-            <a href="<?php the_permalink(); ?>" rel="bookmark"><?php the_title(); ?></a>
-          </h2>
-          <div class="entry-meta">
-            <span class="posted-on">Posted on <?php echo get_the_date(); ?></span>
-            <span class="byline"> by <span class="author vcard"><?php the_author(); ?></span></span>
-          </div>
-        </header>
-
-        <div class="entry-content">
-          <?php the_excerpt(); ?>
-        </div>
-      </article>
-      <?php
-    }
-  }
-
-  $content = ob_get_clean();
-  return $content;
-}
-
-function wp_render_single_post($node) {
-  // Convert Backdrop node to WordPress post
-  $wp_post = WP_Post::from_node($node);
-  if (!$wp_post) {
-    return '<div class="no-content"><p>Unable to load content for this page.</p></div>';
-  }
-
-  // Set up WordPress query
-  global $wp_query, $post;
-  $post = $wp_post;
-  $wp_query = new WP_Query(array(
-    'p' => $node->nid,
-    'post_type' => 'post',
-  ));
-  $wp_query->posts = array($post);
-  $wp_query->post_count = 1;
-  $wp_query->current_post = -1;
-  $wp_query->is_single = true;
-  $wp_query->is_singular = true;
-  $wp_query->queried_object = $post;
-  $wp_query->queried_object_id = $post->ID;
-
-  $GLOBALS['wp_query'] = $wp_query;
-  $GLOBALS['post'] = $post;
-
-  // Render WordPress content
-  ob_start();
-  ?>
-  <article id="post-<?php the_ID(); ?>" class="post type-post status-publish format-standard hentry">
-    <header class="entry-header">
-      <h1 class="entry-title"><?php the_title(); ?></h1>
-      <div class="entry-meta">
-        <span class="posted-on">Posted on <?php echo get_the_date('F j, Y', $wp_post); ?></span>
-        <span class="byline"> by <span class="author vcard"><?php echo get_the_author_meta('display_name', $wp_post->post_author); ?></span></span>
-      </div>
-    </header>
-
-    <div class="entry-content">
-      <?php the_content(); ?>
-    </div>
-  </article>
-  <?php
-  $content = ob_get_clean();
-
-  return $content;
-}
-
 // Load WordPress compatibility classes early
 require_once __DIR__ . '/classes/WP_Post.php';
 require_once __DIR__ . '/classes/WP_Query.php';
@@ -630,6 +502,149 @@ function wp_block_view($delta = '') {
 echo '<!-- Function wp_render_wordpress_content defined -->';
 
 /*
+function wp_render_wordpress_content() {
+  return '<p>Test content</p>';
+}
+  // Debug output
+  echo '<!-- WP Content Debug: Function called -->';
+
+  // Get current Backdrop node
+  $node = menu_get_object();
+
+  // For home page, show multiple posts
+  if (!$node && backdrop_is_front_page()) {
+    return wp_render_home_page_posts();
+  }
+
+  // For single post pages
+  if ($node) {
+    return wp_render_single_post($node);
+  }
+
+  // For home page, show multiple posts
+  if (!$node && backdrop_is_front_page()) {
+    return $debug . wp_render_home_page_posts();
+  }
+
+  // For single post pages
+  if ($node) {
+    return $debug . wp_render_single_post($node);
+  }
+
+  return $debug . '<div class="no-content"><p>No content available for this page.</p></div>';
+}
+
+function wp_render_home_page_posts() {
+  // Load multiple published nodes for the home page
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+        ->propertyCondition('status', 1) // Published
+        ->propertyOrderBy('created', 'DESC')
+        ->range(0, 10); // Show up to 10 posts
+  $result = $query->execute();
+
+  if (empty($result['node'])) {
+    return '<div class="no-content"><p>No posts available.</p></div>';
+  }
+
+  $nids = array_keys($result['node']);
+  $nodes = node_load_multiple($nids);
+
+  // Set up WordPress query for home page
+  global $wp_query, $post;
+  $wp_posts = array();
+
+  foreach ($nodes as $node) {
+    $wp_posts[] = WP_Post::from_node($node);
+  }
+
+  $wp_query = new WP_Query();
+  $wp_query->posts = $wp_posts;
+  $wp_query->post_count = count($wp_posts);
+  $wp_query->current_post = -1;
+  $wp_query->is_home = true;
+  $wp_query->is_archive = false;
+  $wp_query->queried_object = null;
+
+  $GLOBALS['wp_query'] = $wp_query;
+
+  // Render posts in a loop
+  ob_start();
+
+  if (have_posts()) {
+    while (have_posts()) {
+      the_post();
+      ?>
+      <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+        <header class="entry-header">
+          <h2 class="entry-title">
+            <a href="<?php the_permalink(); ?>" rel="bookmark"><?php the_title(); ?></a>
+          </h2>
+          <div class="entry-meta">
+            <span class="posted-on">Posted on <?php echo get_the_date(); ?></span>
+            <span class="byline"> by <span class="author vcard"><?php the_author(); ?></span></span>
+          </div>
+        </header>
+
+        <div class="entry-content">
+          <?php the_excerpt(); ?>
+        </div>
+      </article>
+      <?php
+    }
+  }
+
+  $content = ob_get_clean();
+  return $content;
+}
+
+function wp_render_single_post($node) {
+  // Convert Backdrop node to WordPress post
+  $wp_post = WP_Post::from_node($node);
+  if (!$wp_post) {
+    return '<div class="no-content"><p>Unable to load content for this page.</p></div>';
+  }
+
+  // Set up WordPress query
+  global $wp_query, $post;
+  $post = $wp_post;
+  $wp_query = new WP_Query(array(
+    'p' => $node->nid,
+    'post_type' => 'post',
+  ));
+  $wp_query->posts = array($post);
+  $wp_query->post_count = 1;
+  $wp_query->current_post = -1;
+  $wp_query->is_single = true;
+  $wp_query->is_singular = true;
+  $wp_query->queried_object = $post;
+  $wp_query->queried_object_id = $post->ID;
+
+  $GLOBALS['wp_query'] = $wp_query;
+  $GLOBALS['post'] = $post;
+
+  // Render WordPress content
+  ob_start();
+  ?>
+  <article id="post-<?php the_ID(); ?>" class="post type-post status-publish format-standard hentry">
+    <header class="entry-header">
+      <h1 class="entry-title"><?php the_title(); ?></h1>
+      <div class="entry-meta">
+        <span class="posted-on">Posted on <?php echo get_the_date('F j, Y', $wp_post); ?></span>
+        <span class="byline"> by <span class="author vcard"><?php echo get_the_author_meta('display_name', $wp_post->post_author); ?></span></span>
+      </div>
+    </header>
+
+    <div class="entry-content">
+      <?php the_content(); ?>
+    </div>
+  </article>
+  <?php
+  $content = ob_get_clean();
+
+  return $content;
+}
+
 
 /**
  * Implements template_preprocess_html().
@@ -641,6 +656,8 @@ function wp_preprocess_html(&$variables)
   // WordPress themes expect <html> tag to have language attributes
   $variables['html_attributes'] = language_attributes(false);
 
-  // CSS is now loaded via wp_enqueue_scripts -> enqueue.php
+  // CSS is now loaded via wp_enqueue_scripts -> stubs.php
 }
-echo "<!-- Function added -->";
+function wp_render_wordpress_content() {
+  return "<p>Test content - function is working</p>";
+}

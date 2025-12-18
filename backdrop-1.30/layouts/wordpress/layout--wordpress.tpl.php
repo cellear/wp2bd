@@ -31,12 +31,23 @@
 
   <?php print $action_links; ?>
 
-  <?php 
+  <?php
+  // Debug: Layout is processing
+  print '<!-- Layout processing -->';
+
   // Single block that runs the entire WordPress template
   // This is how WordPress works - one template controls header, content, sidebar, footer
-  if (!empty($content['page'])): 
-    print $content['page']; 
-  endif; 
+  if (!empty($content['page'])):
+    print $content['page'];
+  else:
+    // Fallback: call the WordPress content function directly
+    if (function_exists('wp_render_wordpress_content')) {
+      print '<!-- Function exists, calling it -->';
+      print wp_render_wordpress_content();
+    } else {
+      print '<!-- Function does not exist -->';
+    }
+  endif;
   ?>
 
 </div>
