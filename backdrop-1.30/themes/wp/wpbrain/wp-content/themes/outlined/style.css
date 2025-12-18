@@ -1,0 +1,17 @@
+/*
+Theme Name: Outlined
+Description: Custom outlined WordPress theme
+Version: 1.0
+Author: Custom
+*/
+
+/* Basic styles for outlined theme */
+body {
+    font-family: Arial, sans-serif;
+}
+
+.site-content {
+    border: 2px solid #000;
+    padding: 20px;
+    margin: 20px;
+}

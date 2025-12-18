@@ -217,9 +217,9 @@ function get_footer($name = null) {
                     $footer_content = preg_replace('#</body>#i', '', $footer_content);
                     $footer_content = preg_replace('#</html>#i', '', $footer_content);
                     // For footer.php, remove the container closing tags since we handle document structure
-                    $footer_content = preg_replace('#\s*</div>\s*<!-- #content -->\s*#i', '', $footer_content);
-                    $footer_content = preg_replace('#\s*</div>\s*<!-- .site-content-contain -->\s*#i', '', $footer_content);
-                    $footer_content = preg_replace('#\s*</div>\s*<!-- #page -->\s*#i', '', $footer_content);
+                    $footer_content = preg_replace('/\s*<\/div>\s*<!-- #content -->\s*/i', '', $footer_content);
+                    $footer_content = preg_replace('/\s*<\/div>\s*<!-- \.site-content-contain -->\s*/i', '', $footer_content);
+                    $footer_content = preg_replace('/\s*<\/div>\s*<!-- #page -->\s*/i', '', $footer_content);
 
                     echo $footer_content;
                 } else {
