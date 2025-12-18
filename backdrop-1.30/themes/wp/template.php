@@ -451,6 +451,121 @@ function wp_preprocess_page(&$variables)
  */
 
 /**
+ * Implements hook_block_info().
+ *
+ * Define blocks provided by the WordPress theme.
+ */
+function wp_block_info() {
+  $blocks = array();
+
+  $blocks['wp_content'] = array(
+    'info' => t('WordPress Content'),
+    'description' => t('Displays WordPress theme content for the current page.'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * Render blocks provided by the WordPress theme.
+ */
+function wp_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'wp_content':
+      // Render WordPress content using the WordPress theme system
+      $block['subject'] = NULL; // No title
+      $block['content'] = wp_render_wordpress_content();
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Render WordPress content for the current page.
+ *
+ * This function handles the WordPress theme rendering logic.
+ */
+function wp_render_wordpress_content() {
+  // Get current Backdrop node
+  $node = menu_get_object();
+
+  // For home page, try to get the first published node
+  if (!$node) {
+    // Check if this is the front page
+    if (backdrop_is_front_page()) {
+      // Load the most recent published node for the home page
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'node')
+            ->propertyCondition('status', 1) // Published
+            ->propertyOrderBy('created', 'DESC')
+            ->range(0, 1);
+      $result = $query->execute();
+
+      if (!empty($result['node'])) {
+        $nids = array_keys($result['node']);
+        $node = node_load($nids[0]);
+      }
+    }
+
+    if (!$node) {
+      return '<div class="no-content"><p>No content available for this page.</p></div>';
+    }
+  }
+
+  // Convert Backdrop node to WordPress post
+  $wp_post = WP_Post::from_node($node);
+  if (!$wp_post) {
+    return '<div class="no-content"><p>Unable to load content for this page.</p></div>';
+  }
+
+  // Set up WordPress query
+  global $wp_query, $post;
+  $post = $wp_post;
+  $wp_query = new WP_Query(array(
+    'p' => $node->nid,
+    'post_type' => 'post',
+  ));
+  $wp_query->posts = array($post);
+  $wp_query->post_count = 1;
+  $wp_query->current_post = -1;
+  $wp_query->is_single = true;
+  $wp_query->is_singular = true;
+  $wp_query->queried_object = $post;
+  $wp_query->queried_object_id = $post->ID;
+
+  $GLOBALS['wp_query'] = $wp_query;
+  $GLOBALS['post'] = $post;
+
+  // Render WordPress content
+  ob_start();
+  ?>
+  <article id="post-<?php the_ID(); ?>" class="post type-post status-publish format-standard hentry">
+    <header class="entry-header">
+      <h1 class="entry-title"><?php the_title(); ?></h1>
+      <div class="entry-meta">
+        <span class="posted-on">Posted on <?php echo get_the_date('F j, Y', $wp_post); ?></span>
+        <span class="byline"> by <span class="author vcard"><?php echo get_the_author_meta('display_name', $wp_post->post_author); ?></span></span>
+      </div>
+    </header>
+
+    <div class="entry-content">
+      <?php the_content(); ?>
+    </div>
+  </article>
+  <?php
+  $content = ob_get_clean();
+
+  return $content;
+}
+
+
+/**
  * Implements template_preprocess_html().
  *
  * Set up HTML attributes using WordPress functions.

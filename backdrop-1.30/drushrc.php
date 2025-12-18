@@ -8,5 +8,5 @@
  */
 
 if (getenv('IS_DDEV_PROJECT') == 'true') {
-  $options['l'] = "https://wp4bd-bd-admiring-clarke.ddev.site";
+  $options['l'] = "https://wp4bd-grok.ddev.site";
 }

@@ -81,7 +81,7 @@
     "site_mail": "noreply@ddev.site",
     "site_slogan": "",
     "theme_default": "wp",
-    "theme_debug": true,
+    "theme_debug": "0",
     "user_admin_role": "administrator",
     "user_editor_role": "editor",
     "user_cancel_method": "user_cancel_block",
