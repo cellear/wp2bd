@@ -62,6 +62,15 @@
     <?php print backdrop_get_js(); ?>
   </head>
   <body <?php
+    // Check if WordPress theme has template parts
+    $has_wordpress_header = function_exists('get_header') && !empty(locate_template('header.php'));
+    $has_wordpress_sidebar = function_exists('get_sidebar') && !empty(locate_template('sidebar.php'));
+    $has_wordpress_footer = function_exists('get_footer') && !empty(locate_template('footer.php'));
+
+    // Check if sidebar should be shown (has widgets)
+    $sidebar_active = function_exists('is_active_sidebar') && is_active_sidebar('sidebar-1');
+    $show_sidebar = $has_wordpress_sidebar && $sidebar_active;
+
     // Build body classes
     $body_classes = array();
     if (function_exists('get_body_class')) {
@@ -78,13 +87,6 @@
     echo 'class="' . implode(' ', $body_classes) . '"';
   ?><?php print backdrop_attributes($body_attributes); ?>>
     <?php
-    // Check if WordPress theme has template parts
-    $has_wordpress_header = function_exists('get_header') && !empty(locate_template('header.php'));
-    $has_wordpress_sidebar = function_exists('get_sidebar') && !empty(locate_template('sidebar.php'));
-    $has_wordpress_footer = function_exists('get_footer') && !empty(locate_template('footer.php'));
-
-    // Check if sidebar should be shown (has widgets)
-    $show_sidebar = $has_wordpress_sidebar && function_exists('is_active_sidebar') && is_active_sidebar('sidebar-1');
 
 
     /* Use WordPress template parts when available for proper theme integration */
@@ -112,9 +114,7 @@
           </div><!-- #primary -->
 
           <?php if ($show_sidebar && !isset($GLOBALS['wp2bd_sidebar_rendered'])): ?>
-            <aside id="secondary" class="widget-area" role="complementary" aria-label="Blog Sidebar">
-              <?php get_sidebar(); ?>
-            </aside><!-- #secondary -->
+            <?php get_sidebar(); ?>
           <?php endif; ?>
 
         </div><!-- .wrap -->

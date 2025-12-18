@@ -115,7 +115,7 @@ function get_header($name = null) {
                     // Remove HTML document structure that conflicts with Backdrop's page template
                     // Use a more comprehensive approach to strip nested HTML structure
                     $header_content = preg_replace('#<!DOCTYPE[^>]*>#i', '', $header_content);
-                    $header_content = preg_replace('#<html[^>]*>.*?</html>#is', '', $header_content);
+                    $header_content = preg_replace('#<html[^>]*>#i', '', $header_content);
                     $header_content = preg_replace('#<head[^>]*>.*?</head>#is', '', $header_content);
                     $header_content = preg_replace('#<body[^>]*>#i', '', $header_content);
                     $header_content = preg_replace('#</body>#i', '', $header_content);
@@ -125,10 +125,10 @@ function get_header($name = null) {
                     // WordPress header templates often include content structure that we handle separately
                     if (preg_match('#(.*)</header>#is', $header_content, $matches)) {
                         $header_content = $matches[1] . '</header>';
-                        // Remove any content containers that might be after the header
-                        $header_content = preg_replace('#</header>.*?<div[^>]*id="content[^"]*"[^>]*>.*?</div>#is', '</header>', $header_content);
-                        $header_content = preg_replace('#</header>.*?<div[^>]*class="site-content[^"]*"[^>]*>.*?</div>#is', '</header>', $header_content);
                     }
+                    // Remove any remaining content containers from header output
+                    $header_content = preg_replace('#<div[^>]*class="site-content-contain"[^>]*>.*?</div>#is', '', $header_content);
+                    $header_content = preg_replace('#<div[^>]*id="content"[^>]*class="site-content"[^>]*>.*?</div>#is', '', $header_content);
 
                     echo $header_content;
                 } else {
@@ -211,11 +211,15 @@ function get_footer($name = null) {
 
                     // Remove HTML document structure that conflicts with Backdrop's page template
                     $footer_content = preg_replace('#<!DOCTYPE[^>]*>#i', '', $footer_content);
-                    $footer_content = preg_replace('#<html[^>]*>.*?</html>#is', '', $footer_content);
+                    $footer_content = preg_replace('#<html[^>]*>#i', '', $footer_content);
                     $footer_content = preg_replace('#<head[^>]*>.*?</head>#is', '', $footer_content);
                     $footer_content = preg_replace('#<body[^>]*>#i', '', $footer_content);
                     $footer_content = preg_replace('#</body>#i', '', $footer_content);
                     $footer_content = preg_replace('#</html>#i', '', $footer_content);
+                    // For footer.php, remove the container closing tags since we handle document structure
+                    $footer_content = preg_replace('#\s*</div>\s*<!-- #content -->\s*#i', '', $footer_content);
+                    $footer_content = preg_replace('#\s*</div>\s*<!-- .site-content-contain -->\s*#i', '', $footer_content);
+                    $footer_content = preg_replace('#\s*</div>\s*<!-- #page -->\s*#i', '', $footer_content);
 
                     echo $footer_content;
                 } else {
