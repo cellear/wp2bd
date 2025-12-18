@@ -341,8 +341,6 @@ function wp_head()
     ob_start();
 
     // Fire wp_enqueue_scripts before wp_head (WordPress standard)
-    if (function_exists('watchdog')) {
-    }
     do_action('wp_enqueue_scripts');
 
     // Print WordPress styles directly as link tags

@@ -122,9 +122,6 @@ if (!function_exists('wp_enqueue_style')) {
     function wp_enqueue_style($handle, $src = '', $deps = array(), $ver = false, $media = 'all') {
         global $wp_styles;
 
-        if (function_exists('watchdog')) {
-          watchdog('wp4bd_debug', 'wp_enqueue_style called: @handle - @src', array('@handle' => $handle, '@src' => $src), WATCHDOG_DEBUG);
-        }
 
         // If not registered yet, register it
         if (!isset($wp_styles->registered[$handle])) {
@@ -155,7 +152,7 @@ if (!function_exists('wp_enqueue_style')) {
 if (!function_exists('wp_print_styles')) {
     function wp_print_styles() {
         global $wp_styles;
-        
+
         // Ensure wp_styles is initialized
         if (!isset($wp_styles) || !($wp_styles instanceof WP_Styles)) {
             $wp_styles = new WP_Styles();

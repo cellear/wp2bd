@@ -15,6 +15,22 @@
       <?php print $head; ?>
     <?php endif; ?>
     <title><?php print $head_title; ?></title>
+    <?php
+      // Fire wp_enqueue_scripts to allow WordPress themes to enqueue CSS/JS
+      if (function_exists('do_action')) {
+        do_action('wp_enqueue_scripts');
+      }
+
+      // Also manually call twentyseventeen_scripts if it exists
+      if (function_exists('twentyseventeen_scripts')) {
+        twentyseventeen_scripts();
+      }
+
+      // Print WordPress styles directly as link tags
+      if (function_exists('wp_print_styles')) {
+        wp_print_styles();
+      }
+    ?>
     <?php print backdrop_get_css(); ?>
     <?php print backdrop_get_js(); ?>
   </head>

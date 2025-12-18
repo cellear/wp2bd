@@ -7,6 +7,8 @@
  * rendering to a WordPress theme.
  */
 
+
+
 function wp_render_wordpress_content() {
   // Get current Backdrop node
   $node = menu_get_object();
@@ -624,46 +626,3 @@ function wp_block_view($delta = '') {
  * This function handles the WordPress theme rendering logic.
  */
 
-/**
- * Implements template_preprocess_html().
- *
- * Set up HTML attributes using WordPress functions and ensure WordPress assets load.
- * This hook runs before page.tpl.php is rendered, allowing us to inject WordPress
- * CSS/JS into the head section.
- */
-function wp_preprocess_html(&$variables)
-{
-  // WordPress themes expect <html> tag to have language attributes
-  $variables['html_attributes'] = language_attributes(false);
-
-  // Fire wp_enqueue_scripts to allow WordPress themes to enqueue CSS/JS
-  if (function_exists('do_action')) {
-    do_action('wp_enqueue_scripts');
-  }
-
-  // Also manually call twentyseventeen_scripts if it exists
-  if (function_exists('twentyseventeen_scripts')) {
-    twentyseventeen_scripts();
-  }
-
-  // Add WordPress head content to the head section
-  if (function_exists('wp_head')) {
-    ob_start();
-    wp_head();
-    $wp_head = ob_get_clean();
-    // Append to existing head content
-    $variables['head'] .= $wp_head;
-  }
-
-  // Add WordPress footer scripts to page_bottom
-  if (function_exists('wp_footer')) {
-    ob_start();
-    wp_footer();
-    $wp_footer = ob_get_clean();
-    // Append to page_bottom
-    if (!isset($variables['page_bottom'])) {
-      $variables['page_bottom'] = '';
-    }
-    $variables['page_bottom'] .= $wp_footer;
-  }
-}

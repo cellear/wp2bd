@@ -415,8 +415,12 @@ function get_template_directory_uri() {
         $template_uri = home_url($relative_path);
     } else {
         // Fallback: Try to extract from known WordPress structure
-        // Look for /wp-content/themes/ pattern
+        // Look for /wp-content/themes/ pattern (standard WordPress)
         if (preg_match('#(/wp-content/themes/[^/]+)$#', $template_dir, $matches)) {
+            $template_uri = home_url($matches[1]);
+        }
+        // Look for /wpbrain/wp-content/themes/ pattern (WP4BD structure)
+        elseif (preg_match('#(/wpbrain/wp-content/themes/[^/]+)$#', $template_dir, $matches)) {
             $template_uri = home_url($matches[1]);
         }
         // Look for /themes/ pattern (Backdrop style)
