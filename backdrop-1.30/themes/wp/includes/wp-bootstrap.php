@@ -123,6 +123,100 @@ function wp4bd_bootstrap_wordpress() {
       $GLOBALS['shortcode_tags'] = array();
     }
 
+    // Define WP_Rewrite stub class if not already defined
+    if (!class_exists('WP_Rewrite')) {
+      class WP_Rewrite {
+        public $author_base = 'author';
+        public $author_structure = '';
+        public $permalink_structure = '';
+        public $use_trailing_slashes = true;
+
+        public function get_author_permastruct() {
+          return '';
+        }
+
+        public function using_permalinks() {
+          return !empty($this->permalink_structure);
+        }
+      }
+    }
+
+    // Define WP_Error stub class if not already defined
+    if (!class_exists('WP_Error')) {
+      class WP_Error {
+        public $errors = array();
+        public $error_data = array();
+
+        public function __construct($code = '', $message = '', $data = '') {
+          if (empty($code)) {
+            return;
+          }
+          $this->errors[$code][] = $message;
+          if (!empty($data)) {
+            $this->error_data[$code] = $data;
+          }
+        }
+
+        public function get_error_codes() {
+          return array_keys($this->errors);
+        }
+
+        public function get_error_code() {
+          $codes = $this->get_error_codes();
+          return empty($codes) ? '' : $codes[0];
+        }
+
+        public function get_error_messages($code = '') {
+          if (empty($code)) {
+            $all_messages = array();
+            foreach ((array) $this->errors as $code => $messages) {
+              $all_messages = array_merge($all_messages, $messages);
+            }
+            return $all_messages;
+          }
+          return isset($this->errors[$code]) ? $this->errors[$code] : array();
+        }
+
+        public function get_error_message($code = '') {
+          if (empty($code)) {
+            $code = $this->get_error_code();
+          }
+          $messages = $this->get_error_messages($code);
+          return empty($messages) ? '' : $messages[0];
+        }
+
+        public function get_error_data($code = '') {
+          if (empty($code)) {
+            $code = $this->get_error_code();
+          }
+          return isset($this->error_data[$code]) ? $this->error_data[$code] : null;
+        }
+
+        public function add($code, $message, $data = '') {
+          $this->errors[$code][] = $message;
+          if (!empty($data)) {
+            $this->error_data[$code] = $data;
+          }
+        }
+      }
+    }
+
+    if (!function_exists('is_wp_error')) {
+      /**
+       * Check whether variable is a WordPress Error.
+       * @param mixed $thing Variable to check.
+       * @return bool True if $thing is an object of the WP_Error class.
+       */
+      function is_wp_error($thing) {
+        return ($thing instanceof WP_Error);
+      }
+    }
+
+    // Initialize wp_rewrite global (used for permalink structure)
+    if (!isset($GLOBALS['wp_rewrite'])) {
+      $GLOBALS['wp_rewrite'] = new WP_Rewrite();
+    }
+
     // Step 2: Load db.php drop-in FIRST (Epic 3) - prevents WordPress database connection
     // IMPORTANT: Check the ACTUAL path where db.php should be, not just WP_CONTENT_DIR
     // because WP_CONTENT_DIR might have been defined elsewhere with a different value
@@ -331,6 +425,38 @@ function wp4bd_bootstrap_wordpress() {
        */
       function wp_json_encode($data, $options = 0, $depth = 512) {
         return json_encode($data, $options, $depth);
+      }
+    }
+
+    if (!function_exists('mysql2date')) {
+      /**
+       * Convert MySQL datetime to PHP date format.
+       * @param string $format PHP date format
+       * @param string $date MySQL datetime string
+       * @param bool $translate Whether to translate (use date_i18n)
+       * @return string|int|false Formatted date or false on error
+       */
+      function mysql2date($format, $date, $translate = TRUE) {
+        if (empty($date)) {
+          return FALSE;
+        }
+
+        if ('G' == $format) {
+          return strtotime($date . ' +0000');
+        }
+
+        $i = strtotime($date);
+
+        if ('U' == $format) {
+          return $i;
+        }
+
+        if ($translate && function_exists('date_i18n')) {
+          return date_i18n($format, $i);
+        }
+        else {
+          return date($format, $i);
+        }
       }
     }
 
@@ -748,6 +874,86 @@ function wp4bd_bootstrap_wordpress() {
         return FALSE;
       }
     }
+
+    if (!function_exists('get_post_format')) {
+      /**
+       * Retrieve the post format (e.g., 'aside', 'gallery', 'video').
+       * For now, return FALSE (standard post format).
+       * @param int|WP_Post $post Optional. Post ID or object
+       * @return string|false FALSE for standard format
+       */
+      function get_post_format($post = NULL) {
+        // Stub: standard format only for now
+        return FALSE;
+      }
+    }
+
+    if (!function_exists('get_the_post_thumbnail')) {
+      /**
+       * Retrieve the post thumbnail (featured image) HTML.
+       * @param int|WP_Post|null $post Post ID or post object.
+       * @param string|array $size Optional. Image size. Default 'post-thumbnail'.
+       * @param string|array $attr Optional. Query string or array of attributes.
+       * @return string Post thumbnail HTML or empty string.
+       */
+      function get_the_post_thumbnail($post = NULL, $size = 'post-thumbnail', $attr = '') {
+        // Stub: no featured images for now
+        return '';
+      }
+    }
+
+    if (!function_exists('wp_make_content_images_responsive')) {
+      /**
+       * Filter content to add responsive srcset to images.
+       * @param string $content HTML content
+       * @return string Filtered content
+       */
+      function wp_make_content_images_responsive($content) {
+        // Stub: just return content unchanged
+        return $content;
+      }
+    }
+
+    if (!function_exists('do_shortcode')) {
+      /**
+       * Search content for shortcodes and filter shortcodes through their hooks.
+       * @param string $content Content to search for shortcodes.
+       * @param bool $ignore_html Optional. When true, shortcodes inside HTML elements will be skipped.
+       * @return string Content with shortcodes filtered out.
+       */
+      function do_shortcode($content, $ignore_html = FALSE) {
+        // Stub: no shortcode support for now, just return content unchanged
+        return $content;
+      }
+    }
+
+    if (!function_exists('get_categories')) {
+      /**
+       * Retrieve list of category objects.
+       * @param string|array $args Optional. Arguments to retrieve categories.
+       * @return array List of category objects.
+       */
+      function get_categories($args = '') {
+        // Stub: return empty array (no categories for now)
+        // In the future, we could map to Backdrop taxonomy
+        return array();
+      }
+    }
+
+    if (!function_exists('get_comments_number')) {
+      /**
+       * Retrieve the number of comments a post has.
+       * @param int|WP_Post $post Optional. Post ID or WP_Post object. Default is global $post.
+       * @return string|int The number of comments as a numeric string or integer.
+       */
+      function get_comments_number($post = 0) {
+        // Stub: return 0 (no comments for now)
+        // In the future, we could map to Backdrop comments
+        return '0';
+      }
+    }
+
+    // Note: get_post_type_object() is defined in post.php which we load later
 
     if (!function_exists('get_file_data')) {
       /**
