@@ -2110,3 +2110,4 @@ if (!function_exists('get_parent_theme_file_path')) {
     return get_theme_file_path($file);
   }
 }
+

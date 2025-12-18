@@ -141,6 +141,9 @@ if (!function_exists('wp_enqueue_style')) {
                 $options['media'] = $media;
             }
             backdrop_add_css($src, $options);
+            if (function_exists('watchdog')) {
+              watchdog('wp4bd_debug', 'Added CSS: @src', array('@src' => $src), WATCHDOG_DEBUG);
+            }
         }
     }
 }

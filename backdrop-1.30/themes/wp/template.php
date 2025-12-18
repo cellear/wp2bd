@@ -66,7 +66,11 @@ define('WP2BD_WP_THEMES_DIR', $wp_themes_dir);
 define('WP2BD_ACTIVE_THEME', $active_theme);
 define('WP2BD_ACTIVE_THEME_DIR', $active_theme_dir);
 
-// WordPress theme's functions.php will be loaded later after final theme determination
+// Load the theme's functions.php
+$functions_file = __DIR__ . '/wp-content/themes/' . $active_theme . '/functions.php';
+if (file_exists($functions_file)) {
+  require_once $functions_file;
+}
 
 // Load essential WordPress functions early
 require_once __DIR__ . '/functions/post-metadata.php';

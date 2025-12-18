@@ -15,6 +15,18 @@
  * @version 1.0
  */
 
+// Initialize WordPress hook globals
+if (!isset($GLOBALS['wp_filter'])) {
+    $GLOBALS['wp_filter'] = array();
+}
+if (!isset($GLOBALS['wp_actions'])) {
+    $GLOBALS['wp_actions'] = array();
+}
+if (!isset($GLOBALS['wp_current_filter'])) {
+    $GLOBALS['wp_current_filter'] = array();
+}
+
+
 // Initialize global hook storage
 global $wp_filter, $wp_actions, $wp_current_filter;
 
@@ -50,38 +62,34 @@ if (!isset($wp_current_filter)) {
  */
 function add_filter($hook, $callback, $priority = 10, $accepted_args = 1)
 {
-    global $wp_filter;
 
-    if (function_exists('watchdog')) {
-      watchdog('wp4bd_debug', 'add_filter called: @hook -> @callback', array('@hook' => $hook, '@callback' => is_string($callback) ? $callback : 'closure'), WATCHDOG_DEBUG);
-    }
+    // wp_filter is initialized globally above
+
 
     // Validate callback is callable
     if (!is_callable($callback)) {
-        if (function_exists('watchdog')) {
-          watchdog('wp4bd_debug', 'Callback not callable: @callback', array('@callback' => is_string($callback) ? $callback : 'closure'), WATCHDOG_ERROR);
-        }
         return false;
     }
 
     // Initialize hook array if not exists
-    if (!isset($wp_filter[$hook])) {
-        $wp_filter[$hook] = array();
+    if (!isset($GLOBALS['wp_filter'][$hook])) {
+        $GLOBALS['wp_filter'][$hook] = array();
     }
 
     // Initialize priority array if not exists
-    if (!isset($wp_filter[$hook][$priority])) {
-        $wp_filter[$hook][$priority] = array();
+    if (!isset($GLOBALS['wp_filter'][$hook][$priority])) {
+        $GLOBALS['wp_filter'][$hook][$priority] = array();
     }
 
     // Generate unique identifier for this callback
     $callback_id = _wp_filter_build_unique_id($hook, $callback, $priority);
 
     // Store callback with metadata
-    $wp_filter[$hook][$priority][$callback_id] = array(
+    $GLOBALS['wp_filter'][$hook][$priority][$callback_id] = array(
         'function' => $callback,
         'accepted_args' => $accepted_args
     );
+
 
     return true;
 }
@@ -235,7 +243,6 @@ function add_action($hook, $callback, $priority = 10, $accepted_args = 1)
  */
 function do_action($hook, ...$args)
 {
-    global $wp_filter, $wp_actions, $wp_current_filter;
 
     // Track how many times this action has fired
     if (!isset($wp_actions[$hook])) {
@@ -245,30 +252,13 @@ function do_action($hook, ...$args)
     }
 
     // Track current action for nested calls
-    $wp_current_filter[] = $hook;
-
-    // If no actions registered, exit
-    if (!isset($wp_filter[$hook])) {
-        if (function_exists('watchdog') && $hook === 'wp_enqueue_scripts') {
-          watchdog('wp4bd_debug', 'No callbacks registered for hook: @hook', array('@hook' => $hook), WATCHDOG_DEBUG);
-        }
-        array_pop($wp_current_filter);
-        return;
-    }
-
-    if (function_exists('watchdog') && $hook === 'wp_enqueue_scripts') {
-      $callback_count = 0;
-      foreach ($wp_filter[$hook] as $priority => $callbacks) {
-        $callback_count += count($callbacks);
-      }
-      watchdog('wp4bd_debug', 'Found @count callbacks for wp_enqueue_scripts', array('@count' => $callback_count), WATCHDOG_DEBUG);
-    }
+    $GLOBALS['wp_current_filter'][] = $hook;
 
     // Sort by priority (ascending)
-    ksort($wp_filter[$hook]);
+    ksort($GLOBALS['wp_filter'][$hook]);
 
     // Execute each callback at each priority level
-    foreach ($wp_filter[$hook] as $priority => $callbacks) {
+    foreach ($GLOBALS['wp_filter'][$hook] as $priority => $callbacks) {
         foreach ($callbacks as $callback_id => $callback_data) {
             $callback = $callback_data['function'];
             $accepted_args = $callback_data['accepted_args'];
@@ -277,15 +267,12 @@ function do_action($hook, ...$args)
             $callback_args = array_slice($args, 0, $accepted_args);
 
             // Call the callback (ignore return value for actions)
-            if (function_exists('watchdog')) {
-              watchdog('wp4bd_debug', 'Executing callback: @callback for hook @hook', array('@callback' => is_string($callback) ? $callback : 'closure', '@hook' => $hook), WATCHDOG_DEBUG);
-            }
             call_user_func_array($callback, $callback_args);
         }
     }
 
     // Remove from current action stack
-    array_pop($wp_current_filter);
+    array_pop($GLOBALS['wp_current_filter']);
 }
 
 /**
@@ -353,7 +340,6 @@ function wp_head()
 
     // Fire wp_enqueue_scripts before wp_head (WordPress standard)
     if (function_exists('watchdog')) {
-      watchdog('wp4bd_debug', 'Firing wp_enqueue_scripts action', array(), WATCHDOG_DEBUG);
     }
     do_action('wp_enqueue_scripts');
 

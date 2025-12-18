@@ -12,10 +12,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php print backdrop_get_title(); ?> | <?php print config_get('system.core', 'site_name'); ?></title>
+  <?php
+    // Fire wp_enqueue_scripts to allow WordPress themes to enqueue CSS/JS
+    if (function_exists('do_action')) {
+      do_action('wp_enqueue_scripts');
+    }
+
+    // Also manually call twentyseventeen_scripts if it exists
+    if (function_exists('twentyseventeen_scripts')) {
+      twentyseventeen_scripts();
+    }
+  ?>
   <?php print backdrop_get_css(); ?>
   <?php print backdrop_get_js(); ?>
+  <?php
+    // Call wp_head() for any additional WordPress head content
+    if (function_exists('wp_head')) {
+      wp_head();
+    }
+  ?>
 </head>
-<body class="wordpress-theme">
+<body <?php if (function_exists('body_class')) { body_class(); } else { echo 'class="wordpress-theme"'; } ?>>
   <div id="page">
     <header id="header" role="banner">
       <div class="site-branding">
