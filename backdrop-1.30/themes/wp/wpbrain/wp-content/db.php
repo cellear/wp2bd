@@ -8,6 +8,23 @@
  * @package WP4BD
  */
 
+// Define WordPress database query constants (from wp-includes/wp-db.php)
+if (!defined('OBJECT')) {
+  define('OBJECT', 'OBJECT');
+}
+if (!defined('object')) {
+  define('object', 'OBJECT'); // Back compat
+}
+if (!defined('OBJECT_K')) {
+  define('OBJECT_K', 'OBJECT_K');
+}
+if (!defined('ARRAY_A')) {
+  define('ARRAY_A', 'ARRAY_A');
+}
+if (!defined('ARRAY_N')) {
+  define('ARRAY_N', 'ARRAY_N');
+}
+
 if (!class_exists('wpdb')) {
   class wpdb {
     public $ready = false;
@@ -44,12 +61,14 @@ if (!class_exists('wpdb')) {
     }
 
     private function log($method, $query = '') {
-      if (function_exists('watchdog')) {
-        watchdog('wpdb', '@method attempted: @query', [
-          '@method' => $method,
-          '@query' => $query
-        ], WATCHDOG_DEBUG);
-      }
+      // Silently track queries without logging to avoid log spam
+      // Uncomment the watchdog line below if you need to debug database interception
+      // if (function_exists('watchdog')) {
+      //   watchdog('wpdb', '@method attempted: @query', [
+      //     '@method' => $method,
+      //     '@query' => $query
+      //   ], WATCHDOG_DEBUG);
+      // }
       $this->last_query = $query;
       $this->num_queries++;
     }
