@@ -345,10 +345,13 @@ function wp_head()
     }
     do_action('wp_enqueue_scripts');
 
-    do_action('wp_head');
+    // Print WordPress styles directly as link tags
+    // This ensures WordPress CSS loads even if backdrop_add_css() doesn't render external URLs
+    if (function_exists('wp_print_styles')) {
+        wp_print_styles();
+    }
 
-    // Note: wp_print_styles and wp_print_scripts are NOT called here anymore.
-    // They are handled by wp_enqueue_style/script calling drupal_add_css/js directly.
+    do_action('wp_head');
 
     $output = ob_get_clean();
 

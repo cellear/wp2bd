@@ -155,6 +155,11 @@ if (!function_exists('wp_enqueue_style')) {
 if (!function_exists('wp_print_styles')) {
     function wp_print_styles() {
         global $wp_styles;
+        
+        // Ensure wp_styles is initialized
+        if (!isset($wp_styles) || !($wp_styles instanceof WP_Styles)) {
+            $wp_styles = new WP_Styles();
+        }
 
         if (empty($wp_styles->queue)) {
             return;

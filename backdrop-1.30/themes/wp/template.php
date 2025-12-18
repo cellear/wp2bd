@@ -170,7 +170,7 @@ if (function_exists('config_get')) {
 $theme_changed = false;
 if (isset($_GET['wp_theme']) && !empty($_GET['wp_theme'])) {
   $requested_theme = preg_replace('/[^a-zA-Z0-9-_]/', '', $_GET['wp_theme']);
-  $theme_path = __DIR__ . '/wp-content/themes/' . $requested_theme;
+  $theme_path = __DIR__ . '/wpbrain/wp-content/themes/' . $requested_theme;
   if (function_exists('watchdog')) {
     watchdog('wp4bd_debug', 'Theme switch requested: @theme (path exists: @exists)', array('@theme' => $requested_theme, '@exists' => is_dir($theme_path) ? 'yes' : 'no'), WATCHDOG_DEBUG);
   }
@@ -183,19 +183,19 @@ if (isset($_GET['wp_theme']) && !empty($_GET['wp_theme'])) {
   }
 }
 
-// Set final theme constants
+// Set final theme constants (will be redefined below with correct path)
 define('WP2BD_ACTIVE_THEME', $active_theme);
-define('WP2BD_ACTIVE_THEME_DIR', __DIR__ . '/wp-content/themes/' . $active_theme);
 
 // Define theme directory constants early
-$wp_themes_dir = __DIR__ . '/wp-content/themes';
+// WordPress themes are in wpbrain/wp-content/themes/
+$wp_themes_dir = __DIR__ . '/wpbrain/wp-content/themes';
 $active_theme_dir = $wp_themes_dir . '/' . $active_theme;
 define('WP2BD_WP_THEMES_DIR', $wp_themes_dir);
 define('WP2BD_ACTIVE_THEME', $active_theme);
 define('WP2BD_ACTIVE_THEME_DIR', $active_theme_dir);
 
 // Load the theme's functions.php
-$functions_file = __DIR__ . '/wp-content/themes/' . $active_theme . '/functions.php';
+$functions_file = __DIR__ . '/wpbrain/wp-content/themes/' . $active_theme . '/functions.php';
 if (file_exists($functions_file)) {
   require_once $functions_file;
 }
