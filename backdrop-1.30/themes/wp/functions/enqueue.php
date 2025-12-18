@@ -219,45 +219,7 @@ if (!function_exists('wp_enqueue_script')) {
 /**
  * Print all enqueued scripts (called by wp_head() or wp_footer()).
  */
-if (!function_exists('wp_print_scripts')) {
-    function wp_print_scripts($in_footer = false) {
-        global $wp_scripts;
-        
-        if (empty($wp_scripts->queue)) {
-            return;
-        }
-        
-        foreach ($wp_scripts->queue as $handle) {
-            if (!isset($wp_scripts->registered[$handle])) {
-                continue;
-            }
-            $script = $wp_scripts->registered[$handle];
-            
-            // Only print scripts meant for this location
-            $script_in_footer = isset($script->args) ? $script->args : false;
-            if ($script_in_footer == $in_footer) {
-                $src = $script->src;
-                
-                // Add version parameter if specified
-                if ($script->ver) {
-                    $src .= (strpos($src, '?') === false ? '?' : '&') . 'ver=' . $script->ver;
-                }
-                
-                // Print localized data if any
-                if (isset($wp_scripts->localize[$handle])) {
-                    $l10n = $wp_scripts->localize[$handle];
-                    echo "<script type='text/javascript'>\n";
-                    echo "/* <![CDATA[ */\n";
-                    echo "var " . $l10n['name'] . " = " . json_encode($l10n['data']) . ";\n";
-                    echo "/* ]]> */\n";
-                    echo "</script>\n";
-                }
-                
-                echo "<script type='text/javascript' src='" . esc_attr($src) . "'></script>\n";
-            }
-        }
-    }
-}
+// Removed wp_print_scripts override to use WordPress core function
 
 /**
  * Localize a script.
@@ -265,6 +227,7 @@ if (!function_exists('wp_print_scripts')) {
 if (!function_exists('wp_localize_script')) {
     function wp_localize_script($handle, $object_name, $l10n) {
         global $wp_scripts;
+        print "<!-- WP2BD wp_localize_script called: $handle, $object_name -->\n";
         return $wp_scripts->localize($handle, $object_name, $l10n);
     }
 }
