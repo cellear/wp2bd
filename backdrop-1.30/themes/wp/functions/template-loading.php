@@ -104,7 +104,27 @@ function get_header($name = null) {
 
         if (file_exists($template_file)) {
             try {
-                require $template_file;
+                // Check if we're in Backdrop context (HTML/head already output)
+                // In Backdrop, we only want the header content, not the full HTML structure
+                if (defined('BACKDROP_ROOT')) {
+                    // Start output buffering to capture and modify the header output
+                    ob_start();
+                    require $template_file;
+                    $header_content = ob_get_clean();
+
+                    // Remove HTML structure tags that conflict with Backdrop's page template
+                    // This is a simple approach - we remove common HTML structure elements
+                    $header_content = preg_replace('#<!DOCTYPE[^>]*>#i', '', $header_content);
+                    $header_content = preg_replace('#<html[^>]*>.*?</html>#is', '', $header_content);
+                    $header_content = preg_replace('#<head[^>]*>.*?</head>#is', '', $header_content);
+                    $header_content = preg_replace('#<body[^>]*>#i', '', $header_content);
+                    $header_content = preg_replace('#</body>#i', '', $header_content);
+
+                    echo $header_content;
+                } else {
+                    // Normal WordPress context
+                    require $template_file;
+                }
             } catch (Error $e) {
                 echo "<!-- Header error: " . htmlspecialchars($e->getMessage()) . " -->\n";
                 watchdog('wp_content', 'Header error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
@@ -171,7 +191,27 @@ function get_footer($name = null) {
 
         if (file_exists($template_file)) {
             try {
-                require $template_file;
+                // Check if we're in Backdrop context (HTML/head already output)
+                // In Backdrop, we only want the footer content, not the full HTML structure
+                if (defined('BACKDROP_ROOT')) {
+                    // Start output buffering to capture and modify the footer output
+                    ob_start();
+                    require $template_file;
+                    $footer_content = ob_get_clean();
+
+                    // Remove HTML structure tags that conflict with Backdrop's page template
+                    // This is a simple approach - we remove common HTML structure elements
+                    $footer_content = preg_replace('#<!DOCTYPE[^>]*>#i', '', $footer_content);
+                    $footer_content = preg_replace('#<html[^>]*>.*?</html>#is', '', $footer_content);
+                    $footer_content = preg_replace('#<head[^>]*>.*?</head>#is', '', $footer_content);
+                    $footer_content = preg_replace('#<body[^>]*>#i', '', $footer_content);
+                    $footer_content = preg_replace('#</body>#i', '', $footer_content);
+
+                    echo $footer_content;
+                } else {
+                    // Normal WordPress context
+                    require $template_file;
+                }
             } catch (Error $e) {
                 echo "<!-- Footer error: " . htmlspecialchars($e->getMessage()) . " -->\n";
                 watchdog('wp_content', 'Footer error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
@@ -215,7 +255,27 @@ function get_sidebar($name = null) {
         $template_file = $theme_dir . '/' . $template;
         if (file_exists($template_file)) {
             try {
-                require $template_file;
+                // Check if we're in Backdrop context (HTML/head already output)
+                // In Backdrop, we only want the sidebar content, not the full HTML structure
+                if (defined('BACKDROP_ROOT')) {
+                    // Start output buffering to capture and modify the sidebar output
+                    ob_start();
+                    require $template_file;
+                    $sidebar_content = ob_get_clean();
+
+                    // Remove HTML structure tags that conflict with Backdrop's page template
+                    // This is a simple approach - we remove common HTML structure elements
+                    $sidebar_content = preg_replace('#<!DOCTYPE[^>]*>#i', '', $sidebar_content);
+                    $sidebar_content = preg_replace('#<html[^>]*>.*?</html>#is', '', $sidebar_content);
+                    $sidebar_content = preg_replace('#<head[^>]*>.*?</head>#is', '', $sidebar_content);
+                    $sidebar_content = preg_replace('#<body[^>]*>#i', '', $sidebar_content);
+                    $sidebar_content = preg_replace('#</body>#i', '', $sidebar_content);
+
+                    echo $sidebar_content;
+                } else {
+                    // Normal WordPress context
+                    require $template_file;
+                }
             } catch (Error $e) {
                 echo "<!-- Sidebar error: " . htmlspecialchars($e->getMessage()) . " -->\n";
                 watchdog('wp_content', 'Sidebar error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);

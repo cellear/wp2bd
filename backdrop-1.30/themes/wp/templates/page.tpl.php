@@ -36,36 +36,54 @@
   </head>
   <body <?php if (function_exists('body_class')) { body_class(); } else { echo 'class="' . implode(' ', $classes) . '"'; } ?><?php print backdrop_attributes($body_attributes); ?>>
     <?php
-    // Check if this is an error page or maintenance page
-    if (!isset($page) || !is_array($page)) {
-      // For error/maintenance pages, just show the content
-      print wp_render_wordpress_content();
+    // Check if WordPress theme has template parts
+    $has_wordpress_header = function_exists('get_header') && !empty(locate_template('header.php'));
+    $has_wordpress_sidebar = function_exists('get_sidebar') && !empty(locate_template('sidebar.php'));
+    $has_wordpress_footer = function_exists('get_footer') && !empty(locate_template('footer.php'));
+
+    // Use WordPress template parts if available
+    if ($has_wordpress_header) {
+      // Include WordPress header
+      get_header();
     } else {
-      // Normal page with regions
+      // Fallback wrapper
     ?>
     <div class="page-wrapper">
-      <header id="header" role="banner" class="header">
-        <?php print render($page['header']); ?>
-      </header>
+    <?php } ?>
 
       <div class="main-wrapper">
         <div id="content" class="content" role="main">
-          <?php print wp_render_wordpress_content(); ?>
+          <?php
+          // If $page is a string (rendered content), use it; otherwise render WordPress content
+          if (isset($page) && is_string($page)) {
+            print $page;
+          } else {
+            print wp_render_wordpress_content();
+          }
+          ?>
         </div>
 
-        <?php if (isset($page['sidebar']) && $page['sidebar']): ?>
-          <aside id="sidebar" class="sidebar" role="complementary">
-            <?php print render($page['sidebar']); ?>
-          </aside>
+        <?php if ($has_wordpress_sidebar): ?>
+          <?php get_sidebar(); ?>
         <?php endif; ?>
       </div>
+
+    <?php
+    if ($has_wordpress_footer) {
+      // Include WordPress footer
+      get_footer();
+    } else {
+      // Close wrapper if we opened it
+    ?>
     </div>
-    <?php 
-      // Render page bottom (includes admin bar for users with permissions)
-      if (isset($page_bottom)) {
-        print $page_bottom;
-      }
-    } ?>
+    <?php
+    }
+
+    // Render page bottom (includes admin bar for users with permissions)
+    if (isset($page_bottom)) {
+      print $page_bottom;
+    }
+    ?>
     <?php print backdrop_get_js('footer'); ?>
   </body>
 </html>
