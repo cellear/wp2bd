@@ -1,5 +1,12 @@
-echo "<!-- PHP is working -->";
 <?php
+/**
+ * @file
+ * Backdrop page template with WordPress content integration.
+ *
+ * This template uses Backdrop's region system and integrates WordPress content.
+ * The admin bar is automatically added via admin_bar_preprocess_page() hook
+ * and rendered in $page_bottom.
+ */
 // Check if this is an error page or maintenance page
 if (!isset($page) || !is_array($page)) {
   // For error/maintenance pages, just show the content
@@ -24,4 +31,9 @@ if (!isset($page) || !is_array($page)) {
     <?php endif; ?>
   </div>
 </div>
-<?php } ?>
+<?php 
+  // Render page bottom (includes admin bar for users with permissions)
+  if (isset($page_bottom)) {
+    print $page_bottom;
+  }
+} ?>
