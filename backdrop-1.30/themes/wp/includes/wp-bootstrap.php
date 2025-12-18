@@ -953,6 +953,36 @@ function wp4bd_bootstrap_wordpress() {
       }
     }
 
+    if (!function_exists('get_avatar')) {
+      /**
+       * Retrieve the avatar `<img>` tag for a user, email address, MD5 hash, comment, or post.
+       * @param mixed $id_or_email User ID, email, comment object, or post object.
+       * @param int $size Optional. Avatar size in pixels. Default 96.
+       * @param string $default Optional. Default avatar URL.
+       * @param string $alt Optional. Alt text.
+       * @param array $args Optional. Extra arguments.
+       * @return string|false Avatar img tag or false on failure.
+       */
+      function get_avatar($id_or_email, $size = 96, $default = '', $alt = '', $args = null) {
+        // Stub: return empty string (no avatars for now)
+        // In the future, we could use Gravatar or Backdrop's user picture field
+        return '';
+      }
+    }
+
+    if (!function_exists('_close_comments_for_old_posts')) {
+      /**
+       * Close comments on old posts on the fly, without updating the database.
+       * @param bool $open Comments open status.
+       * @param int $post_id Post ID.
+       * @return bool Comments open status.
+       */
+      function _close_comments_for_old_posts($open, $post_id) {
+        // Stub: just return the current open status
+        return $open;
+      }
+    }
+
     // Note: get_post_type_object() is defined in post.php which we load later
 
     if (!function_exists('get_file_data')) {

@@ -1,0 +1,63 @@
+<?php
+/**
+ * @file
+ * WordPress Theme Module - provides WordPress Page block
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function wp_block_info() {
+  $blocks = array();
+
+  // WordPress Page block - runs the entire theme template
+  $blocks['wordpress_page'] = array(
+    'info' => t('WordPress Page'),
+    'description' => t('Displays content using the WordPress theme template (same as page.tpl.php).'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function wp_block_view($delta = '', $settings = array(), $contexts = array()) {
+  $block = array();
+
+  if ($delta === 'wordpress_page') {
+    // The WordPress Page block renders the same content as page.tpl.php
+    // This allows it to be used in layouts alongside other Backdrop content
+    $block['subject'] = NULL;
+    $block['content'] = array(
+      '#theme' => 'wp_page_content',
+    );
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function wp_theme() {
+  return array(
+    'wp_page_content' => array(
+      'template' => 'templates/wp-page-content',
+      'variables' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_preprocess_block().
+ *
+ * Add custom template suggestion for WordPress blocks to bypass HTML wrapper.
+ */
+function wp_preprocess_block(&$variables) {
+  // Check if this is a WordPress block
+  if (isset($variables['block']->delta) && $variables['block']->delta === 'wordpress_page') {
+    // Add template suggestion for raw output (no wrapper divs)
+    $variables['theme_hook_suggestions'][] = 'block__wp__wordpress_page';
+  }
+}
