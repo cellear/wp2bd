@@ -28,6 +28,7 @@ $wordpress_hooks_ready = (
   function_exists('apply_filters')
 );
 
+// Load functions.php now that plugin.php loads first in wp-bootstrap.php
 if (!defined('WP_THEME_FUNCTIONS_LOADED') && $wordpress_hooks_ready) {
   if (defined('WP2BD_ACTIVE_THEME_DIR')) {
     $theme_functions = WP2BD_ACTIVE_THEME_DIR . '/functions.php';
@@ -66,8 +67,20 @@ global $wp_query, $post;
 // Debug mode - only enable if ?DEBUG parameter is present in URL
 $debug_mode = isset($_GET['DEBUG']);
 $debug_info = array();
+$debug_stages = array();  // New: Track stages
+
 if ($debug_mode) {
   $debug_info['test'] = 'Debug system is active';
+
+  // Stage 1: Show that rendering has started
+  $debug_stages[] = array(
+    'stage' => 'RENDERING STARTED',
+    'description' => 'wp-rendering-logic.inc included',
+    'data' => array(
+      'WordPress hooks loaded' => function_exists('add_action'),
+      'Time' => date('H:i:s'),
+    ),
+  );
 }
 
 // Collect debug info about Backdrop data
@@ -86,6 +99,21 @@ if ($debug_mode) {
 if (!empty($wp_node)) {
   if ($debug_mode) {
     $debug_info['processing'] = 'Single node view detected';
+
+    // Stage 2: Backdrop data received (single node)
+    $debug_stages[] = array(
+      'stage' => 'BACKDROP DATA: Single Node',
+      'description' => 'Backdrop provided a single node to render',
+      'data' => array(
+        'Node ID' => $wp_node->nid,
+        'Node Type' => $wp_node->type,
+        'Node Title' => $wp_node->title,
+        'Node Created' => date('Y-m-d H:i:s', $wp_node->created),
+        'Node Status' => $wp_node->status ? 'Published' : 'Unpublished',
+        'Has Body' => !empty($wp_node->body),
+        'Body Length' => !empty($wp_node->body) ? strlen($wp_node->body['und'][0]['value']) : 0,
+      ),
+    );
   }
 
   // Single node view - convert to WP_Post
@@ -102,6 +130,23 @@ if (!empty($wp_node)) {
   }
 
   if ($wp_post) {
+    if ($debug_mode) {
+      // Stage 3: WP_Post object created
+      $debug_stages[] = array(
+        'stage' => 'WP_POST CREATED',
+        'description' => 'Backdrop node converted to WordPress WP_Post object',
+        'data' => array(
+          'WP_Post ID' => $wp_post->ID,
+          'WP_Post Title' => $wp_post->post_title,
+          'WP_Post Type' => $wp_post->post_type,
+          'WP_Post Status' => $wp_post->post_status,
+          'WP_Post Date' => $wp_post->post_date,
+          'Content Length' => strlen($wp_post->post_content),
+          'Excerpt Length' => strlen($wp_post->post_excerpt),
+        ),
+      );
+    }
+
     // Set up WordPress query for single post
     $wp_query = new WP_Query();
     $wp_query->posts = array($wp_post);
@@ -123,6 +168,23 @@ if (!empty($wp_node)) {
     $GLOBALS['wp_query'] = $wp_query;
 
     if ($debug_mode) {
+      // Stage 4: WP_Query initialized
+      $debug_stages[] = array(
+        'stage' => 'WP_QUERY INITIALIZED (Single)',
+        'description' => 'WordPress query object set up for single post view',
+        'data' => array(
+          'post_count' => $wp_query->post_count,
+          'found_posts' => $wp_query->found_posts,
+          'is_single' => $wp_query->is_single,
+          'is_singular' => $wp_query->is_singular,
+          'queried_object_id' => $wp_query->queried_object_id,
+          '$GLOBALS[post] set' => isset($GLOBALS['post']),
+          '$GLOBALS[wp_query] set' => isset($GLOBALS['wp_query']),
+        ),
+      );
+    }
+
+    if ($debug_mode) {
       $debug_info['wordpress_globals'] = array(
         'global_post_set' => isset($GLOBALS['post']),
         'global_post_ID' => isset($GLOBALS['post']) ? $GLOBALS['post']->ID : 'not set',
@@ -142,6 +204,20 @@ else {
   if ($debug_mode) {
     $debug_info['processing'] = 'Archive/listing view - loading all published posts';
     $debug_info['page_type'] = backdrop_is_front_page() ? 'front page' : 'other';
+
+    // Stage 2: Backdrop querying for posts
+    $debug_stages[] = array(
+      'stage' => 'BACKDROP DATA: Archive Query',
+      'description' => 'Querying Backdrop database for published posts',
+      'data' => array(
+        'Query type' => 'Archive/Listing',
+        'Page type' => backdrop_is_front_page() ? 'FRONT PAGE' : 'Other',
+        'Node type' => 'post',
+        'Status' => 'Published (1)',
+        'Order by' => 'created DESC',
+        'Limit' => 10,
+      ),
+    );
   }
 
   // Load all published post nodes from Backdrop
@@ -159,6 +235,18 @@ else {
       'found_nids' => $nids,
       'count' => count($nids),
     );
+
+    // Stage 3: Show each Backdrop node loaded
+    foreach ($nids as $idx => $nid) {
+      $debug_stages[] = array(
+        'stage' => 'BACKDROP NODE #' . ($idx + 1),
+        'description' => 'Backdrop node loaded from database',
+        'data' => array(
+          'Node ID (nid)' => $nid,
+          'Position in query' => $idx + 1,
+        ),
+      );
+    }
   }
 
   // Convert all nodes to WP_Post objects
@@ -166,10 +254,48 @@ else {
   $nodes = array();
   if (!empty($nids)) {
     $nodes = node_load_multiple($nids);
+
     foreach ($nodes as $node) {
+      if ($debug_mode) {
+        // Show full node data before conversion
+        $debug_stages[] = array(
+          'stage' => 'BACKDROP NODE FULL DATA',
+          'description' => 'Node #' . $node->nid . ': ' . $node->title,
+          'data' => array(
+            'NID' => $node->nid,
+            'Type' => $node->type,
+            'Title' => $node->title,
+            'Status' => $node->status ? 'Published' : 'Unpublished',
+            'Created' => date('Y-m-d H:i:s', $node->created),
+            'Changed' => date('Y-m-d H:i:s', $node->changed),
+            'Author UID' => $node->uid,
+            'Body exists' => !empty($node->body),
+            'Body length' => !empty($node->body) ? strlen($node->body['und'][0]['value']) : 0,
+          ),
+        );
+      }
+
       $wp_post = wp4bd_node_to_post($node);
       if ($wp_post) {
         $wp_posts[] = $wp_post;
+
+        if ($debug_mode) {
+          // Show WP_Post after conversion
+          $debug_stages[] = array(
+            'stage' => 'WP_POST CONVERTED',
+            'description' => 'Node #' . $node->nid . ' → WP_Post #' . $wp_post->ID,
+            'data' => array(
+              'WP_Post ID' => $wp_post->ID,
+              'WP_Post Title' => $wp_post->post_title,
+              'WP_Post Type' => $wp_post->post_type,
+              'WP_Post Status' => $wp_post->post_status,
+              'WP_Post Date' => $wp_post->post_date,
+              'WP_Post Author' => $wp_post->post_author,
+              'Content length' => strlen($wp_post->post_content),
+              'Excerpt length' => strlen($wp_post->post_excerpt),
+            ),
+          );
+        }
       }
     }
   }
@@ -196,6 +322,24 @@ else {
   $GLOBALS['wp_query'] = $wp_query;
 
   if ($debug_mode) {
+    // Stage: WP_Query initialized for archive
+    $debug_stages[] = array(
+      'stage' => 'WP_QUERY INITIALIZED (Archive)',
+      'description' => 'WordPress query object set up for multiple posts',
+      'data' => array(
+        'post_count' => $wp_query->post_count,
+        'found_posts' => $wp_query->found_posts,
+        'max_num_pages' => $wp_query->max_num_pages,
+        'is_single' => $wp_query->is_single ? 'YES' : 'NO',
+        'is_home' => $wp_query->is_home ? 'YES' : 'NO',
+        'is_front_page' => $wp_query->is_front_page ? 'YES' : 'NO',
+        '$GLOBALS[wp_query] set' => isset($GLOBALS['wp_query']) ? 'YES' : 'NO',
+        'Posts in query' => count($wp_query->posts),
+      ),
+    );
+  }
+
+  if ($debug_mode) {
     $debug_info['wordpress_globals'] = array(
       'global_post_set' => isset($GLOBALS['post']),
       'wp_query_post_count' => $wp_query->post_count,
@@ -203,6 +347,25 @@ else {
       'wp_query_is_front_page' => $wp_query->is_front_page,
     );
   }
+}
+
+// ============================================================================
+// Track CSS Files Before Template Rendering
+// ============================================================================
+
+if ($debug_mode) {
+  // Stage: CSS Files Enqueued
+  // This runs BEFORE wp_enqueue_scripts fires (which happens in header.php)
+  // We'll add another stage after wp_head to show what CSS was actually queued
+  $debug_stages[] = array(
+    'stage' => 'PRE-TEMPLATE CSS CHECK',
+    'description' => 'Checking CSS state before template rendering',
+    'data' => array(
+      'wp_styles exists' => isset($GLOBALS['wp_styles']) ? 'YES' : 'NO',
+      'wp_enqueue_style exists' => function_exists('wp_enqueue_style') ? 'YES' : 'NO',
+      'Note' => 'CSS will be enqueued during header.php execution',
+    ),
+  );
 }
 
 // ============================================================================
@@ -329,6 +492,82 @@ if ($debug_mode) {
     }
     add_filter('style_loader_tag', 'wp4bd_trace_style_tag', 999, 2);
   }
+
+  // Track CSS files after wp_head completes
+  if (!function_exists('wp4bd_track_css_after_head')) {
+    function wp4bd_track_css_after_head() {
+      global $wp_styles, $debug_stages;
+
+      if (!isset($wp_styles)) {
+        return;
+      }
+
+      $css_files = array();
+      if (!empty($wp_styles->done)) {
+        foreach ($wp_styles->done as $handle) {
+          if (isset($wp_styles->registered[$handle])) {
+            $obj = $wp_styles->registered[$handle];
+            if ($obj->src) {
+              $href = $wp_styles->_css_href($obj->src, $obj->ver, $handle);
+              $media = isset($obj->args) ? $obj->args : 'all';
+              $css_files[] = array(
+                'handle' => $handle,
+                'src' => $obj->src,
+                'href' => $href,
+                'ver' => $obj->ver,
+                'media' => $media,
+              );
+            }
+          }
+        }
+      }
+
+      // Add stage showing all CSS files
+      $debug_stages[] = array(
+        'stage' => 'CSS FILES ENQUEUED',
+        'description' => 'CSS files queued by WordPress theme after wp_head',
+        'data' => array(
+          'Total CSS files' => count($css_files),
+          'Files' => $css_files,
+        ),
+      );
+    }
+    // Run this at the very end of wp_head, after manual styles print
+    add_action('wp_head', 'wp4bd_track_css_after_head', 1000);
+  }
+
+  // Track The Loop iterations
+  if (!function_exists('wp4bd_track_loop_start')) {
+    function wp4bd_track_loop_start() {
+      global $debug_stages;
+      $debug_stages[] = array(
+        'stage' => 'THE LOOP: START',
+        'description' => 'have_posts() called - The Loop beginning',
+        'data' => array(
+          'Time' => date('H:i:s.u'),
+        ),
+      );
+    }
+  }
+
+  if (!function_exists('wp4bd_track_loop_post')) {
+    function wp4bd_track_loop_post($post) {
+      global $debug_stages, $wp_query;
+      $debug_stages[] = array(
+        'stage' => 'THE LOOP: POST #' . ($wp_query->current_post + 1),
+        'description' => 'the_post() called - Setting up post #' . $post->ID,
+        'data' => array(
+          'Post ID' => $post->ID,
+          'Post Title' => $post->post_title,
+          'Post Type' => $post->post_type,
+          'Loop iteration' => $wp_query->current_post + 1,
+          'Total posts' => $wp_query->post_count,
+        ),
+      );
+      return $post;
+    }
+    add_filter('the_post', 'wp4bd_track_loop_post');
+  }
 }
 
 // WORKAROUND: Manually output styles during wp_head since WP_Styles echoes are being buffered
@@ -438,8 +677,36 @@ if ($template_file && file_exists($template_file)) {
   if (file_exists($header_file)) {
     if ($debug_mode) {
       echo "<!-- DEBUG: Including header.php from {$header_file} -->\n";
+
+      // Stage: Header execution
+      $debug_stages[] = array(
+        'stage' => 'HEADER EXECUTION',
+        'description' => 'Including WordPress theme header.php',
+        'data' => array(
+          'Header file' => $header_file,
+          'File exists' => 'YES',
+          'Template directory' => $template_dir,
+          'Theme' => defined('WP2BD_ACTIVE_THEME') ? WP2BD_ACTIVE_THEME : 'unknown',
+          'Time' => date('H:i:s'),
+        ),
+      );
     }
     include $header_file;
+  }
+
+  if ($debug_mode) {
+    // Stage: Main template execution
+    $debug_stages[] = array(
+      'stage' => 'TEMPLATE EXECUTION',
+      'description' => 'Including main WordPress template file',
+      'data' => array(
+        'Template file' => $template_file,
+        'Template name' => basename($template_file),
+        'Is single' => !empty($wp_post) ? 'YES' : 'NO',
+        'Is archive' => empty($wp_post) ? 'YES' : 'NO',
+        'Time' => date('H:i:s'),
+      ),
+    );
   }
 
   // Include the main template (but it will call get_header/footer which we skip)
@@ -451,12 +718,35 @@ if ($template_file && file_exists($template_file)) {
   if (file_exists($footer_file)) {
     if ($debug_mode) {
       echo "<!-- DEBUG: Including footer.php from {$footer_file} -->\n";
+
+      // Stage: Footer execution
+      $debug_stages[] = array(
+        'stage' => 'FOOTER EXECUTION',
+        'description' => 'Including WordPress theme footer.php',
+        'data' => array(
+          'Footer file' => $footer_file,
+          'File exists' => 'YES',
+          'Time' => date('H:i:s'),
+        ),
+      );
     }
     include $footer_file;
   }
 
   if ($debug_mode) {
     echo "<!-- DEBUG: Finished including all template parts -->\n";
+
+    // Stage: Template rendering complete
+    $debug_stages[] = array(
+      'stage' => 'TEMPLATE RENDERING COMPLETE',
+      'description' => 'All WordPress template files have been included',
+      'data' => array(
+        'Header included' => file_exists($header_file) ? 'YES' : 'NO',
+        'Template included' => 'YES',
+        'Footer included' => file_exists($footer_file) ? 'YES' : 'NO',
+        'Time' => date('H:i:s'),
+      ),
+    );
   }
 }
 else {
@@ -473,27 +763,100 @@ $wordpress_output = ob_get_clean();
 // Debug Output (if enabled)
 // ============================================================================
 
-if ($debug_mode && !empty($debug_info)) {
-  // Build debug display
-  $debug_html = '<div style="background: #f0f0f0; border: 3px solid #c00; padding: 20px; margin: 20px; font-family: monospace; font-size: 14px;">';
-  $debug_html .= '<h2 style="margin-top: 0; color: #c00;">WP Theme Debug: Data Flow</h2>';
+if ($debug_mode && !empty($debug_stages)) {
+  // Add final stage showing output capture complete
+  $debug_stages[] = array(
+    'stage' => 'OUTPUT CAPTURED',
+    'description' => 'WordPress output captured and ready to return to Backdrop',
+    'data' => array(
+      'Output length (bytes)' => strlen($wordpress_output),
+      'Output length (KB)' => round(strlen($wordpress_output) / 1024, 2),
+      'Has HTML' => strpos($wordpress_output, '<html') !== false ? 'YES' : 'NO',
+      'Has body tag' => strpos($wordpress_output, '<body') !== false ? 'YES' : 'NO',
+      'Time' => date('H:i:s'),
+    ),
+  );
 
-  foreach ($debug_info as $section => $data) {
-    $debug_html .= '<div style="margin-bottom: 15px;">';
-    $debug_html .= '<strong style="color: #060;">' . htmlspecialchars($section) . ':</strong><br>';
+  // Build debug display with stage-by-stage breakdown
+  $debug_html = '<div style="background: #f0f0f0; border: 3px solid #c00; padding: 20px; margin: 20px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif; font-size: 14px; line-height: 1.4;">';
+  $debug_html .= '<h1 style="margin-top: 0; color: #c00; font-size: 24px; border-bottom: 3px solid #c00; padding-bottom: 10px;">WP4BD Debug: Data Flow Through System</h1>';
+  $debug_html .= '<p style="color: #666; margin-bottom: 20px;">This shows each stage of data transformation from Backdrop to WordPress and back.</p>';
 
-    if (is_array($data)) {
-      $debug_html .= '<pre style="background: white; padding: 10px; margin: 5px 0; overflow-x: auto;">';
-      $debug_html .= htmlspecialchars(print_r($data, TRUE));
-      $debug_html .= '</pre>';
+  $stage_num = 0;
+  foreach ($debug_stages as $stage_info) {
+    $stage_num++;
+
+    // Stage header
+    $debug_html .= '<div style="background: white; border-left: 5px solid #0066cc; margin-bottom: 20px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">';
+    $debug_html .= '<h3 style="margin: 0 0 5px 0; color: #0066cc; font-size: 16px; font-weight: bold;">';
+    $debug_html .= 'Stage ' . $stage_num . ': ' . htmlspecialchars($stage_info['stage']);
+    $debug_html .= '</h3>';
+    $debug_html .= '<p style="margin: 0 0 15px 0; color: #666; font-size: 13px; font-style: italic;">';
+    $debug_html .= htmlspecialchars($stage_info['description']);
+    $debug_html .= '</p>';
+
+    // Stage data as table
+    if (!empty($stage_info['data'])) {
+      $debug_html .= '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
+
+      foreach ($stage_info['data'] as $key => $value) {
+        $debug_html .= '<tr style="border-bottom: 1px solid #eee;">';
+        $debug_html .= '<td style="padding: 8px; font-weight: bold; color: #333; width: 200px; vertical-align: top;">';
+        $debug_html .= htmlspecialchars($key);
+        $debug_html .= '</td>';
+        $debug_html .= '<td style="padding: 8px; color: #666; vertical-align: top;">';
+
+        // Format value based on type
+        if (is_array($value)) {
+          // Special handling for arrays
+          if ($key === 'Files') {
+            // CSS files - show each file as a row
+            $debug_html .= '<table style="width: 100%; border: 1px solid #ddd; margin: 5px 0;">';
+            $debug_html .= '<tr style="background: #f9f9f9; font-weight: bold;">';
+            $debug_html .= '<td style="padding: 5px;">Handle</td>';
+            $debug_html .= '<td style="padding: 5px;">Source</td>';
+            $debug_html .= '<td style="padding: 5px;">Media</td>';
+            $debug_html .= '<td style="padding: 5px;">Version</td>';
+            $debug_html .= '</tr>';
+            foreach ($value as $file) {
+              $debug_html .= '<tr>';
+              $debug_html .= '<td style="padding: 5px; border-top: 1px solid #eee;">' . htmlspecialchars($file['handle']) . '</td>';
+              $debug_html .= '<td style="padding: 5px; border-top: 1px solid #eee; font-size: 11px; word-break: break-all;">' . htmlspecialchars($file['src']) . '</td>';
+              $debug_html .= '<td style="padding: 5px; border-top: 1px solid #eee;">' . htmlspecialchars($file['media']) . '</td>';
+              $debug_html .= '<td style="padding: 5px; border-top: 1px solid #eee;">' . htmlspecialchars($file['ver']) . '</td>';
+              $debug_html .= '</tr>';
+            }
+            $debug_html .= '</table>';
+          } else {
+            // Other arrays - show as formatted list
+            $debug_html .= '<pre style="background: #f9f9f9; padding: 8px; margin: 0; overflow-x: auto; font-size: 12px; border: 1px solid #ddd;">';
+            $debug_html .= htmlspecialchars(print_r($value, TRUE));
+            $debug_html .= '</pre>';
+          }
+        } elseif (is_bool($value)) {
+          $debug_html .= '<span style="font-weight: bold; color: ' . ($value ? '#060' : '#c00') . ';">';
+          $debug_html .= $value ? 'TRUE' : 'FALSE';
+          $debug_html .= '</span>';
+        } else {
+          $debug_html .= htmlspecialchars((string)$value);
+        }
+
+        $debug_html .= '</td>';
+        $debug_html .= '</tr>';
+      }
+
+      $debug_html .= '</table>';
     }
-    else {
-      $debug_html .= '<div style="padding: 5px 10px; background: white; margin: 5px 0;">';
-      $debug_html .= htmlspecialchars($data);
-      $debug_html .= '</div>';
-    }
+
     $debug_html .= '</div>';
   }
+
+  // Summary footer
+  $debug_html .= '<div style="background: #fff; border: 2px solid #060; padding: 15px; margin-top: 20px;">';
+  $debug_html .= '<h3 style="margin: 0 0 10px 0; color: #060;">Summary</h3>';
+  $debug_html .= '<p style="margin: 0; color: #333;">Total stages: ' . $stage_num . '</p>';
+  $debug_html .= '<p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">Data successfully flowed from Backdrop → WordPress → Rendered HTML → Back to Backdrop</p>';
+  $debug_html .= '</div>';
 
   $debug_html .= '</div>';
 

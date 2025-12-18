@@ -8,7 +8,16 @@
       "Bash(ddev logs:*)",
       "Bash(ddev mutagen sync:*)",
       "Bash(curl:*)",
-      "Bash(ddev bee dblog:show:*)"
+      "Bash(ddev bee dblog:show:*)",
+      "Bash(ddev exec '/var/www/html/backdrop-1.30/core/scripts/backdrop.sh --root=\"\"\"\"/var/www/html/backdrop-1.30\"\"\"\" \"\"\"\"http://default/node/1\"\"\"\"')",
+      "Bash(ddev exec:*)",
+      "Bash(grep:*)",
+      "Bash(ddev bee:*)",
+      "Bash(git add:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "WebFetch(domain:wp2bd-test.ddev.site)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

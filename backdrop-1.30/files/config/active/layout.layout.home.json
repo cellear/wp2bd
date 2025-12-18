@@ -16,152 +16,35 @@
         "title_block": "094cbc03-d088-4b3c-8361-977733540ae8"
     },
     "positions": {
-        "header": [
-            "5c9bc982-39dd-4c1e-ad34-523330ea91f2"
-        ],
-        "content": [
-            "52945860-fbec-49f6-ae07-7f930a6fa639"
-        ],
-        "sidebar": [
-            "e105427d-b33d-4dec-a300-00e458cc24b8"
-        ],
-        "footer": [
-            "583cb515-23a4-4d9a-ba01-1f31ad6b9f9e",
-            "6a46fd7b-646b-4c91-9d03-034e630a2135"
+        "page": [
+            "62feb0af-24c5-437b-9509-9c116cbc79e8"
         ],
         "title": []
     },
     "contexts": [],
     "relationships": [],
     "content": {
-        "5c9bc982-39dd-4c1e-ad34-523330ea91f2": {
-            "plugin": "wp_content:wordpress_header",
+        "62feb0af-24c5-437b-9509-9c116cbc79e8": {
+            "plugin": "wp_content:wordpress_page",
             "data": {
                 "status": 1,
                 "module": "wp_content",
-                "delta": "wordpress_header",
+                "delta": "wordpress_page",
                 "settings": {
-                    "title_display": "custom",
-                    "title": "WordPress Header",
-                    "style": "default",
-                    "block_settings": [],
-                    "contexts": [],
-                    "admin_label": "",
-                    "admin_description": ""
-                },
-                "uuid": "5c9bc982-39dd-4c1e-ad34-523330ea91f2",
-                "style": {
-                    "plugin": "default",
-                    "data": {
-                        "settings": {
-                            "classes": ""
-                        }
-                    }
-                }
-            }
-        },
-        "52945860-fbec-49f6-ae07-7f930a6fa639": {
-            "plugin": "wp_content:wordpress_content",
-            "data": {
-                "status": 1,
-                "module": "wp_content",
-                "delta": "wordpress_content",
-                "settings": {
-                    "title_display": "custom",
-                    "title": "WordPress Content",
-                    "style": "default",
-                    "block_settings": [],
-                    "contexts": [],
-                    "admin_label": "",
-                    "admin_description": ""
-                },
-                "uuid": "52945860-fbec-49f6-ae07-7f930a6fa639",
-                "style": {
-                    "plugin": "default",
-                    "data": {
-                        "settings": {
-                            "classes": ""
-                        }
-                    }
-                }
-            }
-        },
-        "e105427d-b33d-4dec-a300-00e458cc24b8": {
-            "plugin": "wp_content:wordpress_sidebar",
-            "data": {
-                "status": 1,
-                "module": "wp_content",
-                "delta": "wordpress_sidebar",
-                "settings": {
-                    "title_display": "custom",
-                    "title": "WordPress Sidebar",
-                    "style": "default",
-                    "block_settings": [],
-                    "contexts": [],
-                    "admin_label": "",
-                    "admin_description": ""
-                },
-                "uuid": "e105427d-b33d-4dec-a300-00e458cc24b8",
-                "style": {
-                    "plugin": "default",
-                    "data": {
-                        "settings": {
-                            "classes": ""
-                        }
-                    }
-                }
-            }
-        },
-        "583cb515-23a4-4d9a-ba01-1f31ad6b9f9e": {
-            "plugin": "wp_content:wordpress_footer",
-            "data": {
-                "status": 1,
-                "module": "wp_content",
-                "delta": "wordpress_footer",
-                "settings": {
-                    "title_display": "custom",
-                    "title": "WordPress Footer",
-                    "style": "default",
-                    "block_settings": [],
-                    "contexts": [],
-                    "admin_label": "",
-                    "admin_description": ""
-                },
-                "uuid": "583cb515-23a4-4d9a-ba01-1f31ad6b9f9e",
-                "style": {
-                    "plugin": "default",
-                    "data": {
-                        "settings": {
-                            "classes": ""
-                        }
-                    }
-                }
-            }
-        },
-        "6a46fd7b-646b-4c91-9d03-034e630a2135": {
-            "plugin": "system:page_components:messages",
-            "data": {
-                "status": 1,
-                "module": "system",
-                "delta": "page_components",
-                "settings": {
-                    "title_display": "none",
+                    "title_display": "default",
                     "title": "",
                     "style": "default",
                     "block_settings": [],
                     "contexts": [],
-                    "title_tag": "h1",
-                    "title_classes": "page-title",
-                    "tab_type": "both",
                     "admin_label": "",
                     "admin_description": ""
                 },
-                "uuid": "6a46fd7b-646b-4c91-9d03-034e630a2135",
+                "uuid": "62feb0af-24c5-437b-9509-9c116cbc79e8",
                 "style": {
                     "plugin": "default",
                     "data": {
                         "settings": {
-                            "classes": "container"
+                            "classes": ""
                         }
                     }
                 }

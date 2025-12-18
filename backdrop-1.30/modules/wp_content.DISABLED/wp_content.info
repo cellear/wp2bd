@@ -1,0 +1,8 @@
+name = WordPress Content
+description = Provides a block that renders WordPress theme output for Backdrop nodes
+type = module
+backdrop = 1.x
+version = 1.x-1.0.0
+package = WP2BD
+
+dependencies[] = layout

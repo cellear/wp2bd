@@ -12,7 +12,7 @@
  * @version 1.0
  */
 
-?><!DOCTYPE html>
+?><?php if (isset($_GET['DEBUG'])) { echo "\n<!-- DEBUG MARKER: header.php is being executed -->\n"; } ?><!DOCTYPE html>
 <html <?php language_attributes(); ?> class="no-js no-svg">
 <head>
 <meta charset="<?php bloginfo( 'charset' ); ?>">

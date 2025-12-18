@@ -10,6 +10,15 @@
  */
 
 /**
+ * WP4BD: Guard check - only load this file if WordPress hooks are available
+ * This prevents errors during Backdrop cache clear when theme files are scanned
+ * before WordPress is fully bootstrapped.
+ */
+if (!function_exists('add_action') || !function_exists('add_filter')) {
+	return;
+}
+
+/**
  * Twenty Seventeen only works in WordPress 4.7 or later.
  */
 if ( version_compare( $GLOBALS['wp_version'], '4.7-alpha', '<' ) ) {

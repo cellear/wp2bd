@@ -1096,6 +1096,10 @@ function wp4bd_bootstrap_wordpress() {
       }
     }
 
+    // Load plugin system FIRST (needed for hooks)
+    // CRITICAL: This must load before ANY classes that might trigger theme loading
+    require_once ABSPATH . WPINC . '/plugin.php';
+
     // Load class definitions
     require_once ABSPATH . WPINC . '/class-wp-post.php';
     require_once ABSPATH . WPINC . '/class-wp-query.php';
@@ -1107,9 +1111,6 @@ function wp4bd_bootstrap_wordpress() {
     require_once ABSPATH . WPINC . '/class-wp-theme.php';  // Note: reads local template files
 
     // Note: script/style classes loaded by script-loader.php below
-
-    // Load plugin system (needed for hooks)
-    require_once ABSPATH . WPINC . '/plugin.php';
 
     // Load formatting and escaping
     require_once ABSPATH . WPINC . '/formatting.php';
