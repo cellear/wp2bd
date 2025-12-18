@@ -318,3 +318,78 @@ function _wp2bd_get_theme_info($theme_name) {
     $cache[$theme_name] = array();
     return array();
 }
+
+/**
+ * Load header template.
+ *
+ * Includes the header template for a theme or if a name is specified then a
+ * specialised header will be included.
+ *
+ * For the parameter, if the file is called "header-special.php" then specify
+ * "special".
+ *
+ * @param string $name The name of the specialised header.
+ */
+if (!function_exists('get_header')) {
+  function get_header($name = null) {
+    $templates = array();
+    $name = (string) $name;
+    if ('' !== $name) {
+      $templates[] = "header-{$name}.php";
+    }
+
+    $templates[] = 'header.php';
+
+    locate_template($templates, true);
+  }
+}
+
+/**
+ * Load footer template.
+ *
+ * Includes the footer template for a theme or if a name is specified then a
+ * specialised footer will be included.
+ *
+ * For the parameter, if the file is called "footer-special.php" then specify
+ * "special".
+ *
+ * @param string $name The name of the specialised footer.
+ */
+if (!function_exists('get_footer')) {
+  function get_footer($name = null) {
+    $templates = array();
+    $name = (string) $name;
+    if ('' !== $name) {
+      $templates[] = "footer-{$name}.php";
+    }
+
+    $templates[] = 'footer.php';
+
+    locate_template($templates, true);
+  }
+}
+
+/**
+ * Load sidebar template.
+ *
+ * Includes the sidebar template for a theme or if a name is specified then a
+ * specialised sidebar will be included.
+ *
+ * For the parameter, if the file is called "sidebar-special.php" then specify
+ * "special".
+ *
+ * @param string $name The name of the specialised sidebar.
+ */
+if (!function_exists('get_sidebar')) {
+  function get_sidebar($name = null) {
+    $templates = array();
+    $name = (string) $name;
+    if ('' !== $name) {
+      $templates[] = "sidebar-{$name}.php";
+    }
+
+    $templates[] = 'sidebar.php';
+
+    locate_template($templates, true);
+  }
+}

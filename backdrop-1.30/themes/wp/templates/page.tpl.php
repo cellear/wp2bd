@@ -16,6 +16,12 @@ if (!isset($page) || !is_array($page)) {
     <div id="content" class="content" role="main">
       <?php print wp_render_wordpress_content(); ?>
     </div>
+
+    <?php if (isset($page['sidebar']) && $page['sidebar']): ?>
+      <aside id="sidebar" class="sidebar" role="complementary">
+        <?php print render($page['sidebar']); ?>
+      </aside>
+    <?php endif; ?>
   </div>
 </div>
 <?php } ?>
