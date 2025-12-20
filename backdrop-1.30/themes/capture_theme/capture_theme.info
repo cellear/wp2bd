@@ -1,0 +1,7 @@
+type = theme
+name = Capture Theme
+description = Theme for capturing Backdrop render context payloads.
+backdrop = 1.x
+version = BACKDROP_VERSION
+
+project = capture_theme
