@@ -8,6 +8,7 @@
  * Implements template_preprocess_page().
  */
 function capture_theme_preprocess_page(array &$variables) {
+  backdrop_add_css('.capture-theme-note { background: #fff5c2; border: 1px solid #e0c96a; padding: 12px 16px; margin: 12px 0; font-weight: 600; } .capture-theme-note a { font-weight: 700; }', array('type' => 'inline'));
   _wp2bd_capture_store('preprocess_page', _wp2bd_capture_sanitize($variables));
 
   if (!isset($GLOBALS['wp2bd_capture_globals'])) {
@@ -29,6 +30,9 @@ function capture_theme_preprocess_page(array &$variables) {
       'menus' => _wp2bd_capture_sanitize($menu_trees),
     );
   }
+
+  // Ensure capture runs even if process_page is not invoked by the theme layer.
+  _wp2bd_capture_write($variables);
 }
 
 /**
@@ -56,55 +60,7 @@ function capture_theme_preprocess_region(array &$variables) {
  * Implements template_process_page().
  */
 function capture_theme_process_page(array &$variables) {
-  global $theme_key;
-
-  $path = current_path();
-  $timestamp = (int) REQUEST_TIME;
-  $safe_path = preg_replace('/[^a-zA-Z0-9_-]+/', '-', $path);
-  $safe_path = trim($safe_path, '-');
-  if ($safe_path === '') {
-    $safe_path = 'front';
-  }
-
-  $directory = 'public://theme-captures';
-  file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
-  $uri = $directory . '/' . $safe_path . '--' . $timestamp . '.php';
-
-  $payload = array(
-    'metadata' => array(
-      'path' => $path,
-      'timestamp' => $timestamp,
-      'theme' => $theme_key,
-      'file' => $uri,
-    ),
-    'globals' => isset($GLOBALS['wp2bd_capture_globals']) ? $GLOBALS['wp2bd_capture_globals'] : array(),
-    'preprocess' => _wp2bd_capture_store(),
-    'page' => array(
-      'variables' => _wp2bd_capture_sanitize($variables),
-      'page' => isset($variables['page']) ? _wp2bd_capture_sanitize($variables['page']) : array(),
-    ),
-  );
-
-  $export = "<?php\nreturn " . var_export($payload, TRUE) . ";\n";
-  file_unmanaged_save_data($export, $uri, FILE_EXISTS_REPLACE);
-
-  $file_url = file_create_url($uri);
-  $note = t('Theme capture saved to %path. !link', array(
-    '%path' => $uri,
-    '!link' => l(t('View capture payload'), $file_url, array('external' => TRUE)),
-  ));
-
-  backdrop_set_message($note, 'status');
-
-  $note = t('Theme capture created: !link', array(
-    '!link' => l(t('View capture payload'), $file_url, array('external' => TRUE)),
-  ));
-
-  $variables['page']['content']['capture_theme_note'] = array(
-    '#type' => 'markup',
-    '#markup' => '<div class="capture-theme-note">' . $note . '</div>',
-    '#weight' => 1000,
-  );
+  _wp2bd_capture_write($variables);
 }
 
 /**
@@ -157,4 +113,87 @@ function _wp2bd_capture_sanitize($value, $depth = 0) {
   }
 
   return $value;
+}
+
+/**
+ * Write the capture payload and surface a UI note.
+ */
+function _wp2bd_capture_write(array &$variables) {
+  static $has_run = FALSE;
+  if ($has_run) {
+    return;
+  }
+  $has_run = TRUE;
+
+  global $theme_key;
+
+  $path = current_path();
+  $timestamp = (int) REQUEST_TIME;
+
+  $safe_path = preg_replace('/[^a-zA-Z0-9_-]+/', '-', $path);
+  $safe_path = trim($safe_path, '-');
+  if ($safe_path === '') {
+    $safe_path = 'front';
+  }
+
+  $directory = 'public://theme-captures';
+  if (!file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+    watchdog('capture_theme', 'Failed to prepare directory %dir', array('%dir' => $directory), WATCHDOG_ERROR);
+  }
+  $uri = $directory . '/' . $safe_path . '--' . $timestamp . '.php';
+
+  $page_vars = isset($variables['page']) && is_array($variables['page']) ? $variables['page'] : array();
+  $payload = array(
+    'metadata' => array(
+      'path' => $path,
+      'timestamp' => $timestamp,
+      'theme' => $theme_key,
+      'file' => $uri,
+    ),
+    'globals' => isset($GLOBALS['wp2bd_capture_globals']) ? $GLOBALS['wp2bd_capture_globals'] : array(),
+    'preprocess' => _wp2bd_capture_store(),
+    'page' => array(
+      'variables' => _wp2bd_capture_sanitize($variables),
+      'page' => _wp2bd_capture_sanitize($page_vars),
+      'page_raw_type' => isset($variables['page']) ? gettype($variables['page']) : 'unset',
+    ),
+  );
+
+  $export = "<?php\nreturn " . var_export($payload, TRUE) . ";\n";
+  $saved = file_unmanaged_save_data($export, $uri, FILE_EXISTS_REPLACE);
+  if (!$saved) {
+    watchdog('capture_theme', 'Capture failed to save to %uri', array('%uri' => $uri), WATCHDOG_ERROR);
+  }
+
+  $file_url = file_create_url($uri);
+  $note = t('Theme capture saved to %path. !link', array(
+    '%path' => $uri,
+    '!link' => l(t('View capture payload'), $file_url, array('external' => TRUE)),
+  ));
+
+  backdrop_set_message($note, 'status');
+
+  $note = t('Theme capture created: !link', array(
+    '!link' => l(t('View capture payload'), $file_url, array('external' => TRUE)),
+  ));
+
+  $note_markup = '<div class="capture-theme-note">Capture created. ' . $note . '</div>';
+  if (isset($variables['page']) && is_array($variables['page'])) {
+    if (!isset($variables['page']['content']) || !is_array($variables['page']['content'])) {
+      $variables['page']['content'] = array();
+    }
+    $variables['page']['content']['capture_theme_note'] = array(
+      '#type' => 'markup',
+      '#markup' => $note_markup,
+      '#weight' => 1000,
+    );
+  }
+  else {
+    if (isset($variables['messages']) && is_string($variables['messages'])) {
+      $variables['messages'] .= $note_markup;
+    }
+    else {
+      $variables['messages'] = $note_markup;
+    }
+  }
 }

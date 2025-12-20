@@ -5,3 +5,4 @@ backdrop = 1.x
 version = BACKDROP_VERSION
 
 project = capture_theme
+base theme = basis
