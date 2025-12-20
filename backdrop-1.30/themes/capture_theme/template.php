@@ -89,6 +89,13 @@ function capture_theme_process_page(array &$variables) {
   file_unmanaged_save_data($export, $uri, FILE_EXISTS_REPLACE);
 
   $file_url = file_create_url($uri);
+  $note = t('Theme capture saved to %path. !link', array(
+    '%path' => $uri,
+    '!link' => l(t('View capture payload'), $file_url, array('external' => TRUE)),
+  ));
+
+  backdrop_set_message($note, 'status');
+
   $note = t('Theme capture created: !link', array(
     '!link' => l(t('View capture payload'), $file_url, array('external' => TRUE)),
   ));
