@@ -96,6 +96,10 @@ function capture_theme_process_page(array &$variables) {
 
   backdrop_set_message($note, 'status');
 
+  $note = t('Theme capture created: !link', array(
+    '!link' => l(t('View capture payload'), $file_url, array('external' => TRUE)),
+  ));
+
   $variables['page']['content']['capture_theme_note'] = array(
     '#type' => 'markup',
     '#markup' => '<div class="capture-theme-note">' . $note . '</div>',
