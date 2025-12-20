@@ -140,7 +140,7 @@ function _wp2bd_capture_write(array &$variables) {
   if (!file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
     watchdog('capture_theme', 'Failed to prepare directory %dir', array('%dir' => $directory), WATCHDOG_ERROR);
   }
-  $uri = $directory . '/' . $safe_path . '--' . $timestamp . '.php';
+  $uri = $directory . '/' . $safe_path . '--' . $timestamp . '.json';
 
   $page_vars = isset($variables['page']) && is_array($variables['page']) ? $variables['page'] : array();
   $payload = array(
@@ -159,7 +159,7 @@ function _wp2bd_capture_write(array &$variables) {
     ),
   );
 
-  $export = "<?php\nreturn " . var_export($payload, TRUE) . ";\n";
+  $export = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
   $saved = file_unmanaged_save_data($export, $uri, FILE_EXISTS_REPLACE);
   if (!$saved) {
     watchdog('capture_theme', 'Capture failed to save to %uri', array('%uri' => $uri), WATCHDOG_ERROR);
