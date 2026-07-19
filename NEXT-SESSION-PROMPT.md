@@ -30,10 +30,14 @@ Work plan (details in STATE-OF-PROJECT.md §8):
 1. **Triage before coding.** Epics 5–8 were already drafted in December on a
    stacked branch — `origin/claude/epic-8-template-functions-01XU73r6DXHviqs3JEQdEMxr`
    contains all of them, unmerged and unvalidated. Check it out, boot the
-   site, curl pages, and report what works and what breaks. Give the three
-   Dec 18–19 experiment branches (`claude/theme-only-architecture-*`,
-   `grok/module-2-theme`, `codex/*capture*`) a quick assessment too.
-   Salvage beats rewrite.
+   site, curl pages, and report what works and what breaks. Give the
+   Dec 18–19 experiment branches a quick assessment too — `codex/wpbrain-prune`
+   is the most complete tip (it contains `theme-only-architecture` and the
+   capture branches). Salvage beats rewrite.
+   **Decided (Luke, Jul 2026):** the static theme player (`capture_theme` on
+   `codex/wpbrain-prune`) is a keeper — preserve it and treat its JSON
+   render-context fixtures as the data contract for engine testing; see
+   STATE-OF-PROJECT.md §"static theme player".
 2. Recommend a base to the user (main + cherry-picks, the epic-8 tip, or an
    experiment branch) and wait for their pick before merging anything.
 3. Add a kill switch (config flag) around WordPress-core loading so V2 work
