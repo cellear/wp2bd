@@ -120,7 +120,23 @@ render a page with curl → read the debug output / diff against
 `REFERENCE/` screenshots → fix → re-render. Never claim a stage works without
 fetching the page.
 
-## 7. Suggested plan of attack (Epics 5→8, verified at every step)
+## 7. Prior art: the Theme Machine project (separate — do not merge)
+
+`github.com/cellear/theme_machine` is a **sibling project** (Jan–Mar 2026) that
+shipped `d7_theme_compat` 1.0 — unmodified Drupal 7 themes on Backdrop,
+validated across 170+ themes. It is a different project and stays separate;
+WordPress work continues here. Two of its techniques are worth borrowing:
+
+1. **`layout_suppress(TRUE)`** in `hook_init()` — tells Backdrop's Layout
+   system to step aside so the compat layer renders the whole page itself.
+   Cleaner than wedging WordPress output into Layout blocks; a strong
+   candidate for the V2 render path when Epic 6 (Bootstrap Integration) lands.
+2. **Automated theme smoke-testing** — its `theme_tester` module adds a
+   `bee theme-test` command that renders every theme and checks for errors.
+   The same idea here would let one command verify all four WordPress themes
+   after each collision-list change.
+
+## 8. Suggested plan of attack (Epics 5→8, verified at every step)
 
 1. **Re-enable WP core loading behind a kill switch** (config flag or debug
    level) so V2 work never again "breaks the working state" — the Dec 15
