@@ -60,14 +60,53 @@ Then Dec 18–19, three competing architecture experiments (never merged):
   theme, bootstrap cleanup
 - `grok/module-2-theme` (+46) — pragmatic: real Twenty Seventeen layout
   fixes, more themes added
-- `codex/wpbrain-prune` (+45) → `codex/create-new-backdrop-theme-with-capture-feature*`
-  (+38/+41) — a different concept: **capture** WordPress's rendered output as
-  JSON payloads to generate a Backdrop theme (render-once-then-snapshot
-  rather than render-live). PR #6 merged along this line.
+- `codex/wpbrain-prune` (+45, the most complete December tip — it *contains*
+  `theme-only-architecture` and both `capture-feature` branches) — the
+  **static theme player** line: see below. Also prunes wpbrain hard
+  (wp-admin, xmlrpc, mail: ~265K lines deleted) and adds themes
+  Twenty Ten through Twenty Twenty-Two.
 
 A `merge-all-branches.sh` sits at the repo root — an unification attempt that
-appears never to have been run. Ask Luke which December direction he
-considered most promising before picking a base.
+appears never to have been run.
+
+### The static theme player (KEEP — Luke, Jul 2026)
+
+Luke's verdict: this concept is worth keeping regardless of which
+architecture wins. What it actually is (code on `codex/wpbrain-prune`, in
+`backdrop-1.30/themes/capture_theme/` — three files, base theme Basis):
+
+On every page render, `capture_theme` snapshots **Backdrop's complete render
+context** — preprocess variables for page/node/block/region, globals, all
+menu trees, breadcrumbs — as pretty-printed JSON into
+`public://theme-captures/<path>--<timestamp>.json` (sample payload committed
+in `capture_theme/sample/`). The JSON is a **data contract**: a deterministic
+fixture that a "player" can replay through a WordPress theme engine with no
+live Backdrop in the render loop. Uses: fixture-based testing of the WP
+engine, decoupled development, and potentially a render-once/serve-static
+product mode.
+
+### Branch-tip SHAs (pinned here in case branches get cleaned up)
+
+| Line of work | Branch | Tip SHA |
+|---|---|---|
+| Static theme player + theme-only arch + pruned wpbrain | `codex/wpbrain-prune` | `5786df82ed` |
+| V2 Epics 5–8 (stacked, unvalidated) | `claude/epic-8-template-functions-01XU73r6…` | `f49996f814` |
+| Grok: 2017 layout fixes + more themes | `grok/module-2-theme` | `2abcb41024` |
+| Grok: wp-as-engine | `grok/wp-as-engine` | `77711098bc` |
+| Wpbrain analysis (= `grok/theme-integration`, same commit) | `claude/analyze-wpbrain-usage-cKbah` | `c3051f049e` |
+
+The cloud git proxy can't push tags; to pin these permanently, run from a
+machine with full push rights:
+
+```bash
+git fetch origin
+git tag archive/dec2025-capture-player   5786df82ed
+git tag archive/dec2025-epic-chain       f49996f814
+git tag archive/dec2025-grok-module-2    2abcb41024
+git tag archive/dec2025-grok-wp-engine   77711098bc
+git tag archive/dec2025-wpbrain-analysis c3051f049e
+git push origin --tags
+```
 
 ### Dormancy (Dec 15, 2025 → Jul 2026)
 Main froze at Dec 15 (after `5dd0efa` "temporarily disable wp-globals-init to
