@@ -37,15 +37,43 @@ Status when work stopped (also live on the site's front page):
 - **Epic 3 — Database Interception: ✅** — `db.php` drop-in stubs `wpdb`, maps
   queries to `node_load()` / `EntityFieldQuery` / `user_load_multiple()`
 - **Epic 4 — WordPress Globals: ⚠️ code written but DISABLED** (see §4)
-- **Epic 5 — External I/O Interception: ⬅ NEXT** (WP4BD-V2-040/041/042)
-- **Epic 6 — Bootstrap Integration** (050/051/052)
-- **Epic 7 — Data Structure Bridges** (060–063: posts, users, terms, options)
-- **Epic 8 — Testing & Validation** (070–073)
+- **Epics 5–8: ⚠️ DRAFTED ON UNMERGED BRANCHES** (Dec 16–17) — see below.
+  The debug page and older docs say "Next: Epic 5"; git says otherwise.
+
+### The December finale (branch archaeology — verify before redoing anything)
+
+Epics 5–8 were implemented as a **stacked branch chain**
+(epic-5 ⊂ epic-6 ⊂ epic-7 ⊂ epic-8; each builds on the previous):
+
+| Branch (origin/) | Contains |
+|---|---|
+| `claude/epic-5-io-interception-01XU73r6…` | Epic 5 (+6 commits on main) |
+| `claude/epic-6-bootstrap-integration-01XU73r6…` | Epics 5–6 (+10) |
+| `claude/epic-7-data-bridges-01XU73r6…` | Epics 5–7 (+16) |
+| `claude/epic-8-template-functions-01XU73r6…` | **Epics 5–8 complete (+23), incl. production template and test scripts** |
+
+Whether epic-8 actually *renders* was never validated — it was never merged.
+Triage it first: check out the tip, run the site, see what happens.
+
+Then Dec 18–19, three competing architecture experiments (never merged):
+- `claude/theme-only-architecture-fe7f34f6…` (+35) — consolidate into the
+  theme, bootstrap cleanup
+- `grok/module-2-theme` (+46) — pragmatic: real Twenty Seventeen layout
+  fixes, more themes added
+- `codex/wpbrain-prune` (+45) → `codex/create-new-backdrop-theme-with-capture-feature*`
+  (+38/+41) — a different concept: **capture** WordPress's rendered output as
+  JSON payloads to generate a Backdrop theme (render-once-then-snapshot
+  rather than render-live). PR #6 merged along this line.
+
+A `merge-all-branches.sh` sits at the repo root — an unification attempt that
+appears never to have been run. Ask Luke which December direction he
+considered most promising before picking a base.
 
 ### Dormancy (Dec 15, 2025 → Jul 2026)
-Work stopped after commit `5dd0efa` "temporarily disable wp-globals-init to
-restore working state." Nothing is broken; it's parked at a stable V1-rendering
-state with V2 scaffolding in place.
+Main froze at Dec 15 (after `5dd0efa` "temporarily disable wp-globals-init to
+restore working state"); the epic chain and the three experiments happened on
+branches Dec 16–19, then work stopped entirely. Main is parked at a stable
+V1-rendering state with V2 scaffolding in place.
 
 ## 3. The central blocker (read this before coding)
 
@@ -136,19 +164,20 @@ WordPress work continues here. Two of its techniques are worth borrowing:
    The same idea here would let one command verify all four WordPress themes
    after each collision-list change.
 
-## 8. Suggested plan of attack (Epics 5→8, verified at every step)
+## 8. Suggested plan of attack (triage first, then Epics as needed)
 
-1. **Re-enable WP core loading behind a kill switch** (config flag or debug
-   level) so V2 work never again "breaks the working state" — the Dec 15
-   failure mode.
-2. **Burn down the collision list** from the Dec 8 handoff: per WP core file,
-   delete V1 twins, load real file, curl-verify, commit.
-3. **Epic 5** — intercept external I/O (HTTP calls, file paths, mail) so
-   headless WP can't reach out.
-4. **Epic 6** — move bootstrap from the debug template into `wp_content`
-   module properly; prevent any WP DB connection attempt.
-5. **Epic 7** — complete node→WP_Post, user, term, options bridges (options
-   backed by Backdrop config).
-6. **Epic 8** — render all four themes, compare against `REFERENCE/`
-   screenshots, then swap the debug template for the production template
-   (WP4BD-V2-073).
+1. **Triage the December branches before writing new code.** Check out
+   `origin/claude/epic-8-template-functions-01XU73r6DXHviqs3JEQdEMxr` (it
+   contains all of Epics 5–8), boot the site, curl pages, and record what
+   works and what breaks. Do the same quick pass on the three Dec 18–19
+   experiments. Salvage beats rewrite.
+2. **Pick a base with Luke** — main + cherry-picked epic work, the epic-8
+   tip itself, or one of the experiments — and merge it to main behind a
+   kill switch (config flag) so the default page keeps rendering.
+3. **Burn down remaining V1/V2 collisions** from the Dec 8 handoff list:
+   per WP core file, delete V1 twins, load real file, curl-verify, commit.
+   (The epic branches may have already done part of this — check first.)
+4. **Close the remaining epic gaps** found in triage (I/O interception,
+   bootstrap-in-module, data bridges, options-from-config).
+5. **Validate all four themes** against `REFERENCE/` screenshots and swap
+   the debug template for the production template (WP4BD-V2-073).

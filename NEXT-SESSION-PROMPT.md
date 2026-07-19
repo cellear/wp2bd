@@ -25,17 +25,25 @@ manually. Every stage of work must be verified by actually rendering pages —
 never mark a step done without a curl/screenshot check. Reference screenshots
 of the real WordPress themes are in `REFERENCE/2014..2017/`.
 
-Work plan (details in STATE-OF-PROJECT.md §7):
+Work plan (details in STATE-OF-PROJECT.md §8):
 
-1. Add a kill switch (config flag) around WordPress-core loading, then
-   re-enable `wp-globals-init.php` in `page.tpl.php` behind it — the Dec 15
-   failure was V2 breaking the site with no way to switch it off.
-2. Burn down the Dec 8 collision list one WP core file at a time: delete the
-   V1 duplicate functions, load the real core file, re-render, commit. Small
-   commits, one collision group each.
-3. Then continue the epic sequence: Epic 5 (External I/O Interception,
-   tickets WP4BD-V2-040..042), Epic 6 (Bootstrap Integration, 050..052),
-   Epic 7 (Data Bridges, 060..063), Epic 8 (Testing & Validation, 070..073).
+1. **Triage before coding.** Epics 5–8 were already drafted in December on a
+   stacked branch — `origin/claude/epic-8-template-functions-01XU73r6DXHviqs3JEQdEMxr`
+   contains all of them, unmerged and unvalidated. Check it out, boot the
+   site, curl pages, and report what works and what breaks. Give the three
+   Dec 18–19 experiment branches (`claude/theme-only-architecture-*`,
+   `grok/module-2-theme`, `codex/*capture*`) a quick assessment too.
+   Salvage beats rewrite.
+2. Recommend a base to the user (main + cherry-picks, the epic-8 tip, or an
+   experiment branch) and wait for their pick before merging anything.
+3. Add a kill switch (config flag) around WordPress-core loading so V2 work
+   can never again "break the working state" — the Dec 15 failure mode.
+4. Burn down whatever remains of the Dec 8 collision list (the epic branches
+   may have already handled part of it): delete V1 duplicate functions, load
+   the real WP core file, re-render, commit small.
+5. Close remaining epic gaps found in triage, then validate all four themes
+   against `REFERENCE/` screenshots and land the production template
+   (WP4BD-V2-073).
 
 Norms: never leave the site broken at a commit boundary (the kill switch
 exists so the default page keeps rendering); trust the git log over the debug
