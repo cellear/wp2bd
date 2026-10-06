@@ -203,6 +203,36 @@ WordPress work continues here. Two of its techniques are worth borrowing:
    The same idea here would let one command verify all four WordPress themes
    after each collision-list change.
 
+## 7b. Related work: WordPal (Drupal, Oct 2026) — and the three-approaches map
+
+Théodore Biadala's **WordPal** (drupal.org/project/wordpal, gallery at
+wordpal.tresbien.tech) converts WordPress **block themes** to native Drupal
+themes: the 90+ WP core blocks are hand-translated to Single Directory
+Components, and the converter maps the theming system to Drupal concepts.
+Scale proof: 2,050 of 2,319 block themes converted, 82 pixel-identical home
+pages, each gallery entry showing a side-by-side diff count.
+
+From his LinkedIn exchange with Luke (Oct 2026): he **debated a runtime mock
+of WordPress functions and rejected it in favor of conversion** — which is
+exactly why WordPal handles *only* block themes, "not classic or hybrids."
+Block themes are declarative data; classic themes are PHP programs. That
+leaves classic themes — WP4BD's entire territory — untouched by WordPal.
+
+The taxonomy, with each approach now tried by someone:
+1. **Runtime mock of WP functions** — WP4BD V1; Théodore also considered and
+   rejected it. Known dead end at fidelity scale.
+2. **Convert to native theme** — WordPal (works because block themes are
+   data); philosophically akin to our static theme player (§ above).
+3. **Run real WordPress with an intercepted data layer** — WP4BD V2
+   ("a complete installation of WordPress *inside* the theme" — Luke's
+   public phrasing). The only approach that can serve classic themes.
+
+Luke publicly committed on that thread to giving WP4BD another shot. The
+repo link was posted publicly — note that `main`'s README predates all of
+this; the current docs live on `claude/code-review-014RDG3PJ9qUmMQrzSMWrw5v`
+until merged. Borrowable from WordPal: the gallery-with-diff-count as a
+quantified quality bar (our REFERENCE/ screenshots, scored per theme).
+
 ## 8. Suggested plan of attack (triage first, then Epics as needed)
 
 1. **Triage the December branches before writing new code.** Check out
